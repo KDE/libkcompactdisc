@@ -45,6 +45,7 @@ static char plat_osf_id[] = "$Id$";
 
 #include "include/wm_config.h"
 #include "include/wm_struct.h"
+#include "include/wm_helpers.h"
 
 #define WM_MSG_CLASS WM_MSG_CLASS_PLATFORM
 
