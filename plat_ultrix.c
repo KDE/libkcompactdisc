@@ -25,9 +25,10 @@
  * ULTRIX 4.2 drive control routines.
  */
 
+static char plat_ultrix_id[] = "$Id$";
+
 #if defined(ultrix) || defined(__ultrix)
 
-static char plat_ultrix_id[] = "$Id$";
 
 #include <errno.h>
 #include <stdio.h>

@@ -25,9 +25,9 @@
  * BSD/386-specific drive control routines.
  */
 
-#ifdef __bsdi__
-
 static char plat_bsd386_id[] = "$Id$";
+
+#if defined(__bsdi__) || defined(__bsdi)
 
 #include <errno.h>
 #include <stdio.h>

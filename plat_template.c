@@ -28,9 +28,10 @@
  */
 
 
+static char plat_template_id[] = "$Id$"
+
 #if [TEMPLATESYSTEM]
 
-static char plat_template_id[] = "$Id$"
 
 #include "include/wm_config.h"
 #include "include/wm_struct.h"

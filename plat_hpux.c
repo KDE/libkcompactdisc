@@ -25,9 +25,9 @@
  * HP/UX-specific drive control routines.
  */
 
-#if defined(hpux) || defined(__hpux)
-
 static char plat_hpux_id[] = "$Id$";
+
+#if defined(hpux) || defined(__hpux)
 
 #include <errno.h>
 #include <stdio.h>

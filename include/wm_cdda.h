@@ -67,7 +67,7 @@ struct cdda_block {
  * byte-order examination.
  */
 
-#ifdef sun
+#if defined(__sun) || defined(sun) 
 # ifdef SYSV
 #  include <sys/types.h>
 #  include <sys/cdio.h>
@@ -108,8 +108,8 @@ struct cdda_block {
  *
  */
 
-#if !WM_LITTLE_ENDIAN
-#  if !WM_BIG_ENDIAN
+#if !defined(WM_LITTLE_ENDIAN)
+#  if !defined(WM_BIG_ENDIAN)
 #    error yet unsupported architecture
 	foo bar this is to stop the compiler. 
 #  endif

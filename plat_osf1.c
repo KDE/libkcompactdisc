@@ -23,9 +23,11 @@
  * OSF  drive control routines.
  */
 
-#if defined(__osf__)
 
 static char plat_osf_id[] = "$Id$";
+
+#if defined(__osf__) || defined(__osf)
+
 
 #include <errno.h>
 #include <stdio.h>

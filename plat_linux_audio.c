@@ -27,9 +27,9 @@
 
 #include "include/wm_config.h"
 
-#if defined(__linux) && defined(BUILD_CDDA) /* { */
-
 static char plat_linux_audio_id[] = "$Id$";
+
+#if defined(__linux) && defined(BUILD_CDDA) /* { */
 
 #include "include/wm_cdda.h"
 

@@ -199,9 +199,9 @@ connect_open(void)
 	int port;
 	
 	if(cddb.protocol == 3) /* http proxy */
-	  host = strdup(cddb.proxy_server);
+	  host = wm_strdup(cddb.proxy_server);
 	else
-	  host = strdup(cddb.cddb_server);
+	  host = wm_strdup(cddb.cddb_server);
 	/*	
 	 * t=string_split(host,':'); 
 	 */

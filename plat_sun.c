@@ -25,8 +25,9 @@
  * Sun-specific drive control routines.
  */
 
-#ifdef sun
 static char plat_sun_id[] = "$Id$";
+
+#if defined(sun) || defined(__sun)
 
 #include <errno.h>
 #include <stdio.h>

@@ -25,9 +25,10 @@
  * SVR4 specific.  Much of this is similar to plat_hpux.c.
  */
 
-#if defined(SVR4) && !defined(sun) && !defined(__sun__) && !defined(__sony_news)
-
 static char plat_svr4_id[] = "$Id$";
+
+#if (defined(SVR4) || defined(__SVR4)) && !defined(sun) && !defined(__sun) && !defined(sony_news) && !defined(__sony_news)
+
 
 #include <sys/types.h>
 #include <stdio.h>

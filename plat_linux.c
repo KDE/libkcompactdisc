@@ -25,11 +25,9 @@
  * Linux-specific drive control routines.  Very similar to the Sun module.
  */
 
-#ifdef __linux
-
-
-/* Id for ident command */
 static char plat_linux_id[] = "$Id$";
+
+#if defined(__linux)
 
 #include <errno.h>
 #include <stdio.h>
@@ -849,4 +847,4 @@ gen_save( char *filename )
 
 #endif /* BUILD_CDDA } */
 
-#endif /* linux */
+#endif /* __linux__ */

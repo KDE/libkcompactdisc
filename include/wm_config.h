@@ -108,7 +108,7 @@
  ***  **  ******  **  *  ***  ********  **  **  **  **  ***********
  ***     ****    ***    ***  ******    ****    ****    ************
  ******************************************************************/
-#ifdef __bsdi__
+#if defined(__bsdi__) || defined(__bsdi)
 
 /*
  * This lets you use the SoundBlaster Mixer on BSD/386
@@ -126,7 +126,7 @@
  ***  ******  **  **  ******  ******  **  ******  **  *  **********
  ***  ******  **  **      **      **     ****    ***    ***********
  ******************************************************************/
-#if defined(__FreeBSD__) || defined(__NetBSD__)
+#if defined(__FreeBSD__) || defined(__FreeBSD) || defined(__NetBSD__) || defined(__NetBSD)
 
 #define DEFAULT_CD_DEVICE	"/dev/rmatcd0c"
 
@@ -156,7 +156,7 @@
  *****  ****  **  ****  *****    **********************************
  ***      **  **  **      **  **  *********************************
  ******************************************************************/
-#if defined(sgi)
+#if defined(sgi) || defined(__sgi)
 
 #define DEFAULT_CD_DEVICE	"/dev/scsi/sc0d6l0"
 
@@ -171,7 +171,7 @@
  ***  ********  ****  **    **  **  ***    ************************
  ***      **      **  ***   ***    ***  **  ***********************
  ******************************************************************/
-#ifdef __linux
+#if defined(__linux)
 
 /*
  * Uncomment the following line to have WorkMan send SCSI commands
@@ -184,7 +184,7 @@
 /*
  * Which device should be opened by WorkMan at default?
  */
-#define DEFAULT_CD_DEVICE	"/dev/sbpcd"
+#define DEFAULT_CD_DEVICE	"/dev/cdrom"
 
 /*
  * Uncomment the following if you use the sbpcd or mcdx device driver.
@@ -224,7 +224,7 @@
 
 #define BSD_MOUNTTEST 
 
-#endif /* linux */
+#endif /* __linux */
 
 /******************************************************************
  * Sony NewsOS
@@ -250,7 +250,7 @@
  ***  **  **  ******  ******  **    **  **  ******  **  *  ********
  ****    ***  ******      **  ***   **     ****    ***    *********
  ******************************************************************/
-#ifdef __OpenBSD__
+#if defined(__OpenBSD__) || defined(__OpenBSD)
 
 #define	DEFAULT_CD_DEVICE	"/dev/rcdrom"
 
@@ -265,7 +265,7 @@
  ***  **  ******  **  ****  ******  *******************************
  ****    ****    ***  ***  *****      *****************************
  ******************************************************************/
-#if defined(__osf__)
+#if defined(__osf__) || defined(__osf)
 
 #define	DEFAULT_CD_DEVICE	"/dev/rcdrom/cd0"
 
@@ -280,7 +280,7 @@
  *******  **  **  **  **    ***************************************
  ****    ****    ***  ***   ***************************************
  ******************************************************************/
-#if defined(sun) || defined(__sun__)
+#if defined(sun) || defined(__sun)
 
 /*
  * Define the following for Solaris 2.x
@@ -312,7 +312,7 @@
  *******  ***  **  ***  **  *****  ********************************
  ****    *****    ****  **  *****  ********************************
  ******************************************************************/
-#if defined(SVR4) && !defined(sun) && !defined(__sun__)
+#if (defined(SVR4) || defined(__SVR4)) && !defined(sun) && !defined(__sun) && !defined(sony_news) && !defined(__sony_news) 
 
 #define DEFAULT_CD_DEVICE       "/dev/rcdrom/cd0"
 
@@ -340,7 +340,7 @@
  ***  **  ****  *****    ******************************************
  ***  **  **      **  **  *****************************************
  ******************************************************************/
-#if defined(AIXV3)
+#if defined(AIXV3) || defined(__AIXV3)
 
 #define DEFAULT_CD_DEVICE	"/dev/cd0"
 
@@ -348,4 +348,11 @@
 
 /******************************************************************/ 
 #endif /* WM_CONFIG_H */
+
+
+
+
+
+
+
 

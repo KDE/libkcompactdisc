@@ -25,9 +25,9 @@
  * Sony NEWS-specific drive control routines.
  */
 
-#if defined( __sony_news) || defined(sony_news)
-
 static char plat_news_id[] = "$Id$";
+
+#if defined( __sony_news) || defined(sony_news)
 
 #include <errno.h>
 #include <stdio.h>

@@ -30,9 +30,9 @@
  *
  */
 
-#if defined(__FreeBSD__) || defined(__NetBSD__)
-
 static char freebsd_id[] = "$Id$";
+
+#if defined(__FreeBSD__) || defined(__FreeBSD) || defined(__NetBSD__) || defined (__NetBSD)
 
 #include <errno.h>
 #include <stdio.h>
