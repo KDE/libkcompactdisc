@@ -152,8 +152,8 @@ find_cdrom()
     {
       close(fds[0]);
       dup2(fds[1], 1);
-      execl("/etc/uerf", "uerf", "-R", "-r", "300", NULL);
-      execl("/usr/sbin/uerf", "uerf", "-R", "-r", "300", NULL);
+      execl("/etc/uerf", "uerf", "-R", "-r", "300", (void *)0);
+      execl("/usr/sbin/uerf", "uerf", "-R", "-r", "300", (void *)0);
       return 0; /* _exit(1); */
     } else if (pid < 0) {
       perror("fork");

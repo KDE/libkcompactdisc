@@ -867,9 +867,9 @@ cdda_init( struct wm_drive *d )
       close(slavefds[1]);
       close(d->fd);
       /* Try the default path first. */
-      execl(cddaslave_path, cddaslave_path, cd_device, NULL);
+      execl(cddaslave_path, cddaslave_path, cd_device, (void *)0);
       /* Search $PATH if that didn't work. */
-      execlp("cddaslave", "cddaslave", cd_device, NULL);
+      execlp("cddaslave", "cddaslave", cd_device, (void *)0);
       perror(cddaslave_path);
       exit(1);
       
