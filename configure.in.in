@@ -1,0 +1,53 @@
+dnl +-------------------------------+
+dnl |   Checks for LIBWORKMAN       |
+dnl +-------------------------------+
+AC_MSG_CHECKING("for CDDA")
+
+AC_ARG_WITH(cdda, [  --with-cdda             build CDDA support in kscd],
+[
+  if test $withval = "yes"; then
+    libwm_with_cdda=yes
+  else
+    libwm_with_cdda=no
+  fi
+],libwm_with_cdda=no)
+
+if test "$libwm_with_cdda" = "yes"; then
+case $host in
+  *-*-linux-gnu)
+  AC_TRY_COMPILE(
+  [
+#include <linux/cdrom.h>
+  ],[
+#if defined(__linux__)
+ioctl(1, CDROMREADAUDIO, 0);
+#else
+  #error platform?
+#endif
+  ],, libwm_with_cdda=no)
+  ;;
+  *-*-sunos*)
+  AC_TRY_COMPILE(
+  [
+#include <sys/types.h>
+#include <sys/cdio.h>
+  ],[
+#if defined(__sun) || defined(sun)
+ioctl(1, CDROMCDDA, 0);
+#else
+  #error platform?
+#endif
+  ],, libwm_with_cdda=no)
+  ;;
+esac
+fi
+
+if test "$libwm_with_cdda" = "yes"; then
+    AC_DEFINE(BUILD_CDDA, 1, [Define if you will CDDA support in kscd])
+    AC_SUBST(CDDASLAVE, "cddaslave")
+fi
+
+
+dnl +-------------------------------+
+dnl | End LIBWORKMAN checks         |
+dnl +-------------------------------+
