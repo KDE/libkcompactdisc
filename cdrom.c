@@ -200,14 +200,14 @@ const char *wm_drive_device( void )
 int
 find_drive_struct(const char *vendor, const char *model, const char *rev)
 {
-	struct drivelist	*d;
+  struct drivelist *d;
 
   for (d = drives; d; d++) {
-		if( ( (d->ven != NULL) && strncmp(d->ven, vendor, strlen(d->ven)) ) ||
-		    ( (d->mod != NULL) && strncmp(d->mod, model, strlen(d->mod)) ) ||
-		    ( (d->rev != NULL) && strncmp(d->rev, rev, strlen(d->rev)) ) )
-			continue;
-		
+    if(((d->ven != NULL) && strncmp(d->ven, vendor, strlen(d->ven))) ||
+       ((d->mod != NULL) && strncmp(d->mod, model, strlen(d->mod))) ||
+       ((d->rev != NULL) && strncmp(d->rev, rev, strlen(d->rev))))
+      continue;
+
     if(!(d->proto))
       goto fail;
 
@@ -235,10 +235,13 @@ fail:
 int
 read_toc( void )
 {
-        struct wm_playlist *l;
-        int    i;
-        int    pos;
+  struct wm_playlist *l;
+  int    i;
+  int    pos;
 
+  if(!drive.proto)
+    return -1;
+    
   if(drive.proto->gen_get_trackcount &&
     (drive.proto->gen_get_trackcount)(&drive, &thiscd.ntracks) < 0) {
     return -1 ;
@@ -322,19 +325,16 @@ int
 wm_cd_status( void )
 {
   static int oldmode = WM_CDM_UNKNOWN;
-  int mode;
-  int status;
+  int mode, err;
 
-  if(wm_cur_cdmode == WM_CDM_EJECTED ||
+  if(!drive.proto ||
+     wm_cur_cdmode == WM_CDM_EJECTED ||
      wm_cur_cdmode == WM_CDM_DEVICECHANGED) {
     /* device was be changed */
 
     if(drive.proto && drive.proto->gen_close)
       drive.proto->gen_close(&drive);
     wm_cur_cdmode = WM_CDM_UNKNOWN;
-
-    cur_pos_abs = cur_pos_rel = cur_frame = 0;
-    cur_pos_rel = cur_pos_abs = 0;
   }
 
   if(wm_cur_cdmode == WM_CDM_UNKNOWN) {
@@ -342,12 +342,14 @@ wm_cd_status( void )
      * Open the drive.
      * This returns >0 if the device isn't ready and <0 if error.
      */
+    cur_pos_abs = cur_pos_rel = cur_frame = 0;
+    cur_pos_rel = cur_pos_abs = 0;
         
-    status = wmcd_open( &drive );
-
-    if (status < 0)
-      return status;
-    if (status > 0)
+    err = wmcd_open( &drive );
+ 
+    if (err < 0)
+      return WM_CDM_UNKNOWN;
+    if (err > 0)
       return WM_CDM_NO_DISC;
 
     if(read_toc())
@@ -497,10 +499,10 @@ wm_cd_getcountoftracks( void )
 int
 wm_cd_play( int start, int pos, int end )
 {
-  int real_start, real_end;
+  int real_start, real_end, status;
   
-  wm_cd_status();
-  if(wm_cur_cdmode == WM_CDM_EJECTED || thiscd.ntracks < 1)
+  status = wm_cd_status();
+  if(WM_CDS_NO_DISC(status) || thiscd.ntracks < 1)
     return -1;
 
   /*
@@ -547,7 +549,10 @@ wm_cd_play( int start, int pos, int end )
 int
 wm_cd_play_chunk( int start, int end, int realstart )
 {
-  if (wm_cur_cdmode == WM_CDM_EJECTED)
+  int status;
+  
+  status = wm_cd_status();
+  if(WM_CDS_NO_DISC(status))
     return -1;
   
   end--;
@@ -569,6 +574,12 @@ wm_cd_play_chunk( int start, int end, int realstart )
 int
 wm_cd_play_from_pos( int pos )
 {
+  int status;
+  
+  status = wm_cd_status();
+  if(WM_CDS_NO_DISC(status))
+    return -1;
+  
   if (pos == -1)
     pos = thiscd.trk[thiscd.curtrack - 1].length - 1;
 
@@ -588,9 +599,10 @@ int
 wm_cd_pause( void )
 {
   static int paused_pos;
-  int status = wm_cd_status();
-
-  if(WM_CDS_NO_DISC(status)) /* do nothing if there's no CD! */
+  int status;
+   
+  status = wm_cd_status();
+  if(WM_CDS_NO_DISC(status))
     return -1;
 
   if(WM_CDM_PLAYING == wm_cur_cdmode) {
@@ -617,12 +629,14 @@ wm_cd_pause( void )
 int
 wm_cd_stop( void )
 {
-  int status = wm_cd_status();
-
-  if(WM_CDS_NO_DISC(status)) /* do nothing if there's no CD! */
+  int status;
+   
+  status = wm_cd_status();
+  if(WM_CDS_NO_DISC(status))
     return -1;
 
   if (status != WM_CDM_STOPPED) {
+    
     if(drive.proto->gen_stop)
       (drive.proto->gen_stop)(&drive);
 
@@ -644,15 +658,15 @@ wm_cd_stop( void )
 int
 wm_cd_eject( void )
 {
-  int status = -1;
+  int err = -1;
 
   wm_cd_stop();
+  
+  if(drive.proto && drive.proto->gen_eject)
+    err = (drive.proto->gen_eject)(&drive);
 
-  if(drive.proto->gen_eject)
-    status = (drive.proto->gen_eject)(&drive);
-
-  if (status < 0) {
-    if (status == -3) {
+  if (err < 0) {
+    if (err == -3) {
       return 2;
     } else {
       return 1;
@@ -666,7 +680,12 @@ wm_cd_eject( void )
 
 int wm_cd_closetray(void)
 {
-  int err = -1;
+  int status, err = -1;
+  
+  status = wm_cd_status();
+  if(WM_CDS_NO_DISC(status))
+    return -1;
+
   if(drive.proto->gen_closetray)
     err = (drive.proto->gen_closetray)(&drive);
 
@@ -676,7 +695,12 @@ int wm_cd_closetray(void)
 struct cdtext_info*
 wm_cd_get_cdtext( void )
 {
-  wm_cd_status();
+  int status;
+  
+  status = wm_cd_status();
+  if(WM_CDS_NO_DISC(status))
+    return NULL;
+  
   return get_glob_cdtext(&drive, 0);
 }
 
@@ -696,56 +720,56 @@ wm_cd_get_cdtext( void )
 int
 wm_find_trkind( int track, int ind, int start )
 {
-	int	top = 0, bottom, current, interval, ret = 0, i;
+  int top = 0, bottom, current, interval, ret = 0, i, status;
 
-  if(wm_cur_cdmode == WM_CDM_EJECTED)
-    return 0; /* WARNING: was nothing */
+  status = wm_cd_status();
+  if(WM_CDS_NO_DISC(status))
+    return 0;
 
   for (i = 0; i < thiscd.ntracks; i++) {
     if (thiscd.trk[i].track == track)
-			break;
+      break;
   }
 
   bottom = thiscd.trk[i].start;
 
   for (; i < thiscd.ntracks; i++) {
     if (thiscd.trk[i].track > track)
-			break;
+      break;
   }
 
   top = i == thiscd.ntracks ? (thiscd.length - 1) * 75 : thiscd.trk[i].start;
+  if (start > bottom && start < top)
+    bottom = start;
 
-	if (start > bottom && start < top)
-		bottom = start;
+  current = (top + bottom) / 2;
+  interval = (top - bottom) / 4;
 
-	current = (top + bottom) / 2;
-	interval = (top - bottom) / 4;
+  do {
+    wm_cd_play_chunk(current, current + 75, current);
 
-	do {
-		wm_cd_play_chunk(current, current + 75, current);
-
-		if (wm_cd_status() != 1)
+    if (wm_cd_status() != 1)
       return 0;
     while (cur_frame < current) {
-      if (wm_cd_status() != 1 || wm_cur_cdmode != WM_CDM_PLAYING)
+      if(wm_cd_status() != 1 || wm_cur_cdmode != WM_CDM_PLAYING)
         return 0;
-			else
-				wm_susleep(1);
+      else
+       wm_susleep(1);
     }
 
     if (thiscd.trk[thiscd.curtrack - 1].track > track)
-			break;
+      break;
 
-    if (cur_index >= ind) {
-			ret = current;
-			current -= interval;
+    if(cur_index >= ind) {
+      ret = current;
+      current -= interval;
     } else {
-			current += interval;
+      current += interval;
     }
 
-		interval /= 2;
+    interval /= 2;
 
-	} while (interval > 2);
+  } while (interval > 2);
 
   return ret;
 } /* find_trkind() */
