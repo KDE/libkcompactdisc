@@ -341,7 +341,7 @@ wm_cd_status( void )
       wm_cur_cdmode = WM_CDM_UNKNOWN;
   }
 
-  if(wm_cur_cdmode == WM_CDM_UNKNOWN) {
+  if(wm_cur_cdmode == WM_CDM_UNKNOWN || wm_cur_cdmode == WM_CDM_EJECTED) {
     /*
      * Open the drive.
      * This returns >0 if the device isn't ready and <0 if error.
