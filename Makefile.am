@@ -24,9 +24,4 @@ database.c index.c scsi.c \
 plat_aix.c plat_bsd386.c plat_freebsd.c plat_hpux.c plat_irix.c \
 plat_linux.c plat_svr4.c plat_ultrix.c plat_news.c plat_openbsd.c \
 plat_osf1.c plat_sun.c plat_scor5.c \
-drv_sony.c drv_toshiba.c \
-plat_linux_audio.c plat_linux_cdda.c \
-plat_sun_audio.c plat_sun_cdda.c
-
-
-
+drv_sony.c drv_toshiba.c

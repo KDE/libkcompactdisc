@@ -99,7 +99,9 @@ static struct wm_drive *thecd;
 static void 
 thawme(int sig)
 {
-  change_mode(NULL, WM_CDM_STOPPED, NULL);
+// Just leave this line in as a reminder for a missing
+// functionality in the GUI.
+// change_mode(NULL, WM_CDM_STOPPED, NULL);
   codec_init();
   if( thecd )
     gen_set_volume(thecd, last_left, last_right);
@@ -247,8 +249,11 @@ wmcd_open( struct wm_drive *d )
   /*
    * See if we can do digital audio.
    */
+#if defined(BUILD_CDDA) && defined(WMCDDA_DONE)
   if (cdda_init(d))
+    /* WARNING: Old GUI call. How could this survive? */
     enable_cdda_controls(1);
+#endif
   
   /* Can we figure out the drive type? */
   if (wm_scsi_get_drive_type(d, vendor, model, rev)) 
@@ -592,6 +597,7 @@ gen_play( struct wm_drive *d, int start, int end, int realstart)
   
   current_end = end;
   
+
   if (cdda_slave > -1)
     {
       cmdbuf[0] = 'P';
@@ -840,7 +846,8 @@ gen_get_volume( struct wm_drive *d, int *left, int *right )
   return (wm_scsi2_get_volume(d, left, right));
 } /* gen_get_volume() */
 
-#ifdef BUILD_CDDA /* { */
+/* Trying to patch things up. Yuck. */
+/* #ifdef BUILD_CDDA */
 
 /*
  * Try to initialize the CDDA slave.  Returns 0 on error.
@@ -894,7 +901,7 @@ cdda_init( struct wm_drive *d )
   
   return (1);
   
-#else /* BUILD_CDDA only } { */
+#else /* BUILD_CDDA only (WMCDDA_DONE } { */
   /*
    * If we're not building CDDA support, don't even bother trying.
    */
@@ -1005,7 +1012,9 @@ gen_save( char *filename )
   get_ack(cdda_slave);
 } /* gen_save() */
 
-#endif /* CDDA */
+/*
+#endif
+*/
 
 /*
  * The following code activates the internal CD audio passthrough on

@@ -29,7 +29,7 @@
 
 static char plat_sun_audio_id[] = "$Id$";
 
-#if defined(sun) || defined(__sun) && defined(SYSV) && defined(BUILD_CDDA) 
+#if defined(sun) || defined(__sun) && defined(SYSV) && defined(BUILD_CDDA) && defined(WMCDDA_DONE)
 
 
 #include "include/wm_cdda.h"
