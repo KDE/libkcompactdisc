@@ -86,8 +86,8 @@ extern int wm_lib_verbosity;
 #endif /* linux */
 
 void		freeup( char **x );
-void	 	wm_strmcat( char **t, char *s);
-void	 	wm_strmcpy( char **t, char *s );
+void	 	wm_strmcat( char **t, const char *s);
+void	 	wm_strmcpy( char **t, const char *s );
 char *		wm_strdup( char *s );
 /* Somebody's version query unsatisfied? */
 int		wm_libver_major( void );	/* return major internal version number */
@@ -99,7 +99,7 @@ char *		wm_libver_string( void ); 	/* returns string: "<name> <number>" */
 char *		wm_libver_date( void );		/* returns string: date of compilation */
 void 		wm_lib_set_verbosity( int level ); /* set verbosity level */
 int 		wm_lib_get_verbosity( void );      /* get verbosity level */
-void 		wm_lib_message( unsigned int level, char *format, ... ); /* put out a message on stderr */
+void 		wm_lib_message( unsigned int level, const char *format, ... ); /* put out a message on stderr */
 int		wm_susleep( int usec );
 
 #endif /* WM_HELPERS_H */

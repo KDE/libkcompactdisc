@@ -105,7 +105,7 @@ void freeup( char **x )
 
 /* Copy into a malloced string. */
 void
-wm_strmcpy( char **t, char *s )
+wm_strmcpy( char **t, const char *s )
 {
 	wm_lib_message(WM_MSG_CLASS_MISC | WM_MSG_LEVEL_DEBUG, "wm_strmcpy(%s, '%s')\n", *t, s);
 	if (*t != NULL)
@@ -127,7 +127,7 @@ wm_strmcpy( char **t, char *s )
 
 /* Add to a malloced string. */
 void
-wm_strmcat( char **t, char *s)
+wm_strmcat( char **t, const char *s)
 {
 	int	len = strlen(s) + 1;
 
@@ -195,7 +195,7 @@ int wm_lib_get_verbosity( void )
  * defined in each module to reflect the correct message class.
  *
  */
-void wm_lib_message( unsigned int level, char *fmt, ... )
+void wm_lib_message( unsigned int level, const char *fmt, ... )
 {
 	va_list ap;
 	/* verbosity level */
