@@ -96,6 +96,7 @@ int    wm_cd_set_verbosity( int );
 const char * wm_drive_vendor( void );
 const char * wm_drive_model( void );
 const char * wm_drive_revision( void );
+const char * wm_drive_device( void );
 
 /*
  * volume is valid WM_VOLUME_MUTE <= vol <= WM_VOLUME_MAXIMAL,

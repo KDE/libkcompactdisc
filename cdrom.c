@@ -186,6 +186,11 @@ const char *wm_drive_revision( void )
   return drive.revision?drive.revision:"";
 }
 
+const char *wm_drive_device( void )
+{
+  return drive.cd_device ? drive.cd_device : "";
+}
+
 /*
  * Figure out which prototype drive structure we should be using based
  * on the vendor, model, and revision of the current drive.
