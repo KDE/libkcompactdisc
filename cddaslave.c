@@ -108,12 +108,17 @@ struct auheader {
 };
 
 /* had to change #ifdef to #if   -> see wm_cdda.h */
+#ifdef __FreeBSD__
+/* Phungus not with htonl on FreeBSD */
+#include <sys/param.h>
+#else
 #if WM_BIG_ENDIAN
 # ifndef htonl
 #  define htonl(x) (x)
 # endif
 #else
 extern unsigned long htonl(x);
+#endif
 #endif
 
 void *malloc();

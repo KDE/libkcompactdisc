@@ -39,6 +39,10 @@ ioctl(1, CDROMCDDA, 0);
 #endif
   ],, libwm_with_cdda=no)
   ;;
+  *)
+      AC_WARNING([No CDDA support for your platform.])
+      libwm_with_cdda=no
+  ;;
 esac
 fi
 
