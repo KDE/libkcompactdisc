@@ -282,7 +282,7 @@ wm_scsi( struct wm_drive *d, unsigned char *cdb, int cdblen,
   cdc.buflen = retbuflen;
   cdc.stat = 0;
   cdc.sense = &sense;
-  cdc.data_direction = getreply;
+  cdc.data_direction = getreply?CGC_DATA_READ:CGC_DATA_WRITE;
 
   /* sendpacket_over_cdrom_interface() */
   return ioctl(d->fd, CDROM_SEND_PACKET, &cdc);
