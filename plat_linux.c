@@ -350,9 +350,15 @@ gen_get_drive_status( struct wm_drive *d, enum wm_cd_modes oldmode,
 	  return (0);
 	}
     }
-  
+ 
+
+  /* Try to get rid of the door locking    */
+  /* Don't care about return value. If it  */
+  /* works - fine. If not - ...            */
+  ioctl( d->fd, CDROM_LOCKDOOR, 0 ); 
+ 
   sc.cdsc_format = CDROM_MSF;
-  
+ 
   if (ioctl(d->fd, CDROMSUBCHNL, &sc))
     return (0);
   
@@ -574,7 +580,9 @@ gen_eject(struct wm_drive *d)
     }
   endmntent (fp);
 #endif /* BSD_MOUNTTEST */
-  
+ 
+  ioctl( d->fd, CDROM_LOCKDOOR, 0 );
+
   if (ioctl(d->fd, CDROMEJECT))
     {
       wm_lib_message(WM_MSG_LEVEL_DEBUG|WM_MSG_CLASS, "eject failed (%s).\n", strerror(errno));
