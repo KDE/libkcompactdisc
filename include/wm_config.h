@@ -267,8 +267,8 @@
  ******************************************************************/
 #if defined(__osf__) || defined(__osf)
 
-// not needed here, it's figured out by plat_osf1.c
-//#define DEFAULT_CD_DEVICE "/dev/rcdrom/cd0"
+/* not needed here, it's figured out by plat_osf1.c */
+/* #define DEFAULT_CD_DEVICE "/dev/rcdrom/cd0" */
 
 #endif
 
