@@ -213,19 +213,17 @@ wmcd_open( struct wm_drive *d )
 	{
 	  if (!warned)
 	    {
+              /*
 	      char	realname[MAXPATHLEN];
 	      
 	      if (realpath(cd_device, realname) == NULL)
 		{
 		  perror("realpath");
-		  return (-1);
+		  return (1);
 		}
-	      
-	      fprintf(stderr,
-		      "As root, please run\n\nchmod 666 %s\n\n%s\n", realname,
-		      "to give yourself permission to access the CD-ROM device.");
-	      warned++;
-	    }
+                */
+              return -EACCES;
+            }
 	}
       else if (errno != ENXIO)
 	{
@@ -234,12 +232,6 @@ wmcd_open( struct wm_drive *d )
       
       /* No CD in drive. */
       return (1);
-    }
-  
-  if (warned)
-    {
-      warned = 0;
-      fprintf(stderr, "Thank you.\n");
     }
   
   /* Now fill in the relevant parts of the wm_drive structure. */

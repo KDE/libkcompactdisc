@@ -135,13 +135,7 @@ wmcd_open( struct wm_drive *d )
     {
       if (errno == EACCES)
 	{
-	  if (!warned)
-	    {
-	      fprintf(stderr,
-		      "As root, please run\n\nchmod 666 %s\n\n%s\n", cd_device,
-		      "to give yourself permission to access the CD-ROM device.");
-	      warned++;
-	    }
+          return -EACCES;
 	}
       /* Hack proposed by Carey Evans, introduced by Debian maintainer :
        * treat EIO like ENXIO since some Linux drives do never return ENXIO
@@ -154,12 +148,6 @@ wmcd_open( struct wm_drive *d )
       
       /* No CD in drive. */
       retval = 1;
-    }
-  
-  if (warned)
-    {
-      warned = 0;
-      fprintf(stderr, "Thank you.\n");
     }
   
   /* Now fill in the relevant parts of the wm_drive structure. */

@@ -99,13 +99,7 @@ wmcd_open( struct wm_drive *d )
     {
       if (errno == EACCES)
 	{
-	  if (! warned)
-	    {
-	      fprintf(stderr,
-		      "As root, please run\n\nchmod 666 %s\n\n%s\n", cd_device,
-		      "to give yourself permission to access the CD-ROM device.");
-	      warned++;
-	    }
+          return -EACCES;
 	} 
       else if (errno != EINTR)
 	{
@@ -122,12 +116,6 @@ wmcd_open( struct wm_drive *d )
       fprintf(stderr, "%s: SIOC_CMD_MODE: true: %s\n",
 	      cd_device, strerror(errno));
       /*exit(1);*/
-    }
-  
-  if (warned)
-    {
-      warned = 0;
-      fprintf(stderr, "Thank you.\n");
     }
   
   /* Now fill in the relevant parts of the wm_drive structure. */
