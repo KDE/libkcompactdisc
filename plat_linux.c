@@ -80,9 +80,11 @@ typedef unsigned long long __u64;
 #undef __STRICT_ANSI__
 /* needed for non-ansi kernel headers */
 #define asm __asm__
+#define inline __inline__
 #include <asm/types.h>
 #include <linux/cdrom.h>
 #undef asm
+#undef inline
 
 #include "include/wm_cdda.h"
 #include "include/wm_struct.h"
