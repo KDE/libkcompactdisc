@@ -67,6 +67,17 @@ struct cdda_block {
  * byte-order examination.
  */
 
+#if defined(__osf__)
+#include <machine/endian.h>
+#if BYTE_ORDER == LITTLE_ENDIAN
+#define WM_LITTLE_ENDIAN 1
+#define WM_BIG_ENDIAN 0
+#else
+#define WM_LITTLE_ENDIAN 0
+#define WM_BIG_ENDIAN 1
+#endif
+#endif
+
 #if defined(__sun) || defined(sun) 
 # ifdef SYSV
 #  include <sys/types.h>
