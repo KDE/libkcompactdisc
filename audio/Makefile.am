@@ -5,7 +5,7 @@
 
 SUBDIRS =
 
-INCLUDES = $(all_includes) @ARTSC_INCLUDE@
+INCLUDES = $(all_includes) $(ARTSC_INCLUDE)
 
 lib_LIBRARIES = libworkmanaudio.a
 
