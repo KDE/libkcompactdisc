@@ -48,6 +48,7 @@ static char plat_aix_id[] = "$Id$";
 
 #include "include/wm_config.h"
 #include "include/wm_struct.h"
+#include "include/wm_cdtext.h"
 
 #define WM_MSG_CLASS WM_MSG_CLASS_PLATFORM
 
@@ -468,6 +469,16 @@ gen_get_volume(struct wm_drive *d,int *left,int *right)
   
   return 0;
 } /* gen_get_volume() */
+
+/*------------------------------------------------------------------------*
+ * gen_get_cdtext(drive, buffer, lenght)
+ *------------------------------------------------------------------------*/
+
+int
+gen_get_cdtext(struct wm_drive *d, unsigned char **pp_buffer, int *p_buffer_lenght)
+{
+  return -1; /* no SCSI, no CDTEXT */
+} /* gen_get_cdtext() */
 
 
 

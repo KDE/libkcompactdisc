@@ -677,7 +677,9 @@ gen_set_volume( struct wm_drive *d, int left, int right )
  * Return a buffer with cdtext-stream. buffer will be allocated and filled
  *
  * needs send packet interface -> for IDE, linux at 2.2.16
-*------------------------------------------------------------------------*/
+ * depends on scsi.c which depends on wm_scsi defined in here
+ * (which also takes care of IDE drives)
+ *------------------------------------------------------------------------*/
 
 int
 gen_get_cdtext(struct wm_drive *d, unsigned char **pp_buffer, int *p_buffer_lenght)

@@ -42,7 +42,7 @@ static char plat_sun_id[] = "$Id$";
 #include "include/wm_config.h"
 #include "include/wm_helpers.h"
 #include "include/wm_cdrom.h"
-
+#include "include/wm_cdtext.h"
 
 #include <ustat.h>
 #include <unistd.h>
@@ -1209,5 +1209,16 @@ codec_start( void )
 codec_stop( void ) { return 0; }
 
 #endif /* CODEC } */
+
+/*------------------------------------------------------------------------*
+ * gen_get_cdtext(drive, buffer, lenght)
+ *------------------------------------------------------------------------*/
+
+int
+gen_get_cdtext(struct wm_drive *d, unsigned char **pp_buffer, int *p_buffer_lenght)
+{
+  /* This needs to be tested */
+  return wm_scsi_get_cdtext(d, pp_buffer, p_buffer_lenght);
+} /* gen_get_cdtext() */
 
 #endif /* sun } */
