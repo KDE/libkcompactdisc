@@ -12,6 +12,10 @@ struct audio_oops* setup_soundsystem(const char* ss, const char* dev, const char
   if(!strcmp(ss, "arts"))
     return setup_arts(dev, ctl);
 #endif
+#ifdef USE_SUN_AUDIO
+  if(!strcmp(ss, "sun"))
+    return setup_sun_audio(dev, ctl);
+#endif
   ERRORLOG("audio: unknown soundsystem '%s'\n", ss);
   return NULL;
 }
