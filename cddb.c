@@ -49,12 +49,6 @@
 #include "include/wm_helpers.h"
 #include "include/wm_cddb.h"
 
-/*
- * This is for identifying WorkMan at CDDB servers
- */
-#define PROGRAM WORKMAN_NAME
-#define VERSION WORKMAN_VERSION
-
 struct wm_cddb cddb;
 
 extern struct wm_cdinfo thiscd;
@@ -203,8 +197,8 @@ string_makehello(char *line,char delim)
 		delim == ' ' ? ' ' : '=',
 		mail,delim,
 		host,delim,
-		PROGRAM,delim,
-		VERSION);
+		WORKMAN_NAME,delim,
+		WORKMAN_VERSION);
 } /* string_makehello() */
 
 /*
