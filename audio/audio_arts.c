@@ -23,7 +23,7 @@
  */
 #include "audio.h"
 
-#ifdef USE_ARTS
+#ifdef include_ARTS_TRUE
 
 #include <artsc.h>
 
