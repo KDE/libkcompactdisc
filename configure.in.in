@@ -44,8 +44,8 @@ fi
 
 if test "$libwm_with_cdda" = "yes"; then
     AC_DEFINE(BUILD_CDDA, 1, [Define if you will CDDA support in kscd])
-    AC_SUBST(CDDASLAVE, "cddaslave")
 fi
+AM_CONDITIONAL(libwm_with_cdda, test "$libwm_with_cdda" = "yes")
 
 
 dnl +-------------------------------+
