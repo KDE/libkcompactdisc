@@ -18,6 +18,9 @@ plat_linux.c plat_svr4.c plat_ultrix.c plat_news.c plat_openbsd.c \
 plat_osf1.c plat_sun.c plat_scor5.c \
 drv_sony.c drv_toshiba.c
 
+libworkmanincludedir = $(includedir)/libwm
+libworkmaninclude_HEADERS = include/wm_cdrom.h include/wm_cdtext.h
+
 if libwm_with_cdda
 CDDA_SLAVE = cddaslave
 endif
