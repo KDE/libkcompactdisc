@@ -3,14 +3,14 @@ dnl |   Checks for LIBWORKMAN       |
 dnl +-------------------------------+
 AC_MSG_CHECKING("for CDDA")
 
-AC_ARG_WITH(cdda, [  --with-cdda             build CDDA support in kscd],
+AC_ARG_WITH(kscd-cdda, [  --with-kscd-cdda             build CDDA support in kscd [default=yes]],
 [
-  if test $withval = "yes"; then
+  if test $withval = yes; then
     libwm_with_cdda=yes
   else
     libwm_with_cdda=no
   fi
-],libwm_with_cdda=no)
+],libwm_with_cdda=yes)
 
 if test "$libwm_with_cdda" = "yes"; then
 case $host in
