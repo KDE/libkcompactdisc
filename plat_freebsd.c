@@ -49,7 +49,6 @@ static char freebsd_id[] = "$Id$";
 #include <sys/time.h>
 #include <sys/ioctl.h>
 #include <sys/cdio.h>
-#include <sys/scsiio.h>
 
 #if defined(__NetBSD__)
 # define MSF_MINUTES 1
