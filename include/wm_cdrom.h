@@ -48,7 +48,7 @@
 #define WM_CDM_PAUSED     4
 #define WM_CDM_STOPPED    5
 #define WM_CDM_EJECTED    6
-#define WM_CDM_DEVICECHANGED 9
+#define WM_CDM_DEVICECHANGED 9       /* deprecated */
 #define WM_CDM_NO_DISC       10
 #define WM_CDM_UNKNOWN       11
 #define WM_CDM_CDDAERROR     12
