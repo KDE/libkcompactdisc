@@ -490,8 +490,8 @@ wm_cd_play( int start, int pos, int end )
   /*
    * handle as overrun
    */
-  if(start < real_start) start = real_end;
-  if(start > real_end) start = real_start;
+  if(start < real_start) start = real_start;
+  if(start > real_end) start = real_end;
   
   /*
    * Try to avoid mixed mode and CD-EXTRA data tracks
