@@ -23,7 +23,6 @@ CDDA_SLAVE = cddaslave
 endif
 
 bin_PROGRAMS = $(CDDA_SLAVE)
-EXTRA_PROGRAMS = cddaslave
 cddaslave_SOURCES = cddaslave.c plat_linux_cdda.c plat_sun_cdda.c
 
 cddaslave_LDADD = audio/libworkmanaudio.a libworkman.la $(ARTSC_LIBS) $(ALSA_LIBS)
