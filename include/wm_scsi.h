@@ -44,5 +44,7 @@ int	sendscsi( struct wm_drive *d, void *buf,
 		  unsigned char a10, unsigned char a11 );
  int	wm_scsi_get_drive_type( struct wm_drive *d, char *vendor,
 				char *model, char *rev );
+int wm_scsi_get_cdtext( struct wm_drive *d,
+	unsigned char **pp_buffer, int *p_buffer_length );
 
 #endif /* WM_SCSI_H */

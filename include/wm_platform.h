@@ -44,8 +44,8 @@ int	wm_scsi( struct wm_drive *d, unsigned char *cdb, int cdblen,
  * The drive prototypes.
  *
  */
-extern struct wm_drive generic_proto;
-extern struct wm_drive sony_proto;
-extern struct wm_drive toshiba_proto;
+extern struct wm_drive_proto generic_proto;
+extern struct wm_drive_proto sony_proto;
+extern struct wm_drive_proto toshiba_proto;
 
 #endif /* WM_PLATFORM_H */

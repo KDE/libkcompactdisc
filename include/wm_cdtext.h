@@ -21,7 +21,6 @@
 /*
  * cdtext base structure and defines
  */
-extern struct cdtext_info wm_cdtext_info;
 
 #define MAX_LENGHT_OF_CDTEXT_STRING 162 /* max 160 bytes + 2 * 0x00 by UNICODES */
 #define DATAFIELD_LENGHT_IN_PACK 12
@@ -101,7 +100,6 @@ struct feature_descriptor_cdread {
 
 #endif /* IGNORE_FEATURE_LIST */
 
-int wm_get_cdtext(struct wm_drive*);
-void wm_free_cdtext(void);
+struct cdtext_info* wm_cd_get_cdtext( void );
 
 #endif /* WM_CDTEXT_H */

@@ -47,16 +47,28 @@ struct cdda_block {
 	unsigned char	balance;
 };
 
+struct cdda_device {
+  int        fd;
+  const char *devname;
+  char       *buf;
+  long       buflen;
+};
+
+#include "wm_cdrom.h"
+#include "wm_config.h"
+#include "wm_struct.h"
 /*
  * cdda_block status codes.
  */
-#define WMCDDA_ERROR	0	/* Couldn't read CDDA from disc */
-#define WMCDDA_OK	1	/* Read this block successfully (raw data) */
-#define WMCDDA_PLAYED	2	/* Just played the block in question */
-#define WMCDDA_STOPPED	3	/* Block data invalid; we've just stopped */
-#define WMCDDA_ACK	4	/* Acknowledgement of command from parent */
-#define WMCDDA_DONE	5	/* Chunk of data is done playing */
-#define WMCDDA_EJECTED	6	/* Disc ejected or offline */
+
+#define WMCDDA_DONE     WM_CDM_TRACK_DONE /* Chunk of data is done playing */
+#define WMCDDA_PLAYING  WM_CDM_PLAYING /* Just played the block in question */
+#define WMCDDA_PAUSED   WM_CDM_PAUSED
+#define WMCDDA_STOPPED  WM_CDM_STOPPED /* Block data invalid; we've just stopped */
+#define WMCDDA_EJECTED  WM_CDM_EJECTED /* Disc ejected or offline */
+
+#define WMCDDA_ACK      WM_CDM_CDDAACK /* Acknowledgement of command from parent */
+#define WMCDDA_ERROR    WM_CDM_CDDAERROR /* Couldn't read CDDA from disc */
 
 /*
  * Enable or disable CDDA building depending on platform capabilities, and
@@ -128,4 +140,63 @@ struct cdda_block {
 	foo bar this is to stop the compiler. 
 #  endif
 #endif
+
+#if defined(BUILD_CDDA)
+/*
+ * The following code support us by optimize cdda operations
+ */
+#define CDDARETURN(x) if(x && x->cdda == 1) return
+#define IFCDDA(x) if(x && x->cdda == 1)
+int  cdda_get_drive_status( struct wm_drive *d, int oldmode,
+  int *mode, int *pos, int *track, int *ind );
+int  cdda_play( struct wm_drive *d, int start, int end, int realstart );
+int  cdda_pause( struct wm_drive *d );
+int  cdda_stop( struct wm_drive *d );
+int  cdda_eject( struct wm_drive *d );
+int  cdda_set_volume( struct wm_drive *d, int left, int right );
+int  cdda_get_volume( struct wm_drive *d, int *left, int *right );
+void cdda_kill( struct wm_drive *d );
+void cdda_save( struct wm_drive *d, char *filename );
+int  cdda_get_ack( int );
+int  gen_cdda_init( struct wm_drive *d );
+
+void cdda_set_direction( struct wm_drive *d, int newdir );
+void cdda_set_speed( struct wm_drive *d, int speed );
+void cdda_set_loudness( struct wm_drive *d, int loud );
+
+
+int  wmcdda_init(struct cdda_device*, struct cdda_block *block);
+int  wmcdda_open(const char*);
+int  wmcdda_close(struct cdda_device*);
+int  wmcdda_setup(int start, int end, int realstart);
+long wmcdda_read(struct cdda_device*, struct cdda_block *block);
+void wmcdda_speed(int speed);
+void wmcdda_direction(int newdir);
+long wmcdda_normalize(struct cdda_device*, struct cdda_block *block);
+
+#else
+ #define CDDARETURN(x)
+ #define IFCDDA(x)
+ #define cdda_get_drive_status
+ #define cdda_play
+ #define cdda_pause
+ #define cdda_resume
+ #define cdda_stop
+ #define cdda_eject
+ #define cdda_set_volume
+ #define cdda_get_volume
+ #define cdda_kill
+ #define cdda_save
+ #define cdda_get_ack
+#endif /* defined(BUILD_CDDA) */
+
+#include <stdio.h>
+
+#ifdef DEBUG
+ #define DEBUGLOG(fmt, args...) fprintf(stderr, fmt, ##args)
+#else
+ #define DEBUGLOG(fmt, args...)
+#endif
+#define ERRORLOG(fmt, args...) fprintf(stderr, fmt, ##args)
+
 #endif /* WM_CDDA_H */

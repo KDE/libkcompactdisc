@@ -27,40 +27,87 @@
  * 
  * This is just one more step to a more modular and understandable code.
  */
+#include "config.h"
 
-#define WM_CDS_NO_DISC		0
-#define WM_CDS_DISC_READY	1
-#define WM_CDS_JUST_INSERTED	2
+#define WM_CDS_NO_DISC(status) (status == WM_CDM_UNKNOWN ||\
+                                status == WM_CDM_EJECTED ||\
+                                status == WM_CDM_NO_DISC)
 
-#define WM_STR_GENVENDOR	"Generic"
-#define WM_STR_GENMODEL		"drive"
-#define WM_STR_GENREV		"type"
+#define WM_CDS_DISC_READY(status)(status == WM_CDM_TRACK_DONE ||\
+                                status == WM_CDM_PLAYING ||\
+                                status == WM_CDM_FORWARD ||\
+                                status == WM_CDM_PAUSED ||\
+                                status == WM_CDM_STOPPED)
 
-extern int wm_cd_cur_balance;
+#define WM_CDS_DISC_PLAYING(status)(status == WM_CDM_TRACK_DONE ||\
+                                status == WM_CDM_PLAYING ||\
+                                status == WM_CDM_FORWARD ||\
+                                status == WM_CDM_PAUSED)
+#define WM_CDM_BACK       1
+#define WM_CDM_TRACK_DONE 1
+#define WM_CDM_PLAYING    2
+#define WM_CDM_FORWARD    3
+#define WM_CDM_PAUSED     4
+#define WM_CDM_STOPPED    5
+#define WM_CDM_EJECTED    6
+#define WM_CDM_DEVICECHANGED 9
+#define WM_CDM_NO_DISC       10
+#define WM_CDM_UNKNOWN       11
+#define WM_CDM_CDDAERROR     12
+#define WM_CDM_CDDAACK       0xF0
 
-extern char *cd_device;
+#define WM_CDIN                 0
+#define WM_CDDA                 1
 
-char *	wm_drive_vendor( void );
-char *	wm_drive_model( void );
-char *	wm_drive_revision( void );
-void 	wm_drive_settype( char *vendor, char *model, char *revision );
+#define WM_ENDTRACK             0
+
+#define WM_BALANCE_SYMMETRED    0
+#define WM_BALANCE_ALL_LEFTS   -10
+#define WM_BALANCE_ALL_RIGHTS   10
+
+#define WM_VOLUME_MUTE          0
+#define WM_VOLUME_MAXIMAL       100
+
+int    wm_cd_init( int cdin, const char *cd_device, const char *soundsystem,
+  const char *sounddevice, const char *ctldevice );
+int    wm_cd_destroy( void );
 
 int	wm_cd_status( void );
 
-void	wm_cd_play( int start, int pos, int end );
-void	wm_cd_play_chunk( int start, int end, int realstart );
-void	wm_cd_play_from_pos( int pos );
-void	wm_cd_pause( void );
-void	wm_cd_stop( void );
-int	wm_cd_eject( void );
-int     wm_cd_closetray( void );
-int	wm_cd_read_initial_volume( int max );
-void	wm_cd_get_cdtext( void );
+int    wm_cd_getcurtrack( void );
+int    wm_cd_getcurtracklen( void );
+int    wm_cd_getcountoftracks( void );
+
+int    wm_cd_play( int start, int pos, int end );
+int    wm_cd_play_chunk( int start, int end, int realstart );
+int    wm_cd_play_from_pos( int pos );
+int    wm_cd_pause( void );
+int    wm_cd_stop( void );
+int    wm_cd_eject( void );
+int    wm_cd_closetray( void );
+
+int    wm_find_trkind( int, int, int );
 
 /*
- * Following are the missing to rename.
+ * for vaild values see wm_helpers.h
  */
-int	find_trkind( int track, int index, int start );
-void	cd_volume( int vol, int bal, int max );
+int    wm_cd_set_verbosity( int );
+
+const char * wm_drive_vendor( void );
+const char * wm_drive_model( void );
+const char * wm_drive_revision( void );
+
+/*
+ * volume is valid WM_VOLUME_MUTE <= vol <= WM_VOLUME_MAXIMAL,
+ * balance is valid WM_BALANCE_ALL_LEFTS <= balance <= WM_BALANCE_ALL_RIGHTS
+ */
+int    wm_cd_volume( int volume, int balance);
+
+/*
+ * please notice, that more OSs don't allow to read balance and volume
+ * in this case you get -1 for volume and WM_BALANCE_SYMMETRED for balance
+ */
+int    wm_cd_getvolume( void );
+int    wm_cd_getbalance( void );
 
 #endif /* WM_CDROM_H */

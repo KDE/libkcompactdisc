@@ -85,6 +85,8 @@ struct wm_cdinfo
   char	artist[84];	/* Artist's name */
   char	cdname[84];	/* Disc's name */
   int	ntracks;	/* Number of tracks on the disc */
+  int  curtrack;
+  int  curtracklen;
   int	length;		/* Total running time in seconds */
   int	autoplay;	/* Start playing CD immediately */
   int	playmode;	/* How to play the CD */
@@ -104,45 +106,50 @@ extern struct wm_cdinfo *cd;
 
 struct wm_playlist *new_list();
 
-enum wm_cd_modes	
-{
-  WM_CDM_UNKNOWN = -1,
-  WM_CDM_BACK = 0, WM_CDM_TRACK_DONE = 0,
-  WM_CDM_PLAYING = 1,
-  WM_CDM_FORWARD = 2,
-  WM_CDM_PAUSED = 3,
-  WM_CDM_STOPPED = 4,
-  WM_CDM_EJECTED = 5,
-  WM_CDM_DEVICECHANGED = 66,
-  WM_CDM_NO_DISC = 67
-};
+#define WM_STR_GENVENDOR "Generic"
+#define WM_STR_GENMODEL  "drive"
+#define WM_STR_GENREV    "type"
+
 
 /*
  * Drive descriptor structure.  Used for access to low-level routines.
  */
+struct wm_drive_proto
+{
+  int (*gen_init)();
+  int (*gen_close)();
+  int (*gen_get_trackcount)();
+  int (*gen_get_cdlen)();
+  int (*gen_get_trackinfo)();
+  int (*gen_get_drive_status)();
+  int (*gen_get_volume)();
+  int (*gen_set_volume)();
+  int (*gen_pause)();
+  int (*gen_resume)();
+  int (*gen_stop)();
+  int (*gen_play)();
+  int (*gen_eject)();
+  int (*gen_closetray)();
+  int (*gen_get_cdtext)();
+};
+
 struct wm_drive 
 {
+  int  cdda;         /* cdda 1, cdin 0 */
+  const char *cd_device;
+  char *soundsystem;
+  char *sounddevice;
+  char *ctldevice;
   int	fd;		/* File descriptor, if used by platform */
-  char	vendor[32];	/* Vendor name */
-  char	model[32];	/* Drive model */
-  char  revision[32];   /* Revision of the drive */
+  int  cdda_slave;   /* File descriptor for CDDA */
+
+  char *vendor;      /* Vendor name */
+  char *model;       /* Drive model */
+  char *revision;    /* Revision of the drive */
   void	*aux;		/* Pointer to optional platform-specific info */
   void	*daux;		/* Pointer to optional drive-specific info */
   
-  int	(*init)();
-  int	(*get_trackcount)();
-  int	(*get_cdlen)();
-  int	(*get_trackinfo)();
-  int	(*get_drive_status)();
-  int	(*get_volume)();
-  int	(*set_volume)();
-  int	(*pause)();
-  int	(*resume)();
-  int	(*stop)();
-  int	(*play)();
-  int	(*eject)();
-  int   (*closetray)();
-  int   (*get_cdtext)();
+  struct wm_drive_proto *proto;
 };
 
 /*
@@ -164,22 +171,28 @@ extern struct wm_cddb cddb;
  * These functions should never be seen outside libworkman. So I don't care
  * about the wm_ naming convention here.
  */
-int     gen_init(),
-        gen_get_trackcount(),
-        gen_get_cdlen(),
-        gen_get_trackinfo(),
-	gen_get_drive_status(),
-	gen_get_volume(),
-	gen_set_volume(),
-	gen_pause(),
-	gen_resume(),
-	gen_stop(),
-	gen_play(),
-	gen_eject(),
-	gen_closetray(),
-	gen_get_cdtext();
+int gen_init( struct wm_drive *d );
+int gen_close( struct wm_drive *d );
+int gen_get_trackcount(struct wm_drive *d, int *tracks);
+int gen_get_cdlen(struct wm_drive *d, int *frames);
+int gen_get_trackinfo(struct wm_drive *d, int track, int *data, int *startframe);
+int gen_get_drive_status( struct wm_drive *d, int oldmode,
+  int *mode, int *pos, int *track, int *ind );
+int gen_set_volume( struct wm_drive *d, int left, int right );
+int gen_get_volume( struct wm_drive *d, int *left, int *right );
+int gen_pause(struct wm_drive *d);
+int gen_resume(struct wm_drive *d);
+int gen_stop(struct wm_drive *d);
+int gen_play(struct wm_drive *d, int start, int end, int realstart);
+int gen_eject(struct wm_drive *d);
+int gen_closetray(struct wm_drive *d);
+int gen_get_cdtext(struct wm_drive *d, unsigned char **pp_buffer, int *p_buffer_lenght);
 
-struct wm_drive *find_drive_struct();
+int find_drive_struct(const char *vendor, const char *model, const char *rev);
 
+
+struct cdtext_info* get_glob_cdtext(struct wm_drive*, int);
+void free_cdtext(void);
+const char* gen_status(int);
 
 #endif /* WM_STRUCT_H */

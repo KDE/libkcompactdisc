@@ -33,21 +33,18 @@ extern char *cur_trackname;		/* Take a guess */
 extern int cur_index;			/* Current index mark */
 extern int cur_frame;			/* Current frame number */
 extern struct wm_play *playlist;		/* = NULL */
-extern struct wm_cdinfo thiscd;
-extern struct wm_cdinfo *cd;
-extern int cur_track;			/* Current track number, starting at 1 */
+
+/*extern int cur_track;*/		/* Current track number, starting at 1 */
 extern char *cur_artist;		/* Name of current CD's artist */
 extern char cur_avoid;			/* Avoid flag */
 extern char cur_contd;			/* Continued flag */
 extern char *cur_cdname;		/* Album name */
 extern int cur_nsections;		/* Number of sections currently defined */
 extern int exit_on_eject;
-extern int cur_track;
 extern int cur_pos_abs;
 extern int cur_pos_rel;
-extern int cur_tracklen;
 extern int cur_cdlen;
-extern enum wm_cd_modes cur_cdmode;
+
 extern int cur_ntracks;
 extern int cur_lasttrack;
 extern int cur_firsttrack;
@@ -68,7 +65,7 @@ int	split_trackinfo( int pos );
 int	remove_trackinfo( int num );
 void	freeup( char **x );
 int	get_runtime( void );
-char   *trackname( int num );
+const char *trackname( int num );
 void	stash_cdinfo( char *artist, char *cdname, int autoplay, int playmode );
 void	stash_trkinfo( int track, char *songname, int contd, int avoid );
 int	get_avoid( int num );

@@ -31,12 +31,12 @@ extern int cur_cddb_protocol;
 extern char *cur_cddb_server, *cur_cddb_mail_adress,
 	*cur_cddb_path_to_cgi, *cur_cddb_proxy_server;
 
-unsigned long cddb_discid();
-void cddb_struct2cur();
-void cddb_cur2struct();
-void cddb_select();
-void connect_cddb();
-void update_cddbserver();
-void cddb_request();
+unsigned long cddb_discid(void);
+void cddb_struct2cur(void);
+void cddb_cur2struct(void);
+void cddb_select(void);
+void connect_cddb(void);
+void update_cddbserver(void);
+void cddb_request(void);
 
 #endif /* WM_CDDB_H */
