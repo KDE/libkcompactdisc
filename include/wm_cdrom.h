@@ -38,6 +38,7 @@
 
 extern int wm_cd_cur_balance;
 
+extern char *cd_device;
 
 char *	wm_drive_vendor( void );
 char *	wm_drive_model( void );

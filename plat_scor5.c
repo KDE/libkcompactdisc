@@ -58,7 +58,7 @@ char *strchr();
 int	min_volume = 0;
 int	max_volume = 255;
 
-/* extern char	*cd_device; */
+extern char	*cd_device;
 
 /*
  * platformspecific internal function

@@ -107,9 +107,12 @@ void freeup( char **x )
 void
 wm_strmcpy( char **t, char *s )
 {
-	wm_lib_message(WM_MSG_CLASS_MISC | WM_MSG_LEVEL_DEBUG, "wm_strmcpy(%s, %s)\n", *t, s);
+	wm_lib_message(WM_MSG_CLASS_MISC | WM_MSG_LEVEL_DEBUG, "wm_strmcpy(%s, '%s')\n", *t, s);
 	if (*t != NULL)
-		free(*t);
+	  {
+	    wm_lib_message(WM_MSG_CLASS_MISC | WM_MSG_LEVEL_DEBUG, "wm_strmcpy freeing pointer 0x%08X\n", *t);
+	    free(*t);
+	  }
 
 	*t = malloc(strlen(s) + 1);
 	if (*t == NULL)
@@ -118,7 +121,8 @@ wm_strmcpy( char **t, char *s )
 		exit(1);
 	}
 
-	(void) strcpy(*t, s);
+	wm_lib_message(WM_MSG_CLASS_MISC | WM_MSG_LEVEL_DEBUG, "wm_strmcpy finally copying (0x%08X, '%s')\n", *t, s);
+	strncpy(*t, s, strlen(s));
 } /* wm_strmcpy() */
 
 /* Add to a malloced string. */
@@ -168,6 +172,7 @@ void wm_lib_set_verbosity( int level )
 	if( WM_MSG_LEVEL_NONE <= level <= WM_MSG_LEVEL_DEBUG )
 	{
 	 	wm_lib_verbosity = level;
+		wm_lib_message(WM_MSG_CLASS_MISC | WM_MSG_LEVEL_DEBUG, "Verbosity set to %d|%d\n", WM_MSG_LEVEL_DEBUG, level & WM_MSG_CLASS_ALL);
 	}
 } /* wm_lib_set_verbosity */
 
@@ -211,6 +216,7 @@ void wm_lib_message( unsigned int level, char *fmt, ... )
          */	
 	if( (level <= vlevel) && (vclass != 0) )
 	{
+		fprintf(stderr, "libWorkMan: ");
 		va_start(ap, fmt);
 		vfprintf(stderr, fmt, ap);
 		va_end(ap);

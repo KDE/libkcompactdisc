@@ -177,9 +177,10 @@ find_drive_struct(char *vendor, char *model, char *rev)
 struct wm_cdinfo *
 read_toc()
 {
-	struct wm_playlist		*l;
-	int			i, pos;
 
+        struct wm_playlist *l;
+        int    i;
+        int    pos;
 	if ((drive.get_trackcount)(&drive, &thiscd.ntracks) < 0)
 	{
 		perror("trackcount");
@@ -257,8 +258,9 @@ read_toc()
 	thiscd.length = thiscd.trk[thiscd.ntracks].length;
         thiscd.cddbid = cddb_discid(drive);
         
+	wm_lib_message(WM_MSG_LEVEL_DEBUG|WM_MSG_CLASS_MISC, "read_toc() returning &thiscd\n");
 	return (&thiscd);
-}
+} // read_toc()
 
 /*
  * wm_cd_status()
@@ -327,6 +329,7 @@ wm_cd_status( void )
 
 		if ((cd = read_toc()) == NULL)
                 {
+		        wm_lib_message(WM_MSG_LEVEL_DEBUG|WM_MSG_CLASS_MISC,"status: returned toc was NULL\n");
 			if (exit_on_eject)
 			{
 				exit(-1);
@@ -338,7 +341,10 @@ wm_cd_status( void )
 		cur_nsections = 0;
 		cur_ntracks = cd->ntracks;
 		cur_cdlen = cd->length;
-		load();
+		/* load() is WorkMan database specific. Need to 
+		 * move this away.
+		 *
+		 * load(); */
 		cur_artist = cd->artist;
 		cur_cdname = cd->cdname;
 		cur_cdmode = WM_CDM_STOPPED;

@@ -31,7 +31,7 @@ extern int cur_cddb_protocol;
 extern char *cur_cddb_server, *cur_cddb_mail_adress,
 	*cur_cddb_path_to_cgi, *cur_cddb_proxy_server;
 
-unsigned int cddb_discid();
+unsigned long cddb_discid();
 void cddb_struct2cur();
 void cddb_cur2struct();
 void cddb_select();

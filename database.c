@@ -976,10 +976,13 @@ plnomem:
 			if( ( mark_namelen = strlen(mark_name)) )
 				mark_name[mark_namelen - 1] = '\0';
 
+/*
 			if (! strcmp(mark_name, "START"))
 				set_abtimer(0, mark_val);
 			else if (! strcmp(mark_name, "END"))
 				set_abtimer(1, mark_val);
+
+*/
 		}
 
 		/* Unrecognized keyword.  Put it in the right place. */

@@ -199,13 +199,13 @@ wm_scsi_get_drive_type( struct wm_drive *d, char *vendor,
 /* removed   unsigned*/
 	char		*s, *t, buf[36];
 
-	wm_lib_message(WM_MSG_CLASS_SCSI | WM_MSG_LEVEL_INFO, "Sending SCSI inquiry command...");
+	wm_lib_message(WM_MSG_CLASS_SCSI | WM_MSG_LEVEL_INFO, "Sending SCSI inquiry command...\n");
 	if (sendscsi(d, buf, sizeof(buf), 1, SCMD_INQUIRY, 0, 0, 0, sizeof(buf), 0,0,0,0,0,0,0))
 	  {
 		sprintf( vendor, WM_STR_GENVENDOR);
 		sprintf( model, WM_STR_GENMODEL);
 		sprintf( rev, WM_STR_GENREV);
-		wm_lib_message(WM_MSG_CLASS_SCSI | WM_MSG_LEVEL_ERROR, "\nSCSI inquiry command not supported by the hardware\n");
+		wm_lib_message(WM_MSG_CLASS_SCSI | WM_MSG_LEVEL_ERROR, "SCSI Inquiry command not supported in this context\n");
 		return (WM_ERR_SCSI_INQUIRY_FAILED);
 	  }
 	wm_lib_message(WM_MSG_CLASS_SCSI | WM_MSG_LEVEL_DEBUG, "sent.\n");

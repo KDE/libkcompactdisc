@@ -168,9 +168,11 @@ wmcd_open( struct wm_drive *d )
   
 #ifdef LINUX_SCSI_PASSTHROUGH
   /* Can we figure out the drive type? */
-  wm_scsi_get_drive_type(d, vendor, model, rev);
+  retval = wm_scsi_get_drive_type(d, vendor, model, rev);
+  if (retval == WM_ERR_SCSI_INQUIRY_FAILED)
+    wm_lib_message(WM_MSG_LEVEL_DEBUG|WM_MSG_CLASS, "wmcd_open(): After failed inquiry\n");
 #endif
-  *d = *(find_drive_struct(vendor, model, rev));	
+  *d = *(find_drive_struct(vendor, model, rev));
   wm_drive_settype(vendor, model, rev);
   
   d->fd = fd;
@@ -188,12 +190,12 @@ wmcd_reopen( struct wm_drive *d )
   int tries = 0;
   
   do {
-    wm_lib_message(WM_MSG_LEVEL_DEBUG|WM_MSG_CLASS, "wmcd_reopen ");
+    wm_lib_message(WM_MSG_LEVEL_DEBUG|WM_MSG_CLASS, "wmcd_reopen\n");
     if (d->fd >= 0)		/* Device really open? */
       {
-	wm_lib_message(WM_MSG_LEVEL_DEBUG|WM_MSG_CLASS, "closes the device and ");
-	if((close( d->fd )) < 0)   /* close it! */
-	  d->fd = -1; /* closed */
+	wm_lib_message(WM_MSG_LEVEL_DEBUG|WM_MSG_CLASS, "closing the device\n");
+	if(!close( d->fd ))   /* close it! */
+	  d->fd = -1;      /* closed */
       }
     wm_susleep( 1000 );
     wm_lib_message(WM_MSG_LEVEL_DEBUG|WM_MSG_CLASS, "calls wmcd_open()\n");

@@ -66,7 +66,7 @@ char	cur_avoid;	/* Avoid flag */
 int	exit_on_eject = 0;
 
 int cur_stopmode = -1;
-extern int info_modified;
+int info_modified;
 
 /*
  * insert_trackinfo()
