@@ -38,7 +38,5 @@ int	save( void );
 void	load( void );
 void	load_settings( void );
 
-extern int wm_db_save_disabled;
-extern int cur_playnew;
 
 #endif /* WM_DATABASE_H */
