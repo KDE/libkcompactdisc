@@ -154,21 +154,10 @@ wmcd_open( struct wm_drive *d )
   }
 
   fd = open(d->cd_device, O_RDONLY | O_NONBLOCK);
-
-  if (fd < 0) {
-    if (errno == EACCES) {
-      return -EACCES;
-    }
-    /* Hack proposed by Carey Evans, introduced by Debian maintainer :
-     * treat EIO like ENXIO since some Linux drives do never return ENXIO
-     * ENOMEDIUM is returned by Kernel 2.2.x unified drivers.
-     */
-    else if ((errno != ENXIO) && (errno != EIO) && (errno != ENOMEDIUM)) {
-      return (-6);
-    }
-    /* No CD in drive. */
-    return 1;
-  }
+  wm_lib_message(WM_MSG_LEVEL_DEBUG|WM_MSG_CLASS, "wmcd_open(): device=%s fd=%d\n", d->cd_device, fd);
+  
+  if (fd < 0)
+    return -errno;
 
   /* Now fill in the relevant parts of the wm_drive structure. */
   d->fd = fd;
@@ -373,87 +362,115 @@ int
 gen_get_drive_status( struct wm_drive *d, int oldmode,
   int *mode, int *pos, int *track, int *ind )
 {
-  struct cdrom_subchnl		sc;
+  struct cdrom_subchnl sc;
+  int ret;
   
 #ifdef SBPCD_HACK
   static int prevpos = 0;
 #endif
   
-  /* If we can't get status, the CD is ejected, so default to that. */
-  *mode = WM_CDM_EJECTED;
   
   /* Is the device open? */
-  if (d->fd < 0)
-    {
-      switch (wmcd_open(d))
-	{
-	case -1:	/* error */
-	  return (-1);
-	case 1:		/* retry */
-	  return (0);
-	}
+  if (d->fd < 0) {
+    ret = wmcd_open(d);
+    if(ret < 0) /* error */
+      return ret;
+          
+    if(ret == 1) {
+      /* retry */
+      *mode = WM_CDM_UNKNOWN;
+      return 0;
     }
- 
-#if defined(BUILD_CDDA)
-  CDDARETURN(d) cdda_get_drive_status(d, oldmode, mode, pos, track, ind);
-#endif
+  }
 
   /* Try to get rid of the door locking    */
   /* Don't care about return value. If it  */
   /* works - fine. If not - ...            */
-  ioctl( d->fd, CDROM_LOCKDOOR, 0 ); 
- 
+  ioctl(d->fd, CDROM_LOCKDOOR, 0); 
+  
+  *mode = WM_CDM_UNKNOWN;
+  
   sc.cdsc_format = CDROM_MSF;
  
-  if (ioctl(d->fd, CDROMSUBCHNL, &sc))
-    return 1;
-  
-  switch (sc.cdsc_audiostatus) {
-  case CDROM_AUDIO_PLAY:
-    *mode = WM_CDM_PLAYING;
-    *track = sc.cdsc_trk;
-    *ind = sc.cdsc_ind;
-    *pos = sc.cdsc_absaddr.msf.minute * 60 * 75 +
-      sc.cdsc_absaddr.msf.second * 75 +
-      sc.cdsc_absaddr.msf.frame;
-#ifdef SBPCD_HACK
-    if( *pos < prevpos )
-      {
-	if( (prevpos - *pos) < 75 )
-	  {
-	    *mode = WM_CDM_TRACK_DONE;
-	  }
-      }
-    
-    prevpos = *pos;
+#if defined(BUILD_CDDA)
+  IFCDDA(d) {
+    if(!cdda_get_drive_status(d, oldmode, mode, pos, track, ind)) {
+      if(*mode == WM_CDM_STOPPED)
+        *mode = WM_CDM_UNKNOWN; /* dont believe */
+    }
+  } else
 #endif
-    break;
-    
-  case CDROM_AUDIO_PAUSED:
-  case CDROM_AUDIO_NO_STATUS:
-  case CDROM_AUDIO_INVALID: /**/
-    if (oldmode == WM_CDM_PLAYING || oldmode == WM_CDM_PAUSED)
-      {
-	*mode = WM_CDM_PAUSED;
-	*track = sc.cdsc_trk;
-	*ind = sc.cdsc_ind;
-	*pos = sc.cdsc_absaddr.msf.minute * 60 * 75 +
-	  sc.cdsc_absaddr.msf.second * 75 +
-	  sc.cdsc_absaddr.msf.frame;
+  if(!ioctl(d->fd, CDROMSUBCHNL, &sc)) {
+    switch (sc.cdsc_audiostatus) {
+    case CDROM_AUDIO_PLAY:
+      *mode = WM_CDM_PLAYING;
+      *track = sc.cdsc_trk;
+      *ind = sc.cdsc_ind;
+      *pos = sc.cdsc_absaddr.msf.minute * 60 * 75 +
+        sc.cdsc_absaddr.msf.second * 75 +
+        sc.cdsc_absaddr.msf.frame;
+#ifdef SBPCD_HACK
+      if( *pos < prevpos ) {
+        if( (prevpos - *pos) < 75 ) {
+          *mode = WM_CDM_TRACK_DONE;
+        }
       }
-    else
-      *mode = WM_CDM_STOPPED;
-    break;
     
-  case CDROM_AUDIO_COMPLETED:
-    *mode = WM_CDM_TRACK_DONE; /* waiting for next track. */
-    break;
+      prevpos = *pos;
+#endif
+      break;
     
-  default:
-    *mode = WM_CDM_UNKNOWN;
-    break;
+    case CDROM_AUDIO_PAUSED:
+    case CDROM_AUDIO_NO_STATUS:
+      if (oldmode == WM_CDM_PLAYING || oldmode == WM_CDM_PAUSED) {
+        *mode = WM_CDM_PAUSED;
+        *track = sc.cdsc_trk;
+        *ind = sc.cdsc_ind;
+        *pos = sc.cdsc_absaddr.msf.minute * 60 * 75 +
+          sc.cdsc_absaddr.msf.second * 75 +
+          sc.cdsc_absaddr.msf.frame;
+      } else
+        *mode = WM_CDM_STOPPED;
+      break;
+    
+    case CDROM_AUDIO_COMPLETED:
+      *mode = WM_CDM_TRACK_DONE; /* waiting for next track. */
+      break;
+    
+    case CDROM_AUDIO_INVALID: /**/
+    default:
+      *mode = WM_CDM_UNKNOWN;
+      break;
+    }
   }
   
+  if(WM_CDS_NO_DISC(*mode)) {
+    /* verify status of drive */
+    ret = ioctl(d->fd, CDROM_DRIVE_STATUS, 0/* slot */);
+    if(ret == CDS_DISC_OK)
+      ret = ioctl(d->fd, CDROM_DISC_STATUS, 0);
+    switch(ret) {
+    case CDS_NO_DISC:
+      *mode = WM_CDM_NO_DISC;
+      break;
+    case CDS_TRAY_OPEN:
+      *mode = WM_CDM_EJECTED;
+      break;
+    case CDS_AUDIO:
+    case CDS_MIXED:
+      *mode = WM_CDM_STOPPED;
+      break;
+    case CDS_DRIVE_NOT_READY:
+    case CDS_NO_INFO:
+    case CDS_DATA_1:
+    case CDS_DATA_2:
+    case CDS_XA_2_1:
+    case CDS_XA_2_2:
+    default:
+      *mode = WM_CDM_UNKNOWN;
+    }
+  }
+
   return (0);
 } /* gen_get_drive_status */
 
@@ -500,7 +517,7 @@ gen_get_trackinfo(struct wm_drive *d, int track, int *data, int *startframe)
 int
 gen_get_cdlen(struct wm_drive *d, int *frames)
 {
-  int		tmp;
+  int tmp;
 
   return gen_get_trackinfo( d, CDROM_LEADOUT, &tmp, frames);
 } /* gen_get_cdlen() */
@@ -702,11 +719,23 @@ scale_volume( int vol, int max )
 {
 #ifdef CURVED_VOLUME
   return ((max * max - (max - vol) * (max - vol)) *
-	  (max_volume - min_volume) / (max * max) + min_volume);                        
+    (max_volume - min_volume) / (max * max) + min_volume);                        
 #else
   return ((vol * (max_volume - min_volume)) / max + min_volume);
 #endif        
 } /* scale_volume() */
+
+static int
+unscale_volume( int vol, int max )
+{
+#ifdef CURVED_VOLUME
+  /* FIXME do it simple */
+  int tmp = (((max_volume - min_volume - vol) * max * max) - (vol + min_volume));
+  return max - sqrt((tmp/(max_volume - min_volume)));                        
+#else
+  return (((vol - min_volume) * max) / (max_volume - min_volume));
+#endif        
+} /* unscale_volume() */
 
 /*---------------------------------------------------------------------*
  * Set the volume level for the left and right channels.  Their values
@@ -715,7 +744,7 @@ scale_volume( int vol, int max )
 int
 gen_set_volume( struct wm_drive *d, int left, int right )
 {
-  struct	cdrom_volctrl v;
+  struct cdrom_volctrl v;
   
   CDDARETURN(d) cdda_set_volume(d, left, right);
 
@@ -736,10 +765,18 @@ gen_set_volume( struct wm_drive *d, int left, int right )
 int
 gen_get_volume( struct wm_drive *d, int *left, int *right )
 {
+  struct cdrom_volctrl v;
+  
   CDDARETURN(d) cdda_get_volume(d, left, right);
 
-  /* Suns, HPs, Linux, NEWS can't read the volume; oh well */
-  *left = *right = -1;
+#if defined(CDROMVOLREAD)
+  if(!ioctl(d->fd, CDROMVOLREAD, &v)) {
+    *left = unscale_volume((v.channel0 + v.channel2)/2, 100);
+    *right = unscale_volume((v.channel1 + v.channel3)/2, 100);
+  } else
+#endif
+    /* Suns, HPs, Linux, NEWS can't read the volume; oh well */
+    *left = *right = -1;
 
   return 0;
 } /* gen_get_volume() */

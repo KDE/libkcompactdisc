@@ -240,7 +240,7 @@ read_toc( void )
   if(!drive.proto)
     return -1;
     
-  if(drive.proto->gen_get_trackcount &&
+  if(drive.proto && drive.proto->gen_get_trackcount &&
     (drive.proto->gen_get_trackcount)(&drive, &thiscd.ntracks) < 0) {
     return -1 ;
   }
@@ -270,7 +270,7 @@ read_toc( void )
   }
 
   for (i = 0; i < thiscd.ntracks; i++) {
-    if(drive.proto->gen_get_trackinfo &&
+    if(drive.proto && drive.proto->gen_get_trackinfo &&
       (drive.proto->gen_get_trackinfo)(&drive, i + 1, &thiscd.trk[i].data,
       &thiscd.trk[i].start) < 0) {
       return -1;
@@ -289,7 +289,7 @@ read_toc( void )
       thiscd.trk[i].track, thiscd.trk[i].start);
   }
 
-  if(drive.proto->gen_get_cdlen &&
+  if(drive.proto && drive.proto->gen_get_cdlen &&
      (drive.proto->gen_get_cdlen)(&drive, &thiscd.trk[i].start) < 0) {
     return -1;
   }
@@ -333,10 +333,10 @@ wm_cd_status( void )
     if (err < 0) {
       wm_cur_cdmode = WM_CDM_UNKNOWN;
       return err;
-    }    
+    }
   }
-  
-  if(drive.proto->gen_get_drive_status &&
+
+  if(drive.proto && drive.proto->gen_get_drive_status &&
     (drive.proto->gen_get_drive_status)(&drive, oldmode, &mode, &cur_frame,
     &(thiscd.curtrack), &cur_index) < 0) {
     perror("WM gen_get_drive_status");
@@ -359,7 +359,7 @@ wm_cd_status( void )
       gen_status(oldmode), gen_status(mode));
   }
   oldmode = mode;
-    
+
   /*
    * it seems all driver have'nt state for stop
    */
@@ -578,7 +578,7 @@ wm_cd_pause( void )
     return -1;
 
   if(WM_CDM_PLAYING == wm_cur_cdmode) {
-    if(drive.proto->gen_pause)
+    if(drive.proto && drive.proto->gen_pause)
       (drive.proto->gen_pause)(&drive);
 
     paused_pos = cur_pos_rel;
@@ -609,7 +609,7 @@ wm_cd_stop( void )
 
   if (status != WM_CDM_STOPPED) {
     
-    if(drive.proto->gen_stop)
+    if(drive.proto && drive.proto->gen_stop)
       (drive.proto->gen_stop)(&drive);
 
     status = wm_cd_status();
