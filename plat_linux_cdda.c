@@ -29,7 +29,7 @@
  
 static char plat_linux_cdda_id[] = "$Id$";
 
-#if defined(__linux) && defined(BUILD_CDDA) /* { */
+#if defined(__linux__) && defined(BUILD_CDDA) /* { */
 
 #include "include/wm_cdda.h"
 /* types.h and cdio.h are included by wmcdda.h */

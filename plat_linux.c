@@ -27,7 +27,7 @@
 
 static char plat_linux_id[] = "$Id$";
 
-#if defined(__linux)
+#if defined(__linux__)
 
 #include <errno.h>
 #include <stdio.h>
