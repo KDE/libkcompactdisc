@@ -328,14 +328,14 @@ wm_cd_status( void )
 	if(drive.get_drive_status == NULL)
 	{
 		perror("CD get drive status: function pointer NULL");
-		return (-1);
+		return (WM_CDM_UNKNOWN);
 	}
 
 	if( (drive.get_drive_status)(&drive, oldmode, &mode, &cur_frame,
 					&trackno, &cur_index) < 0)
 	{
 		perror("CD get drive status");
-		return (-1);
+		return (WM_CDM_UNKNOWN);
 	}
 	oldmode = mode;
 
@@ -366,7 +366,7 @@ wm_cd_status( void )
                 {
 		    wm_lib_message(WM_MSG_LEVEL_DEBUG|WM_MSG_CLASS_MISC,"status: returned toc was NULL\n");
 		    cur_cdmode = WM_CDM_NO_DISC;
-		    return (-1);
+		    return (WM_CDM_UNKNOWN);
 		}
 
 		cur_nsections = 0;
@@ -427,7 +427,12 @@ wm_cd_status( void )
 		if (cur_pos_abs < 0)
 			cur_pos_abs = cur_frame = 0;
 
-		if (cur_track < 1)
+		if (cd == NULL)
+        {
+            ret = WM_CDM_UNKNOWN;
+			cur_tracklen = 0;
+        }
+		else if (cur_track < 1)
 			cur_tracklen = cd->length;
 		else
 			cur_tracklen = cd->trk[cur_track-1].length;
