@@ -50,10 +50,11 @@ static char freebsd_id[] = "$Id$";
 #include <sys/ioctl.h>
 #include <sys/cdio.h>
 
-#if defined(__NetBSD__)
+#if defined(__NetBSD__) || defined(__OpenBSD__) 
 # define MSF_MINUTES 1
 # define MSF_SECONDS 2
 # define MSF_FRAMES 3
+#include <sys/scsiio.h>
 # include "/sys/scsi/scsi_all.h"
 # include "/sys/scsi/scsi_cd.h"
 #else
