@@ -88,6 +88,9 @@ wmcdda_init(struct cdda_device* pdev)
     if (pdev->fd > -1)
         return -1;
 
+    if(!pdev->devname)
+      return -1;
+      
     for (i = 0; i < pdev->numblocks; i++) {
         /* in Linux const */
         pdev->blocks[i].buflen = pdev->frames_at_once * CDDABLKSIZE;
@@ -98,7 +101,7 @@ wmcdda_init(struct cdda_device* pdev)
         }
     }
       
-    pdev->fd = open(pdev->devname?pdev->devname:"/dev/cdrom", O_RDONLY | O_NONBLOCK);
+    pdev->fd = open(pdev->devname, O_RDONLY | O_NONBLOCK);
 
     if (pdev->fd > -1) {
         cdda.addr_format = CDROM_LBA;

@@ -112,6 +112,7 @@ gen_cdda_init( struct wm_drive *d )
     dev.blocks = blks;
     dev.numblocks = NUMBLOCKS;
     dev.status = WM_CDM_UNKNOWN;
+    dev.devname = d->cd_device;
 
     if ((ret = wmcdda_init(&dev)))
         return ret;
