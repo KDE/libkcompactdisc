@@ -420,7 +420,7 @@ cddb_request(void)
 	extern int cur_ntracks;
 	
 	int status;
-	char category[20];
+	char category[21];
 	unsigned int id;
 	
 	strcpy(cddb.cddb_server,"localhost:888");
@@ -471,7 +471,7 @@ cddb_request(void)
 		 */
 		if(status == 200) /* Exact match */
 		{
-			sscanf(tempbuf,"%d %s %08x",&status,category,&id);
+			sscanf(tempbuf,"%d %20s %08x",&status,category,&id);
 			cddbp_read(category,id);
 			connect_read_entry();
 		}
@@ -480,7 +480,7 @@ cddb_request(void)
 				   * Hack: always use first. */
 		{
 			connect_getline(tempbuf);
-			sscanf(tempbuf,"%s %08x",category,&id);
+			sscanf(tempbuf,"%20s %08x",category,&id);
 			while(strcmp(tempbuf,"."))
 			  connect_getline(tempbuf);
 			cddbp_read(category,id);
@@ -519,7 +519,7 @@ cddb_request(void)
 		{
 			connect_close();
 			connect_open();
-			sscanf(tempbuf,"%d %s %08x",&status,category,&id);
+			sscanf(tempbuf,"%d %20s %08x",&status,category,&id);
 			http_read(category,id);
 			connect_read_entry();
 		}
@@ -528,7 +528,7 @@ cddb_request(void)
 				   * Hack: always use first. */
 		{
 			connect_getline(tempbuf);
-			sscanf(tempbuf,"%s %08x",category,&id);
+			sscanf(tempbuf,"%20s %08x",category,&id);
 			while(strcmp(tempbuf,"."))
 			  connect_getline(tempbuf);
 			connect_close();

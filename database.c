@@ -503,7 +503,7 @@ search_db( FILE *fp, int prefs, int scan, int holesize_wanted )
 		if (b != '\n')
 		{
 			keyword[0] = b;
-			fscanf(fp, "%s", &keyword[1]);
+			fscanf(fp, "%62s", &keyword[1]);
 		}
 		if (keyword[0] == '\0')		/* Blank line. */
 		{
@@ -923,7 +923,7 @@ chomp:
 		else if (! strcmp(keyword, "playlist"))
 		{
 			getc(fp);
-			fscanf(fp, "%s", listname);
+			fscanf(fp, "%63s", listname);
 
 /* XXX take this out at some point */
 			if (! strcmp(listname, "Default"))
