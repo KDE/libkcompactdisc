@@ -83,7 +83,6 @@ insert_trackinfo(int num)
 		if ((cd->trk = (struct wm_trackinfo *) calloc(1,
 						sizeof(*newtrk))) == NULL)
 		{
-nomem:
 			perror("insert_trackinfo");
 			exit(1);
 		} else {
@@ -93,7 +92,10 @@ nomem:
 	/* Stick the new entry in cd->trk[]. */
 	if ((newtrk = (struct wm_trackinfo *) malloc(sizeof(*newtrk) *
 						(cur_ntracks + 1))) == NULL)
-		goto nomem;
+	{
+		perror("insert_trackinfo");
+		exit(1);
+	}
 
 	if (num)
 		memcpy(newtrk, cd->trk, sizeof(*newtrk) * num);

@@ -689,7 +689,6 @@ gen_closetray(struct wm_drive *d)
     }
 #endif /* CDROMCLOSETRAY */
 #endif /* CAN_CLOSE */
-  
   /* Always succeed if the drive can't close. */
   return(0);
 } /* gen_closetray() */

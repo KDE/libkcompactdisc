@@ -336,7 +336,9 @@ wm_cd_status( void )
 
     if(drive.proto && drive.proto->gen_close)
       drive.proto->gen_close(&drive);
-    wm_cur_cdmode = WM_CDM_UNKNOWN;
+
+    if (wm_cur_cdmode != WM_CDM_EJECTED)
+      wm_cur_cdmode = WM_CDM_UNKNOWN;
   }
 
   if(wm_cur_cdmode == WM_CDM_UNKNOWN) {
@@ -346,7 +348,7 @@ wm_cd_status( void )
      */
     cur_pos_abs = cur_pos_rel = cur_frame = 0;
     cur_pos_rel = cur_pos_abs = 0;
-        
+
     err = wmcd_open( &drive );
 
     if (err < 0)
@@ -674,9 +676,9 @@ wm_cd_eject( void )
 int wm_cd_closetray(void)
 {
   int status, err = -1;
-  
+
   status = wm_cd_status();
-  if(WM_CDS_NO_DISC(status))
+  if (status == WM_CDM_UNKNOWN || status == WM_CDM_NO_DISC)
     return -1;
 
   if(drive.proto->gen_closetray)
