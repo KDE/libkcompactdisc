@@ -169,7 +169,7 @@ cddb_discid(void)
 } /* cddb_discid() */
 
 /*
- * Split a string into two components according to the first occurance of
+ * Split a string into two components according to the first occurrence of
  * the delimiter.
  */
 char *
