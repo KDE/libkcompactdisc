@@ -88,7 +88,7 @@ struct cdda_device {
 		#define WM_LITTLE_ENDIAN 0
 		#define WM_BIG_ENDIAN 1
 	#endif
-#elif defined(__sun) || defined(sun) 
+#elif defined(__sun) || defined(sun)
 # ifdef SYSV
 #  include <sys/types.h>
 #  include <sys/cdio.h>

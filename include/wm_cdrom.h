@@ -27,8 +27,6 @@
  * 
  * This is just one more step to a more modular and understandable code.
  */
-#include "config.h"
-
 #define WM_CDS_NO_DISC(status) (status == WM_CDM_UNKNOWN ||\
                                 status == WM_CDM_EJECTED ||\
                                 status == WM_CDM_NO_DISC)

@@ -54,7 +54,8 @@
  * The above order corresponds with the order of the platform specific
  * options below.
  */
-
+ 
+#include <config.h>
 /******************************************************************
  * generic options
  ******************************************************************

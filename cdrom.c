@@ -37,6 +37,8 @@ static char cdrom_id[] = "$Id$";
 #include <sys/types.h>
 /* #include <sys/time.h> */
 
+#include "config.h"
+
 #include "include/wm_config.h"
 #include "include/wm_struct.h"
 #include "include/wm_cddb.h"
