@@ -407,7 +407,7 @@ wm_cd_status( void )
 		/* Fall through */
 
 	case WM_CDM_STOPPED:
-		if (cur_track >= 1 && cur_track <= cur_ntracks)
+		if (cur_track >= 1 && cur_track <= cur_ntracks && cd->trk != NULL)
 		{
 			cur_trackname = cd->trk[cur_track-1].songname;
 			cur_avoid = cd->trk[cur_track-1].avoid;
