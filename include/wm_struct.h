@@ -140,6 +140,7 @@ struct wm_drive
   int	(*play)();
   int	(*eject)();
   int   (*closetray)();
+  int   (*get_cdtext)();
 };
 
 /*
@@ -173,7 +174,8 @@ int     gen_init(),
 	gen_stop(),
 	gen_play(),
 	gen_eject(),
-	gen_closetray();
+	gen_closetray(),
+	gen_get_cdtext();
 
 struct wm_drive *find_drive_struct();
 

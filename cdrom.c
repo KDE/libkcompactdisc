@@ -45,6 +45,7 @@ static char cdrom_id[] = "$Id$";
 #include "include/wm_platform.h"
 #include "include/wm_helpers.h"
 #include "include/wm_cdinfo.h"
+#include "include/wm_cdtext.h"
 
 #ifdef CAN_CLOSE
 #include <fcntl.h>
@@ -568,7 +569,14 @@ wm_cd_stop( void )
 		cur_track = 1;
 	}
 } /* wm_cd_stop() */
- 
+
+
+void
+wm_cd_get_cdtext( void )
+{
+	wm_get_cdtext(&drive);
+}
+
 /*
  * wm_cd_play_chunk(start, end)
  *
@@ -828,5 +836,6 @@ struct wm_drive generic_proto = {
 	gen_stop,
 	gen_play,
 	gen_eject,
-	gen_closetray
+	gen_closetray,
+	gen_get_cdtext
 };

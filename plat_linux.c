@@ -43,6 +43,8 @@ static char plat_linux_id[] = "$Id$";
 #include <sys/wait.h>
 
 #include "include/wm_config.h"
+#include "include/wm_struct.h"
+#include "include/wm_cdtext.h"
 
 #if defined(BSD_MOUNTTEST)
   #include <mntent.h>
@@ -204,7 +206,7 @@ wm_scsi( struct wm_drive *d, unsigned char *cdb, int cdblen,
   
   char *cmd;
   int cmdsize;
-  
+
   cmdsize = 2 * sizeof(int);
   if (retbuf)
     {
@@ -241,6 +243,43 @@ wm_scsi( struct wm_drive *d, unsigned char *cdb, int cdblen,
   return 0;
   
 #else /* Linux SCSI passthrough*/
+/*----------------------------------------*
+ * send packet over cdrom interface
+ * kernel >= 2.2.16
+ *----------------------------------------*/
+#ifdef CDROM_SEND_PACKET	
+
+  struct cdrom_generic_command cdc;
+  struct request_sense sense;
+  int ret, capability;
+
+  wm_lib_message(WM_MSG_LEVEL_DEBUG|WM_MSG_CLASS, "wm_scsi over CDROM_SEND_PACKET entered\n");
+
+  capability = ioctl(d->fd, CDROM_GET_CAPABILITY);
+
+  if(!(capability & CDC_GENERIC_PACKET))
+  {
+    wm_lib_message(WM_MSG_LEVEL_DEBUG|WM_MSG_CLASS, "your CDROM or/and kernel don't support CDC_GENERIC_PACKET ...\n");
+    printf("your CDROM or/and kernel don't support CDC_GENERIC_PACKET ...\n");
+    return -1;
+  }
+
+  memset(&cdc, 0, sizeof(struct cdrom_generic_command));
+  memset(&sense, 0, sizeof(struct request_sense));
+	
+  memcpy(cdc.cmd, cdb, cdblen);
+
+  cdc.buffer = retbuf;
+  cdc.buflen = retbuflen;
+  cdc.stat = 0;
+  cdc.sense = &sense;
+  cdc.data_direction = getreply;
+
+  /* sendpacket_over_cdrom_interface() */
+  return ioctl(d->fd, CDROM_SEND_PACKET, &cdc);
+#endif /* CDROM_SEND_PACKET */
+  printf("ERROR: this binary was compiled without CDROM GENERIC PACKET SUPPORT. kernel version < 2.2.16?\n");
+  printf("ERROR: if you have a SCSI CDROM, rebuild it with a #define LINUX_SCSI_PASSTHROUGH\n");
   return (-1);
 #endif
 } /* wm_scsi */
@@ -631,6 +670,20 @@ gen_set_volume( struct wm_drive *d, int left, int right )
   
   return (ioctl(d->fd, CDROMVOLCTRL, &v));
 } /* gen_set_volume() */
+
+/*------------------------------------------------------------------------*
+ * gen_get_cdtext(drive, buffer, lenght)
+ *
+ * Return a buffer with cdtext-stream. buffer will be allocated and filled
+ *
+ * needs send packet interface -> for IDE, linux at 2.2.16
+*------------------------------------------------------------------------*/
+
+int
+gen_get_cdtext(struct wm_drive *d, unsigned char **pp_buffer, int *p_buffer_lenght)
+{
+  return wm_scsi_get_cdtext(d, pp_buffer, p_buffer_lenght);
+} /* gen_get_cdtext() */
 
 /*---------------------------------------------------------------------*
  * Read the initial volume from the drive, if available.  Each channel

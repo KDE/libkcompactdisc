@@ -55,6 +55,7 @@ void	wm_cd_stop( void );
 int	wm_cd_eject( void );
 int     wm_cd_closetray( void );
 int	wm_cd_read_initial_volume( int max );
+void	wm_cd_get_cdtext( void );
 
 /*
  * Following are the missing to rename.

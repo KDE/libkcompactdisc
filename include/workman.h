@@ -45,7 +45,8 @@
 #include "wm_index.h" 
 #include "wm_platform.h" 
 #include "wm_scsi.h" 
-#include "wm_struct.h" 
+#include "wm_struct.h"
+#include "wm_cdtext.h"
 
 #endif /* WORKMAN_H */
 

@@ -181,7 +181,7 @@
  * probably want this, but it will cause WorkMan to not work on IDE
  * drives.
  */
-#define LINUX_SCSI_PASSTHROUGH 1
+/*#define LINUX_SCSI_PASSTHROUGH 1*/
 
 /*
  * Which device should be opened by WorkMan at default?
