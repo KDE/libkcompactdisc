@@ -76,7 +76,7 @@ static char plat_sun_id[] = "$Id$";
 int	min_volume = 0;
 int	max_volume = 255;
 
-extern char	*cd_device, *cddaslave_path;
+extern char	*cd_device, *cddaslave_path; 
 extern int	intermittent_dev;
 
 int	cdda_slave = -1;
@@ -855,7 +855,7 @@ gen_get_volume( struct wm_drive *d, int *left, int *right )
 int
 cdda_init( struct wm_drive *d )
 {
-#if defined(WMCDDA_DONE) /* { */
+#if defined(BUILD_CDDA) && defined(WMCDDA_DONE) /* { */
   int	slavefds[2];
   
   if (cdda_slave > -1)
