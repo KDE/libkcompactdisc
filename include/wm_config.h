@@ -171,7 +171,7 @@
  ***  ********  ****  **    **  **  ***    ************************
  ***      **      **  ***   ***    ***  **  ***********************
  ******************************************************************/
-#if defined(__linux)
+#if defined(__linux__)
 
 /*
  * Uncomment the following line to have WorkMan send SCSI commands

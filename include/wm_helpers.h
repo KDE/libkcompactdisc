@@ -77,7 +77,7 @@ extern int wm_lib_verbosity;
 #define FALSE	0
 #endif
 
-#ifdef __linux
+#ifdef __linux__
 #include <signal.h>
 /* Linux doesn't have a SIGEMT */
 #if !defined( SIGEMT )
