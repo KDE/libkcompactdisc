@@ -195,8 +195,9 @@
 
 /*
  * Linux Soundcard support
+ * Disabled by default, because some people rely on it
  */
-#define OSS_SUPPORT 1
+/* #define OSS_SUPPORT 1 */
 
 /*
  * This has nothing to do with the above.
