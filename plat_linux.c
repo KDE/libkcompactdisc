@@ -729,7 +729,7 @@ static int
 unscale_volume( int vol, int max )
 {
 #ifdef CURVED_VOLUME
-  /* FIXME do it simple */
+  /* FIXME do it simpler */
   int tmp = (((max_volume - min_volume - vol) * max * max) - (vol + min_volume));
   return max - sqrt((tmp/(max_volume - min_volume)));                        
 #else
