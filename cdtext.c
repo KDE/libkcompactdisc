@@ -67,7 +67,9 @@ int free_cdtext_info_block(struct cdtext_info_block* cdtextinfoblock)
 int free_cdtext_info(struct cdtext_info* cdtextinfo)
 {
   int i;
+#ifndef NDEBUG
   printf("CDTEXT INFO: free_cdtext_info() called\n");
+#endif
   if(cdtextinfo)
   {
     for(i = 0; i < 8; i++)
@@ -191,7 +193,9 @@ void get_data_from_cdtext_pack(
   }
 #else
   else {
+#ifndef NDEBUG
      fprintf( stderr, "can't handle unicode"); 
+#endif
   }
 #endif
 }
@@ -246,6 +250,7 @@ int wm_get_cdtext(struct wm_drive *d)
       if(pack->header_field_id1_typ_of_pack >= 0x80 && pack->header_field_id1_typ_of_pack < 0x90)
       {
         int code, j;
+#ifndef NDEBUG
           printf("CDTEXT DEBUG: valid packet at 0x%08X: 0x %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X\n",
             i,
             pack->header_field_id1_typ_of_pack,
@@ -266,6 +271,7 @@ int wm_get_cdtext(struct wm_drive *d)
             pack->text_data_field[11],
             pack->crc_byte1,
             pack->crc_byte2);
+#endif
         wm_cdtext_info.count_of_valid_packs++;
 
         code = (pack->header_field_id4_block_no >> 4) & 0x07;
@@ -283,7 +289,9 @@ int wm_get_cdtext(struct wm_drive *d)
           if(MAX_LANGUAGE_BLOCKS <= j)
           {
             free_cdtext_info(&wm_cdtext_info);
+#ifndef NDEBUG
             printf("CDTEXT ERROR: more as 8 languageblocks defined\n");
+#endif            
             return -1;
           }
 
@@ -293,7 +301,9 @@ int wm_get_cdtext(struct wm_drive *d)
             lp_block = malloc_cdtext_info_block(wm_cdtext_info.count_of_entries);
             if(0 == lp_block)
             {
+#ifndef NDEBUG
               printf("CDTEXT ERROR: out of memory, can't create a new language block\n");
+#endif
               free_cdtext_info(&wm_cdtext_info);
               return ENOMEM;
             }
@@ -302,7 +312,9 @@ int wm_get_cdtext(struct wm_drive *d)
               wm_cdtext_info.blocks[j] = lp_block;
               wm_cdtext_info.blocks[j]->block_code = code;
               wm_cdtext_info.blocks[j]->block_unicode = pack->header_field_id4_block_no & 0x80;
+#ifndef NDEBUG
               printf("CDTEXT INFO: created a new language block; code %i, %s characters\n", code, lp_block->block_unicode?"doublebyte":"singlebyte");
+#endif
 /*
   unsigned char block_encoding; not jet!
   cdtext_string* block_encoding_text;
@@ -347,18 +359,26 @@ int wm_get_cdtext(struct wm_drive *d)
           (char*)(pack->text_data_field),  DATAFIELD_LENGHT_IN_PACK);
           break;
         case 0x88:
+#ifndef NDEBUG
          printf("CDTEXT INFO: PACK with code 0x88 (TOC)\n");
+#endif          
           break;
         case 0x89:
+#ifndef NDEBUG
          printf("CDTEXT INFO: PACK with code 0x89 (second TOC)\n");
+#endif
           break;
         case 0x8A:
         case 0x8B:
         case 0x8C:
+#ifndef NDEBUG
           printf("CDTEXT INFO: PACK with code 0x%02X (reserved)\n", pack->header_field_id1_typ_of_pack);
+#endif
           break;
         case 0x8D:
+#ifndef NDEBUG
           printf("CDTEXT INFO: PACK with code 0x8D (for content provider only)\n");
+#endif
           break;
         case 0x8E:
           p_componente = (lp_block->UPC_EAN_ISRC_code);
@@ -369,6 +389,7 @@ int wm_get_cdtext(struct wm_drive *d)
           (char*)(pack->text_data_field), DATAFIELD_LENGHT_IN_PACK);
           break;
         default:
+#ifndef NDEBUG
           printf("CDTEXT ERROR: invalid packet at 0x%08X: 0x %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X\n",
             i,
             pack->header_field_id1_typ_of_pack,
@@ -389,6 +410,7 @@ int wm_get_cdtext(struct wm_drive *d)
             pack->text_data_field[11],
             pack->crc_byte1,
             pack->crc_byte2);
+#endif
           wm_cdtext_info.count_of_invalid_packs++;
       }
       i += sizeof(struct cdtext_pack_data_header);
@@ -403,7 +425,9 @@ int wm_get_cdtext(struct wm_drive *d)
 
 void wm_free_cdtext(void)
 {
+#ifndef NDEBUG
   printf("CDTEXT INFO: wm_free_cdtext() called, this function will be called at the end from USERSPACE(KSCD etc.)\n");
+#endif
   if (0 == first_initialise)
     free_cdtext_info(&wm_cdtext_info);
 

@@ -851,7 +851,9 @@ pl_find_track( int track )
 
 	if (playlist == NULL)
 	{
+#ifndef NDEBUG
 		fprintf(stderr, "Null playlist!  Huh?\n");
+#endif
 		return;
 	}
 

@@ -262,7 +262,9 @@ wm_scsi( struct wm_drive *d, unsigned char *cdb, int cdblen,
   if(!(capability & CDC_GENERIC_PACKET))
   {
     wm_lib_message(WM_MSG_LEVEL_DEBUG|WM_MSG_CLASS, "your CDROM or/and kernel don't support CDC_GENERIC_PACKET ...\n");
+#ifndef NDEBUG
     printf("your CDROM or/and kernel don't support CDC_GENERIC_PACKET ...\n");
+#endif
     return -1;
   }
 
@@ -758,15 +760,18 @@ cdda_init( struct wm_drive *d )
   if (cdda_slave > -1)
     return (1);
   
+#ifndef NDEBUG
   fprintf( stderr, "slave okay\n" );
-  
+#endif  
   if (socketpair(AF_UNIX, SOCK_STREAM, 0, slavefds))
     {
       perror("socketpair");
       return (0);
     }
   
+#ifndef NDEBUG
   fprintf( stderr, "going to fork\n" );
+#endif
   switch (fork()) {
   case 0:
     close(slavefds[0]);
@@ -793,7 +798,9 @@ cdda_init( struct wm_drive *d )
   
   if (!get_ack(cdda_slave))
     {
+#ifndef NDEBUG
       fprintf( stderr, "get_ack failed\n" );
+#endif
       cdda_slave = -1;
       /*		codec_start(); */
       return (0);

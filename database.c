@@ -179,6 +179,7 @@ nomem:
 
 	if (no_db || no_rc)
 	{
+#ifndef NDEBUG
 		fprintf(stderr,
 "WorkMan was run without a home directory, probably by a system daemon.\n");
 		fprintf(stderr, "It doesn't know where to find ");
@@ -193,7 +194,7 @@ nomem:
 
 		fprintf(stderr,
 ".\nYou can use the X resources \"workman.db.shared\" and \"workman.db.personal\"\nto tell WorkMan where to look.\n");
-
+#endif
 		wm_db_save_disabled = TRUE;
 	}
 }
@@ -1095,13 +1096,13 @@ load( void )
 
 /* This is some kind of profiling code. I don't change it
    to wm_lib_message() for now... */
-#ifdef DEBUG
+#ifndef NDEBUG
 	long		t1, t2;
 	if( getenv( "WORKMAN_DEBUG" ) != NULL )
 	  {
 		time(&t1);
 		printf("%s (%d): search start = %ld\n", __FILE__, __LINE__, t1);
-		fflush(stdout);
+        fflush(stdout);
 	  }	
 #endif
 
@@ -1143,7 +1144,7 @@ load( void )
 		}
 	} while (*++dbfile != NULL && cd->whichdb == NULL);
 
-#ifdef DEBUG
+#ifndef NDEBUG
 	if( getenv( "WORKMAN_DEBUG" ) != NULL )
 	  {
 		time(&t2);
@@ -1177,7 +1178,7 @@ load( void )
 	if (cur_playnew == -1)
 		cur_playnew = 0;
 
-#ifdef DEBUG
+#ifndef NDEBUG
 	if( getenv( "WORKMAN_DEBUG" ) != NULL )
 	  {
 		time(&t2);

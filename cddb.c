@@ -214,7 +214,9 @@ connect_open(void)
 	if(!port)
 	  port=8880;
 
+#ifndef NDEBUG
 	printf("%s:%d\n",host,port);
+#endif
 	hp  =gethostbyname(host);
   
 	if (hp == NULL)
@@ -228,7 +230,9 @@ connect_open(void)
 		defaddr.s_addr = inet_addr(host);
 		if (defaddr.s_addr == -1) 
 		{
+#ifndef NDEBUG
 			printf("unknown host: %s\n", host);
+#endif
 			return (-1);
 		}
 		strcpy(namebuf, host);
@@ -379,22 +383,32 @@ http_send(char* line)
 	char tempbuf[2000];
 	
 	write(Socket, "GET ", 4);
+#ifndef NDEBUG
 	printf("GET ");
+#endif
 	if(cddb.protocol == 3)
 	{
 		write(Socket, "http://", 7);
 		write(Socket, cddb.cddb_server, strlen(cddb.cddb_server));
+#ifndef NDEBUG
 		printf("http://%s",cddb.cddb_server);
+#endif
 	}
 	write(Socket, cddb.path_to_cgi, strlen(cddb.path_to_cgi));
 	write(Socket, "?cmd=" ,5);
 	write(Socket, line, strlen(line));
+#ifndef NDEBUG
 	printf("%s?cmd=%s",cddb.path_to_cgi,line);
-	string_makehello(tempbuf,'+');
+#endif	
+    string_makehello(tempbuf,'+');
 	write(Socket, tempbuf, strlen(tempbuf));
+#ifndef NDEBUG
 	printf("%s",tempbuf);
-	write(Socket, "&proto=1 HTTP/1.0\n\n", 19);
+#endif	
+    write(Socket, "&proto=1 HTTP/1.0\n\n", 19);
+#ifndef NDEBUG
 	printf("&proto=1 HTTP/1.0\n");
+#endif
 	do
 	  connect_getline(tempbuf);
 	while(strcmp(tempbuf,""));
@@ -435,11 +449,15 @@ cddb_request(void)
 	switch(cddb.protocol)
 	{
 	 case 1: /* cddbp */
+#ifndef NDEBUG
 		printf("USING CDDBP\n");
 		printf("open\n");
+#endif
 		connect_open();
 		connect_getline(tempbuf);
+#ifndef NDEBUG
 		printf("[%s]\n",tempbuf);
+#endif        
 		/*
 		 * if(atoi(tempbuf) == 201) return;
 		 */
@@ -448,23 +466,29 @@ cddb_request(void)
 		 * strcpy(tempbuf,"cddb hello svolli bigfoot.com Eierkratzer eins");
 		 */
 		string_makehello(tempbuf,' ');
+#ifndef NDEBUG
 		fprintf(stderr, "%s\n", tempbuf);
+#endif
 		cddbp_send(tempbuf);
 		connect_getline(tempbuf);
+#ifndef NDEBUG
 		printf("[%s]\n",tempbuf);
-		
 		printf("query\n");
+#endif
 		sprintf(tempbuf, "cddb query %08x %d",thiscd.cddbid,thiscd.ntracks);
 		for (i = 0; i < cur_ntracks; i++)
 		  if (thiscd.trk[i].section < 2)
 		    sprintf(tempbuf + strlen(tempbuf), " %d",
 			    thiscd.trk[i].start);
 		sprintf(tempbuf + strlen(tempbuf), " %d\n", thiscd.length);
+#ifndef NDEBUG
 		printf(">%s<\n",tempbuf);
+#endif
 		cddbp_send(tempbuf);
 		connect_getline(tempbuf);
+#ifndef NDEBUG
 		printf("[%s]\n",tempbuf);
-		
+#endif
 		status=atoi(tempbuf);
 		/*
 		 * fprintf(stderr, "status:%d\n",status);
@@ -491,25 +515,32 @@ cddb_request(void)
 		
 		cddbp_send("quit");
 		connect_close();
+#ifndef NDEBUG
 		printf("close\n");
+#endif
 		break;
 	 case 2: /* http */
 	 case 3: /* http proxy */
+#ifndef NDEBUG
 		printf("USING HTTP%s\n",
 		       (cddb.protocol == 3) ? " WITH PROXY" : "");
 		printf("query\n");
+#endif
 		sprintf(tempbuf, "cddb+query+%08x+%d",thiscd.cddbid,thiscd.ntracks);
 		for (i = 0; i < cur_ntracks; i++)
 		  if (thiscd.trk[i].section < 2)
 		    sprintf(tempbuf + strlen(tempbuf), "+%d",
 			    thiscd.trk[i].start);
 		sprintf(tempbuf + strlen(tempbuf), "+%d", thiscd.length);
+#ifndef NDEBUG
 		printf(">%s<\n",tempbuf);
+#endif
 		connect_open();
 		http_send(tempbuf);
 		connect_getline(tempbuf);
+#ifndef NDEBUG
 		printf("[%s]\n",tempbuf);
-		
+#endif
 		status=atoi(tempbuf);
 		/*
 		 * fprintf(stderr, "status:%d\n",status);

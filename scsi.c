@@ -400,7 +400,7 @@ wm_scsi2_get_drive_status(d, oldmode, mode, pos, track, index)
 
         default:
 		*mode = WM_CDM_UNKNOWN;
-#ifdef DEBUG		
+#ifndef NDEBUG
 		if( getenv( "WORKMAN_DEBUG" ) != NULL )
 			printf("wm_scsi2_get_drive_status: status is 0x%x\n",
 				buf[1]);
@@ -562,19 +562,27 @@ wm_scsi_get_cdtext(struct wm_drive *d, unsigned char **pp_buffer, int *p_buffer_
   cdtext_possible = 0;
   wm_lib_message(WM_MSG_LEVEL_DEBUG|WM_MSG_CLASS, "wm_scsi_get_cdtext entered\n");
 
+#ifndef NDEBUG
   printf("CDTEXT INFO: use GET_FEATURE_LIST(0x46)...\n");
+#endif
   ret = sendscsi(d, temp, 8, CGC_DATA_READ,
     0x46, 0x02, 0x00, 0x1E, 0,
     0, 0, 0, 8, 0, 0, 0);
 
   if(ret)
   {
+#ifndef NDEBUG
     printf("CDTEXT ERROR: GET_FEATURE_LIST(0x46) not implemented or broken. ret = %i!\n", ret);
+#endif
 #ifndef IGNORE_FEATURE_LIST
+#ifndef NDEBUG
     printf("CDTEXT ERROR: Try #define IGNORE_FEATURE_LIST in libwm/scsi.c\n");
+#endif
 #else
     cdtext_possible = 1;
+#ifndef NDEBUG
     printf("CDTEXT INFO: GET_FEATURE_LIST(0x46) ignored. It's OK, becose many CDROMS don't implement this featury\n");
+#endif
 #endif /* IGNORE_FEATURE_LIST */
   }
   else
@@ -619,44 +627,57 @@ wm_scsi_get_cdtext(struct wm_drive *d, unsigned char **pp_buffer, int *p_buffer_
 
   if(!cdtext_possible)
   {
+#ifndef NDEBUG
     printf("CDTEXT INFO: GET_FEATURE_LIST(0x46) says, CDTEXT is not present!\n");
+#endif
     return EXIT_SUCCESS;
   }
 
+#ifndef NDEBUG
   printf("CDTEXT INFO: try to read, how long CDTEXT is?\n");
+#endif
   ret = sendscsi(d, temp, 4, CGC_DATA_READ,
     SCMD_READ_TOC, 0x00, 0x05, 0, 0, 0,
     0, 0, 4, 0, 0, 0);
 
   if(ret)
   {
+#ifndef NDEBUG
     printf("CDTEXT ERROR: READ_TOC(0x43) with format code 0x05 not implemented or broken. ret = %i!\n", ret);
+#endif
   }
   else
   {
     cdtext_data_length = temp[0]*0xFF + temp[1] + 4 + 1; /* divide by 18 + 4 ? */
     /* cdtext_data_length%18 == 0;? */
+#ifndef NDEBUG
     printf("CDTEXT INFO: CDTEXT is a %i byte(s) long\n", cdtext_data_length);
+#endif
     /* cdc_buffer[2];  cdc_buffer[3]; reserwed */
     dynamic_temp = malloc(cdtext_data_length);
     if(!dynamic_temp)
       return -1;
 
     memset(dynamic_temp, 0, cdtext_data_length);
+#ifndef NDEBUG
     printf("CDTEXT INFO: try to read CDTEXT\n");
+#endif
     ret = sendscsi(d, dynamic_temp, cdtext_data_length, CGC_DATA_READ,
       SCMD_READ_TOC, 0x00, 0x05, 0, 0, 0,
       0, (cdtext_data_length>>8) & 0xFF, cdtext_data_length & 0xFF, 0, 0, 0);
    
     if(ret)	
     {
+#ifndef NDEBUG
       printf("CDTEXT ERROR: READ_TOC(0x43) with format code 0x05 not implemented or broken. ret = %i!\n", ret);
+#endif
     }
     else
     {
       cdtext_data_length = temp[0]*0xFF + temp[1] + 4 + 1; /* divide by 18 + 4 ? */
+#ifndef NDEBUG
       printf("CDTEXT INFO: read %i byte(s) of CDTEXT\n", cdtext_data_length);
-
+#endif
       /* send cdtext only 18 bytes packs * ? */
       *(p_buffer_length) = cdtext_data_length - 4;
       *pp_buffer = malloc(*p_buffer_length);
