@@ -115,6 +115,8 @@
  */
 #define SOUNDBLASTER 1
 
+#define DEFAULT_CD_DEVICE "/dev/rsr2c" 
+
 #endif /* __bsdi__ (BSD/386) */
 
 /******************************************************************

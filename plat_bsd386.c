@@ -45,25 +45,18 @@ static char plat_bsd386_id[] = "$Id$";
  */
 #if defined(BSD_MOUNTTEST)
   #include <mntent.h>
-#else
-  /*
-   * this is for glibc 2.x which defines ust structure in
-   * ustat.h not stat.h. 
-   */
-  #ifdef __GLIBC__
-    #include <sys/ustat.h>
-  #endif
 #endif
 
 
 #include <sys/time.h>
 #include <string.h>
-#include <sys/cdrom.h>
+#include <cdrom.h>
 #ifdef SOUNDBLASTER
-# include <i386/isa/sblast.h>
+# include <sys/soundcard.h>
 #endif
 
 #include "include/wm_struct.h"
+#include "include/wm_helpers.h"
 
 #define WM_MSG_CLASS WM_MSG_CLASS_PLATFORM
 
@@ -87,8 +80,15 @@ void *malloc();
 
 extern char	*cd_device;
 
-int	min_volume = 10;
-int	max_volume = 255;
+#ifdef SOUNDBLASTER
+       int     min_volume = 0;
+       int     max_volume = 100;
+       int     min_volume_drive = 10;  /* Toshiba drive does low values. */
+       int     max_volume_drive = 255;
+#else
+       int     min_volume = 10;
+       int     max_volume = 255;
+#endif
 
 /*--------------------------------------------------------*
  * Initialize the drive.  A no-op for the generic driver.
@@ -123,6 +123,10 @@ wmcd_open(struct wm_drvie *d)
   if ((daux = malloc(sizeof(struct pause_info))) == NULL)
     return (-1);
   
+#ifdef SOUNDBLASTER
+  fd = open("/dev/mixer", O_RDWR, 0);
+#endif
+
   /* Now fill in the relevant parts of the wm_drive structure. */
   *d = *(find_drive_struct("", "", ""));
   d->aux = aux;
@@ -147,12 +151,18 @@ wmcd_reopen( struct wm_drive *d )
   
   do {
     wm_lib_message(WM_MSG_LEVEL_DEBUG|WM_MSG_CLASS, "wmcd_reopen\n");
-    if (d->fd >= 0)		/* Device really open? */
+    if (d->aux == NULL)		/* Device really open? */
       {
 	wm_lib_message(WM_MSG_LEVEL_DEBUG|WM_MSG_CLASS, "closing the device\n");
 	status = close( d->fd );   /* close it! */
+	 if (d->fd >= 0)
+             close(d->fd); /* close mixer if open */
+	 d->fd = -1;
+	 status = cdclose( d->aux );   /* close the cdrom drive! */
+	d->aux = NULL;
+	free(d->daux);
+	d->daux = NULL;
 	/* we know, that the file is closed, do we? */
-	d->fd = -1;
       }
     wm_susleep( 1000 );
     wm_lib_message(WM_MSG_LEVEL_DEBUG|WM_MSG_CLASS, "calling wmcd_open()\n");
@@ -368,6 +378,9 @@ gen_eject(struct wm_drive *d)
   free(d->daux);
   d->daux = NULL;
   
+  if (d->fd >= 0)
+     close(d->fd);     /* close mixer */
+  d->fd = -1;
   return (0);
 } /* gen_eject() */
 
@@ -378,13 +391,9 @@ int
 gen_closetray(struct wm_drive *d)
 {
 #ifdef CAN_CLOSE
-  if(!close(d->fd))
-    {
-      d->fd=-1;
-      return(wmcd_open(d));
-    } else {
-      return(-1);
-    }
+  if (!cdload(d->aux))
+      return(0);
+   return(-1);
 #else
   /* Always succeed if the drive can't close */
   return(0);
@@ -444,14 +453,22 @@ unscale_volume(int cd_vol, int max)
 int
 gen_set_volume(struct wm_drive *d, int left, int right)
 {
+  int level;
+
   left = scale_volume(left, 100);
   right = scale_volume(right, 100);
+  level = right << 8 | left; 
   
+  /* Send a Mixer IOCTL */
+  if (d->fd >= 0)
+       (void) ioctl(d->fd, MIXER_WRITE(SOUND_MIXER_VOLUME), &level);
+#ifdef notnow
   /* NOTE: the cdvolume2() call is an addition to the cdrom library.
      Pick it up from the archives on bsdi.com */
   cdvolume2 (CUR_CD, left < 0 ? 0 : left > 255 ? 255 : left,
 	     right < 0 ? 0 : right > 255 ? 255 : right);
   
+#endif
   return (0);
 }
 
@@ -462,8 +479,18 @@ gen_set_volume(struct wm_drive *d, int left, int right)
 int
 gen_get_volume(struct wm_drive *d, int *left, int *right)
 {
+  int level;
+
   /* Most systems can't seem to do this... */
   *left = *right = -1;
+
+  /* Send a Mixer IOCTL */
+  if (d->fd >= 0) {
+      if (ioctl(d->fd, MIXER_READ(SOUND_MIXER_VOLUME), &level) == 0) {
+         *left = unscale_volume((level & 0xff) & 0xff, 100);
+         *right = unscale_volume((level >> 8) & 0xff, 100);
+       }
+    }
   return (0);
 }
 
