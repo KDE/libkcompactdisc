@@ -185,7 +185,7 @@ read_toc()
 	if ((drive.get_trackcount)(&drive, &thiscd.ntracks) < 0)
 	{
 		perror("trackcount");
-		return (NULL);
+		return NULL ;
 	}
 
 	thiscd.artist[0] = thiscd.cdname[0] = '\0';
@@ -285,9 +285,11 @@ wm_cd_status( void )
 
 	if( cur_cdmode == WM_CDM_DEVICECHANGED )
 	  {
-	    /* Don't open the device now, just change the mode to ejected */
-	    cur_cdmode = WM_CDM_EJECTED;
+	    /* Don't open the device now */
+	    close( drive.fd );
+	    drive.fd = -1;
 	    status = 0;
+	    wmcd_open( &drive );
 	  } else {
 	    /* Open the drive.  This returns 1 if the device isn't ready. */
 	    status = wmcd_open( &drive );
@@ -313,15 +315,12 @@ wm_cd_status( void )
 	}
 	oldmode = mode;
 
-	if (mode == WM_CDM_EJECTED || mode == WM_CDM_UNKNOWN)
+        if ((mode == WM_CDM_EJECTED || mode == WM_CDM_UNKNOWN) && (cur_cdmode != WM_CDM_DEVICECHANGED) )
 	{
 		cur_cdmode = WM_CDM_EJECTED;
 		cur_track = -1;
 		cur_cdlen = cur_tracklen = 1;
 		cur_pos_abs = cur_pos_rel = cur_frame = 0;
-
-		if (exit_on_eject)
-			exit(0);
 
 		return (WM_CDS_NO_DISC);
 	}
@@ -329,21 +328,21 @@ wm_cd_status( void )
 	/* If there wasn't a CD before and there is now, learn about it. 
 	 * If the device has changed, this will close the old fd and     
          * re-open the device before gathering information */
-	if (cur_cdmode == WM_CDM_EJECTED)
+	if (cur_cdmode == WM_CDM_EJECTED || cur_cdmode == WM_CDM_DEVICECHANGED)
 	{
+
+	        cur_track = -1;
+		cur_pos_abs = cur_pos_rel = cur_frame = 0;
+
 		cur_pos_rel = cur_pos_abs = 0;
 
 		status = wmcd_reopen( &drive );
 
 		if ((cd = read_toc()) == NULL)
                 {
-		        wm_lib_message(WM_MSG_LEVEL_DEBUG|WM_MSG_CLASS_MISC,"status: returned toc was NULL\n");
-			if (exit_on_eject)
-			{
-				exit(-1);
-			} else {
-				return (-1);
-			}
+		    wm_lib_message(WM_MSG_LEVEL_DEBUG|WM_MSG_CLASS_MISC,"status: returned toc was NULL\n");
+		    cur_cdmode = WM_CDM_NO_DISC;
+		    return (-1);
 		}
 
 		cur_nsections = 0;
@@ -692,9 +691,6 @@ wm_cd_eject( void )
 		}
 	}
 	
-	if (exit_on_eject)
-		exit(0);
-
 	cur_track = -1;
 	cur_cdlen = cur_tracklen = 1;
 	cur_pos_abs = cur_pos_rel = cur_frame = 0;
