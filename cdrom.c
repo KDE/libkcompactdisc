@@ -301,9 +301,6 @@ wm_cd_status( void )
 	int			status, trackno = cur_track;
 	int			ret = WM_CDS_DISC_READY;
         
-	//if(drive.get_drive_status == NULL)
-	//return (-1);
-
 	if( cur_cdmode == WM_CDM_DEVICECHANGED )
 	  {
 	    /* Don't open the device now */
