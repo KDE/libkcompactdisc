@@ -165,6 +165,7 @@ int wm_cd_destroy( void )
   FREE(drive.vendor);
   FREE(drive.model);
   FREE(drive.revision);
+  drive.proto = NULL;
 
   return 0;
 }
