@@ -25,7 +25,7 @@
  * Sun (really Solaris) digital audio functions.
  */
 
-#include "config.h"
+#include <config.h>
 
 #ifdef USE_SUN_AUDIO
 

@@ -13,7 +13,7 @@
 
 
 
-#include "config.h"
+#include <config.h>
 
 #if defined(HAVE_ARTS_LIBASOUND2)
 
