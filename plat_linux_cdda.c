@@ -38,7 +38,10 @@ static char plat_linux_cdda_id[] = "$Id$";
 #endif
 #undef __STRICT_ANSI__
 #include <asm/types.h>
+/* ugly workaround for broken glibc shipped in SuSE 9.0 */
+#define inline __inline__
 #include <linux/cdrom.h>
+#undef inline
 /* types.h and cdio.h are included by wm_cdda.h */
 
 #include <stdio.h>
