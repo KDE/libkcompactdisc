@@ -42,7 +42,7 @@
  *
  */
 
-#include "config.h"
+#include "include/wm_config.h"
 
 #ifdef BUILD_CDDA
  
