@@ -27,7 +27,6 @@
  */
 
 
-
 static char plat_linux_id[] = "$Id$";
 
 #if defined(M_UNIX) || defined(__M_UNIX)

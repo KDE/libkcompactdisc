@@ -26,6 +26,7 @@
  */
 
 #include "include/wm_config.h"
+
 static char plat_sun_audio_id[] = "$Id$";
 
 #if defined(sun) || defined(__sun) && defined(SYSV) && defined(BUILD_CDDA) 
