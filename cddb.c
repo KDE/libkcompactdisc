@@ -29,8 +29,6 @@
  *
  */
 
-static char cddb_id[] = "$Id$";
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <strings.h>
