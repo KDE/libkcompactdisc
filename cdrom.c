@@ -327,52 +327,15 @@ wm_cd_status( void )
   static int oldmode = WM_CDM_UNKNOWN;
   int mode, err;
 
-  if(!drive.proto ||
-     wm_cur_cdmode == WM_CDM_EJECTED ||
-     wm_cur_cdmode == WM_CDM_DEVICECHANGED) {
-    /* device was be changed */
-
-    if(drive.proto && drive.proto->gen_close)
-      drive.proto->gen_close(&drive);
-
-    if (wm_cur_cdmode != WM_CDM_EJECTED)
-      wm_cur_cdmode = WM_CDM_UNKNOWN;
-  }
-
-  if(WM_CDS_NO_DISC(wm_cur_cdmode)) {
-    /*
-     * Open the drive.
-     * This returns >0 if the device isn't ready and <0 if error.
-     */
-    cur_pos_abs = cur_pos_rel = cur_frame = 0;
-    cur_pos_rel = cur_pos_abs = 0;
-    thiscd.ntracks = 0;
-
+  if(!drive.proto) {
+    oldmode = WM_CDM_UNKNOWN;
     err = wmcd_open( &drive );
     if (err < 0) {
       wm_cur_cdmode = WM_CDM_UNKNOWN;
-    } else if (err > 0) {
-      wm_cur_cdmode = WM_CDM_NO_DISC;
-    } else if(read_toc() || 0 == thiscd.ntracks) {
-      wm_cur_cdmode = WM_CDM_NO_DISC;
-    } else {
-        /* refresh cdtext info */
-        get_glob_cdtext(&drive, 1);
-
-        thiscd.curtrack = 0;
-        wm_cur_cdmode = WM_CDM_STOPPED;
-    }
-    return wm_cur_cdmode;
+      return err;
+    }    
   }
-
-  /* If the user hit the stop button, don't pass PLAYING as oldmode.
-   * Likewise, if we've just started playing, don't remember that
-   * we were stopped before (or the state machine in get_drive_status
-   * can get confused.)
-   */
-  if( (wm_cur_cdmode == WM_CDM_STOPPED) || (wm_cur_cdmode == WM_CDM_PLAYING) )
-    oldmode = wm_cur_cdmode;
-
+  
   if(drive.proto->gen_get_drive_status &&
     (drive.proto->gen_get_drive_status)(&drive, oldmode, &mode, &cur_frame,
     &(thiscd.curtrack), &cur_index) < 0) {
@@ -384,25 +347,19 @@ wm_cd_status( void )
       gen_status(mode), thiscd.curtrack, cur_frame);
   }
 
-  /* workaround for CDDA get_status,
-     I can not found a way for a cdda to get its right current mode. */
- if(drive.cdda && WM_CDS_NO_DISC(mode) && !read_toc()) {
-    mode = WM_CDM_STOPPED;
-  }
-  
-  oldmode = mode;            
-   
-  if((mode == WM_CDM_EJECTED || mode == WM_CDM_UNKNOWN) &&
-    (wm_cur_cdmode != WM_CDM_DEVICECHANGED)) {
-    wm_cur_cdmode = WM_CDM_EJECTED;
-    thiscd.curtrack = -1;
+  if(WM_CDS_NO_DISC(oldmode) && WM_CDS_DISC_READY(mode)) {
+    /* device changed */
     thiscd.ntracks = 0;
-    thiscd.length = thiscd.curtracklen = 1;
-    cur_pos_abs = cur_pos_rel = cur_frame = 0;
-  
-    return wm_cur_cdmode;
+    if(read_toc() || 0 == thiscd.ntracks)
+      mode = WM_CDM_NO_DISC;
+    else /* refresh cdtext info */
+      get_glob_cdtext(&drive, 1);
+      
+    wm_lib_message(WM_MSG_LEVEL_DEBUG|WM_MSG_CLASS, "device status changed() from %s to %s\n",
+      gen_status(oldmode), gen_status(mode));
   }
-  
+  oldmode = mode;
+    
   /*
    * it seems all driver have'nt state for stop
    */
@@ -427,7 +384,7 @@ wm_cd_status( void )
   case WM_CDM_UNKNOWN:
     if (mode == WM_CDM_UNKNOWN)
     {
-      mode = WM_CDM_STOPPED;
+      mode = WM_CDM_NO_DISC;
       cur_lasttrack = cur_firsttrack = -1;
     }
     /* Fall through */
@@ -459,8 +416,10 @@ wm_cd_status( void )
     break;
   case WM_CDM_FORWARD:
   case WM_CDM_EJECTED:
+    wm_cur_cdmode = mode;
     break;	
   }
+  
   wm_lib_message(WM_MSG_LEVEL_DEBUG|WM_MSG_CLASS,
     "wm_cd_status returns %s\n", gen_status(wm_cur_cdmode));
   return wm_cur_cdmode;
@@ -706,8 +665,9 @@ struct cdtext_info*
 wm_cd_get_cdtext( void )
 {
   int status;
-  
+
   status = wm_cd_status();
+  
   if(WM_CDS_NO_DISC(status))
     return NULL;
   
