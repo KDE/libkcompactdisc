@@ -67,18 +67,16 @@ struct cdda_block {
  * byte-order examination.
  */
 
-#if defined(__osf__)
-#include <machine/endian.h>
-#if BYTE_ORDER == LITTLE_ENDIAN
-#define WM_LITTLE_ENDIAN 1
-#define WM_BIG_ENDIAN 0
-#else
-#define WM_LITTLE_ENDIAN 0
-#define WM_BIG_ENDIAN 1
-#endif
-#endif
-
-#if defined(__sun) || defined(sun) 
+#ifdef HAVE_MACHINE_ENDIAN_H
+	#include <machine/endian.h>
+	#if BYTE_ORDER == LITTLE_ENDIAN
+		#define WM_LITTLE_ENDIAN 1
+		#define WM_BIG_ENDIAN 0
+	#else
+		#define WM_LITTLE_ENDIAN 0
+		#define WM_BIG_ENDIAN 1
+	#endif
+#elif defined(__sun) || defined(sun) 
 # ifdef SYSV
 #  include <sys/types.h>
 #  include <sys/cdio.h>
@@ -95,13 +93,12 @@ struct cdda_block {
 # else
 #  undef BUILD_CDDA
 # endif
-#endif
 
 /* Linux only allows definition of endianness, because there's no
  * standard interface for CDROM CDDA functions that aren't available
  * if there is no support.
  */
-#ifdef __linux
+#elif defined(__linux)
 /*# include <bytesex.h>*/
 # include <endian.h>
 /*
@@ -110,6 +107,12 @@ struct cdda_block {
  */
 # define WM_LITTLE_ENDIAN !(__BYTE_ORDER - __LITTLE_ENDIAN)
 # define WM_BIG_ENDIAN !(__BYTE_ORDER - __BIG_ENDIAN)
+#elif defined WORDS_BIGENDIAN
+	#define WM_LITTLE_ENDIAN 0
+	#define WM_BIG_ENDIAN 1
+#else
+	#define WM_LITTLE_ENDIAN 1
+	#define WM_BIG_ENDIAN 0
 #endif
 
 /*
