@@ -1,6 +1,3 @@
-#include "audio.h"
-
-#ifdef USE_ARTS
 /*
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Library General Public
@@ -24,8 +21,9 @@
  * most modern soundcards accept 16LE with 44.1kHz
  * Alexander Kern alex.kern@gmx.de
  */
+#include "audio.h"
 
-#include <stdio.h>
+#ifdef USE_ARTS
 
 #include <artsc.h>
 

@@ -8,7 +8,6 @@
 #endif
 
 #define USE_ARTS
-#define USE_ALSA
 
 struct audio_oops {
   int (*wmaudio_open)(void);

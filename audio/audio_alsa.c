@@ -1,6 +1,3 @@
-#include "audio.h"
-
-#ifdef USE_ALSA
 /*
  *  Driver for Advanced Linux Sound Architecture, http://alsa.jcu.cz
  *
@@ -13,8 +10,9 @@
  *
  * This file comes under GPL license.
  */
+#include "audio.h"
 
-#include <stdio.h>
+#if defined(HAVE_ARTS_LIBASOUND2)
 
 #include <alsa/asoundlib.h>
 
@@ -281,4 +279,4 @@ setup_alsa(const char *dev, const char *ctl)
   return &alsa_oops;
 }
 
-#endif /* USE_ALSA */
+#endif /* ALSA */

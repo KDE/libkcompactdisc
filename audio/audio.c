@@ -4,7 +4,7 @@
 
 struct audio_oops* setup_soundsystem(const char* ss, const char* dev, const char* ctl)
 {
-#ifdef USE_ALSA
+#if defined(HAVE_ARTS_LIBASOUND2)
   if(!strcmp(ss, "alsa"))
     return setup_alsa(dev, ctl);
 #endif
@@ -12,5 +12,6 @@ struct audio_oops* setup_soundsystem(const char* ss, const char* dev, const char
   if(!strcmp(ss, "arts"))
     return setup_arts(dev, ctl);
 #endif
+  ERRORLOG("audio: unknown soundsystem '%s'\n", ss);
   return NULL;
 }
