@@ -79,8 +79,6 @@ struct pause_info
 
 void *malloc();
 
-extern char	*cd_device;
-
 #ifdef SOUNDBLASTER
        int     min_volume = 0;
        int     max_volume = 100;
@@ -115,7 +113,7 @@ wmcd_open(struct wm_drvie *d)
       return (0);
     }
   
-  if ((aux = cdopen(cd_device)) == NULL)
+  if ((aux = cdopen(d->cd_device)) == NULL)
     {
       fprintf(stderr, "No cdrom found by libcdrom\n");
       return (-6);
@@ -129,7 +127,7 @@ wmcd_open(struct wm_drvie *d)
 #endif
 
   /* Now fill in the relevant parts of the wm_drive structure. */
-  *d = *(find_drive_struct("", "", ""));
+  find_drive_struct("", "", "");
   d->aux = aux;
   d->daux = daux;
   d->fd = fd;
@@ -152,19 +150,7 @@ wmcd_reopen( struct wm_drive *d )
   
   do {
     wm_lib_message(WM_MSG_LEVEL_DEBUG|WM_MSG_CLASS, "wmcd_reopen\n");
-    if (d->aux == NULL)		/* Device really open? */
-      {
-	wm_lib_message(WM_MSG_LEVEL_DEBUG|WM_MSG_CLASS, "closing the device\n");
-	status = close( d->fd );   /* close it! */
-	 if (d->fd >= 0)
-             close(d->fd); /* close mixer if open */
-	 d->fd = -1;
-	 status = cdclose( d->aux );   /* close the cdrom drive! */
-	d->aux = NULL;
-	free(d->daux);
-	d->daux = NULL;
-	/* we know, that the file is closed, do we? */
-      }
+    status = gen_close( d );
     wm_susleep( 1000 );
     wm_lib_message(WM_MSG_LEVEL_DEBUG|WM_MSG_CLASS, "calling wmcd_open()\n");
     status = wmcd_open( d ); /* open it as usual */
@@ -186,6 +172,21 @@ wm_scsi(struct wm_drive *d, unsigned char *cdb, int cdblen,
 	return (-1);
 } /* wm_scsi() */
 
+int
+gen_close( struct wm_drive *d )
+{
+  if(d->fd != -1) {
+    wm_lib_message(WM_MSG_LEVEL_DEBUG|WM_MSG_CLASS, "closing the device\n");
+    close(d->fd); /* close mixer if open */
+    d->fd = -1;
+    cdclose( d->aux ); /* close the cdrom drive! */
+    d->aux = NULL;
+    free(d->daux);
+    d->daux = NULL;
+  }
+  return 0;
+}
+
 /*--------------------------------------------------------------------------*
  * Get the current status of the drive: the current play mode, the absolute
  * position from start of disc (in frames), and the current track and index
@@ -197,8 +198,8 @@ wm_scsi(struct wm_drive *d, unsigned char *cdb, int cdblen,
 *index = status.index_num
 
 int
-gen_get_drive_status(struct wm_drive *d, enum wm_cd_modes oldmode,
-                     enum wm_cd_modes *mode, int *pos, int *track, int *index)
+gen_get_drive_status(struct wm_drive *d, int oldmode,
+                     int *mode, int *pos, int *track, int *index)
 {
   struct cdstatus	status;
   extern enum wm_cd_modes cur_cdmode;

@@ -62,8 +62,6 @@ char *strchr();
 int	min_volume = 0;
 int	max_volume = 255;
 
-extern char	*cd_device;
-
 /*
  * platformspecific internal function
  */
@@ -159,14 +157,14 @@ wmcd_open( struct wm_drive *d)
       return (0);
     }
   
-  if (cd_device == NULL)
+  if (d->cd_device == NULL)
     {
       fprintf(stderr,"cd_device string empty\n");
       return (-1);
     }
   
   
-  d->fd = create_cdrom_node(cd_device); /* this will do open */
+  d->fd = create_cdrom_node(d->cd_device); /* this will do open */
   
   if (d->fd < 0)
     {
@@ -174,13 +172,13 @@ wmcd_open( struct wm_drive *d)
 	{
 	  if (! warned)
 	    {
-	      fprintf(stderr,"Cannot access %s\n",cd_device);
+	      fprintf(stderr,"Cannot access %s\n",d->cd_device);
 	      warned++;
 	    }
 	}
       else if (errno != EINTR)
 	{
-	  perror(cd_device);
+	  perror(d->cd_device);
           return( -6 );
 	}
       
@@ -203,8 +201,7 @@ wmcd_open( struct wm_drive *d)
       perror("Cannot inquiry drive for it's type");
       return (-1);
     }
-  *d = *(find_drive_struct(vendor, model, rev));
-  /*	about_set_drivetype(d->vendor, d->model, rev);*/
+  find_drive_struct(vendor, model, rev);
   
   d->fd = fd;
   
@@ -219,11 +216,7 @@ wmcd_reopen( struct wm_drive *d )
   int status;
   int tries = 0;
   do {
-    if (d->fd >= 0) /* Device really open? */
-      {
-	close(d->fd);  /* ..then close it */
-	d->fd = -1;      /* closed */
-      }
+    gen_close(d);
     susleep( 1000 );
     status = wmcd_open( d );
     susleep( 1000 );
@@ -281,6 +274,17 @@ wm_scsi(struct wm_drive *d, unsigned char *xcdb, int cdblen,
   return 0;
 } /* wm_scsi() */
 
+int
+gen_close( struct wm_drive *d )
+{
+  if(d->fd != -1) {
+    wm_lib_message(WM_MSG_LEVEL_DEBUG|WM_MSG_CLASS, "closing the device\n");
+    close(d->fd);
+    d->fd = -1;
+  }
+  return 0;
+}
+
 void
 keep_cd_open() { }
 
@@ -290,7 +294,7 @@ keep_cd_open() { }
  * numbers if the CD is playing or paused.
  */
 int
-gen_get_drive_status(wm_drive *d, enum cd_modes oldmode, enum cd_modes *mode, 
+gen_get_drive_status(wm_drive *d, int oldmode, int *mode, 
 		     int *pos, int *track, int *index)
 {
   return (wm_scsi2_get_drive_status(d, oldmode, mode, pos, track, index));

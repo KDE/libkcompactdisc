@@ -58,8 +58,6 @@ char *strchr();
 int	min_volume = 0;
 int	max_volume = 255;
 
-extern char	*cd_device;
-
 static int
 create_cdrom_node(char *dev_name)
 {
@@ -129,6 +127,7 @@ create_cdrom_node(char *dev_name)
   return file_des;
 } /* create_cdrom_node() */
 
+const char*
 find_cdrom()
 {
   /*
@@ -136,25 +135,26 @@ find_cdrom()
   ** otherwise we are vulnerable to race conditions
   ** Thomas Biege <thomas@suse.de>
   */
+  const char* device = NULL;
   
-  cd_device = getenv("CDROM");
-  if ( (cd_device != NULL) && 
-       !(strncmp("/dev/", cd_device, 5) || 
-	 strstr(cd_device, "/../") ))
-    return 1;
+  device = getenv("CDROM");
+  if ( (device != NULL) && 
+       !(strncmp("/dev/", device, 5) || 
+	 strstr(_device, "/../") ))
+    return device;
   
   if (access("/dev/cdrom/cdrom1", F_OK) == 0)
     {
-      cd_device = "/dev/cdrom/cdrom1";
-      return 1;
+      return "/dev/cdrom/cdrom1";
     }
   else if (access("/dev/cdrom/cdrom2", F_OK) == 0)
     {
-      cd_device = "/dev/cdrom/cdrom2";
-      return 1;
-    } else {
+      return "/dev/cdrom/cdrom2";
+    }
+  else
+    {
       fprintf(stderr, "Couldn't find a CD device!\n");
-      return 0;
+      return NULL;
     }
 } /* find_cdrom() */
 
@@ -185,10 +185,10 @@ wmcd_open(struct wm_drive *d)
       return (0);
     }
   
-  if (cd_device == NULL)
-    cd_device = DEFAULT_CD_DEVICE;
+  if (d->cd_device == NULL)
+    d->cd_device = DEFAULT_CD_DEVICE;
   
-  d->fd = create_cdrom_node(cd_device); /* this will do open */
+  d->fd = create_cdrom_node(d->cd_device); /* this will do open */
   
   if (d->fd < 0)
     {
@@ -196,7 +196,7 @@ wmcd_open(struct wm_drive *d)
 	{
 	  if (! warned)
 	    {
-	      fprintf(stderr,"Cannot access %s\n",cd_device);
+	      fprintf(stderr,"Cannot access %s\n",d->cd_device);
 	      warned++;
 	    }
 	}
@@ -224,8 +224,7 @@ wmcd_open(struct wm_drive *d)
       perror("Cannot inquiry drive for it's type");
       exit(1);
     }
-  *d = *(find_drive_struct(vendor, model, rev));
-  wm_drive_settype(vendor, model, rev);
+  find_drive_struct(vendor, model, rev);
   
   d->fd = fd;
   
@@ -242,13 +241,7 @@ wmcd_reopen( struct wm_drive *d )
   
   do {
     wm_lib_message(WM_MSG_LEVEL_DEBUG|WM_MSG_CLASS, "wmcd_reopen\n");
-    if (d->fd >= 0)		/* Device really open? */
-      {
-	wm_lib_message(WM_MSG_LEVEL_DEBUG|WM_MSG_CLASS, "closing the device\n");
-	status = close( d->fd );   /* close it! */
-	/* we know, that the file is closed, do we? */
-	d->fd = -1;
-      }
+    status = gen_close( d );
     wm_susleep( 1000 );
     wm_lib_message(WM_MSG_LEVEL_DEBUG|WM_MSG_CLASS, "calling wmcd_open()\n");
     status = wmcd_open( d ); /* open it as usual */
@@ -345,14 +338,25 @@ wm_scsi( struct wm_drive *d, unsigned char *xcdb, int cdblen,
   return -1;
 } /* wm_scsi() */
 
+int
+gen_close( struct wm_drive *d )
+{
+  if(d->fd != -1) {
+    wm_lib_message(WM_MSG_LEVEL_DEBUG|WM_MSG_CLASS, "closing the device\n");
+    close(d->fd);
+    d->fd = -1;
+  }
+  return 0;
+}
+
 /*
  * Get the current status of the drive: the current play mode, the absolute
  * position from start of disc (in frames), and the current track and index
  * numbers if the CD is playing or paused.
  */
 int
-gen_get_drive_status(struct wm_drive *d, enum wm_cd_modes oldmode,
-		     enum wm_cd_modes *mode, int *pos, int *track, int *index)
+gen_get_drive_status(struct wm_drive *d, int oldmode,
+		     int *mode, int *pos, int *track, int *index)
 {
   return (wm_scsi2_get_drive_status(d, oldmode, mode, pos, track, index));
 } /* gen_get_drive_status() */

@@ -41,15 +41,9 @@ static int	tosh_eject( struct wm_drive *d );
 static int	tosh_set_volume( struct wm_drive *d, int left, int right );
 static int	tosh_get_volume( struct wm_drive *d, int *left, int *right );
 
-struct wm_drive toshiba_proto = {
-	-1,			/* fd */
-	"Toshiba",		/* vendor */
-	"",			/* model */
-	"",			/* revision */
-	NULL,			/* aux */
-	NULL,			/* daux */
-
+struct wm_drive_proto toshiba_proto = {
 	tosh_init,		/* functions... */
+	gen_close,
 	gen_get_trackcount,
 	gen_get_cdlen,
 	gen_get_trackinfo,
@@ -61,7 +55,8 @@ struct wm_drive toshiba_proto = {
 	gen_stop,
 	gen_play,
 	tosh_eject,
-	gen_closetray
+	gen_closetray,
+	NULL /* gen_get_cdtext */
 };
 
 /*

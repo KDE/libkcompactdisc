@@ -48,7 +48,6 @@ static char plat_news_id[] = "$Id$";
 void *malloc();
 char *strchr();
 
-extern char	*cd_device;
 extern int	intermittent_dev;
 
 int	min_volume = 128;
@@ -82,10 +81,10 @@ wmcd_open( struct wm_drive *d )
     }
   
   intermittent_dev = 1;
-  if (cd_device == NULL)
-    cd_device = DEFAULT_CD_DEVICE;
+  if (d->cd_device == NULL)
+    d->cd_device = DEFAULT_CD_DEVICE;
   
-  if ((d->fd = CD_Open(cd_device, 0)) < 0)
+  if ((d->fd = CD_Open(d->cd_device, 0)) < 0)
     {
       /* Solaris 2.2 volume manager moves links around */
       if (errno == ENOENT && intermittent_dev)
@@ -121,8 +120,7 @@ wmcd_open( struct wm_drive *d )
   
   /* Figure out the drive type, if possible */
   wm_scsi_get_drive_type(d, vendor, model, rev);
-  *d = *(find_drive_struct(vendor, model, rev));
-  wm_drive_settype(vendor, model, rev);
+  find_drive_struct(vendor, model, rev);
   
   d->fd = fd;
   
@@ -130,19 +128,6 @@ wmcd_open( struct wm_drive *d )
   
   return (0);
 } /* wmcd_open() */
-
-/*
- * Close the CD device.
- */
-int
-wmcd_close(int fd)
-{
-  int	ret;
-  
-  ret = CD_Close(fd);
-  wm_susleep(3000000);
-  return (ret);
-} /* wmcd_close */
 
 /*
  * Re-Open the device if it is open.
@@ -154,13 +139,7 @@ wmcd_reopen( struct wm_drive *d )
   
   do {
     wm_lib_message(WM_MSG_LEVEL_DEBUG|WM_MSG_CLASS, "wmcd_reopen\n");
-    if (d->fd >= 0)		/* Device really open? */
-      {
-	wm_lib_message(WM_MSG_LEVEL_DEBUG|WM_MSG_CLASS, "closing the device.\n");
-	status = wmcd_close( d->fd );   /* close it! */
-	/* we know, that the file is closed, do we? */
-	d->fd = -1;
-      }
+    status = gen_close( d );
     wm_susleep( 1000 );
     wm_lib_message(WM_MSG_LEVEL_DEBUG|WM_MSG_CLASS, "calling wmcd_open()\n");
     status = wmcd_open( d ); /* open it as usual */
@@ -180,6 +159,18 @@ wm_scsi(struct wm_drive *d, unsigned char *cdb, int cdblen,
 	return (-1);
 } /* wm_scsi() */
 
+int
+gen_close( struct wm_drive *d )
+{
+  int	ret = 0;
+  if(d->fd != -1) {
+    wm_lib_message(WM_MSG_LEVEL_DEBUG|WM_MSG_CLASS, "closing the device.\n");
+    ret = CD_Close(d->fd);
+    d->fd = -1;
+    wm_susleep(3000000);
+  }
+  return (ret);
+}
 
 /*
  * Get the current status of the drive: the current play mode, the absolute
@@ -187,8 +178,8 @@ wm_scsi(struct wm_drive *d, unsigned char *cdb, int cdblen,
  * numbers if the CD is playing or paused.
  */
 int
-gen_get_drive_status( struct wm_drive *d, enum wm_cd_modes oldmode, 
-		      enum wm_cd_modes *mode, int *pos, int *track, int *index)
+gen_get_drive_status( struct wm_drive *d, int oldmode, 
+		      int *mode, int *pos, int *track, int *index)
 {
   struct CD_Status		sc;
 
@@ -210,8 +201,7 @@ gen_get_drive_status( struct wm_drive *d, enum wm_cd_modes oldmode,
   /* Disc is ejected.  Close the device. */
   if (CD_GetStatus(d->fd, &sc))
     {
-      wmcd_close(d->fd);
-      d->fd = -1;
+      gen_close(d);
       return (0);
     }
   
@@ -387,8 +377,7 @@ gen_eject( struct wm_drive *d )
   /* Close the device if it needs to vanish. */
   if (intermittent_dev)
     {
-      wmcd_close(d->fd);
-      d->fd = -1;
+      gen_close(d);
     }
   
   return (0);
@@ -404,9 +393,8 @@ int
 gen_closetray(struct wm_drive *d)
 {
 #ifdef CAN_CLOSE
-  if(!wmcd_close(d->fd))
+  if(!gen_close(d))
     {
-      d->fd=-1;
       return(wmcd_reopen(d));
     } else {
       return(-1);

@@ -64,6 +64,25 @@ static char scsi_id[] = "$Id$";
 
 #define WM_MSG_CLASS WM_MSG_CLASS_SCSI
 
+/* local prototypes */
+int wm_scsi_mode_select( struct wm_drive *d, unsigned char *buf, unsigned char len );
+int wm_scsi2_pause_resume(struct wm_drive *d, int resume);
+int wm_scsi2_prevent(struct wm_drive *d, int prevent);
+int wm_scsi2_play(struct wm_drive *d, int sframe, int eframe);
+int wm_scsi2_get_trackinfo(struct wm_drive *d, int track, int *data, int *startframe);
+int wm_scsi2_get_cdlen(struct wm_drive *d, int frames);
+int wm_scsi2_get_drive_status(struct wm_drive *d, int oldmode,
+  int *mode, int *pos, int *track, int *ind);
+int wm_scsi2_get_trackcount(struct wm_drive *d, int *tracks);
+int wm_scsi2_pause(struct wm_drive *d);
+int wm_scsi2_resume(struct wm_drive *d);
+int wm_scsi2_stop(struct wm_drive *d);
+int wm_scsi2_eject(struct wm_drive *d);
+int wm_scsi2_closetray(struct wm_drive *d);
+int wm_scsi2_get_volume(struct wm_drive *d, int *left, int *right);
+int wm_scsi2_set_volume(struct wm_drive *d, int left, int right);
+/* local prototypes END */
+
 /*
  * Send a SCSI command over the bus, with all the CDB bytes specified
  * as unsigned char parameters.  This doesn't use varargs because some
@@ -163,10 +182,7 @@ wm_scsi_mode_sense( struct wm_drive *d, unsigned char page, unsigned char *buf )
  * len	Size of page
  */
 int
-wm_scsi_mode_select(d, buf, len)
-	struct wm_drive	*d;
-	unsigned char	*buf;
-	unsigned char	len;
+wm_scsi_mode_select( struct wm_drive *d, unsigned char *buf, unsigned char len )
 {
 	unsigned char	pagebuf[255];
 	int		i;
@@ -199,16 +215,18 @@ wm_scsi_get_drive_type( struct wm_drive *d, char *vendor,
 {
 /* removed   unsigned*/
 	char		*s, *t, buf[36];
+        memset(buf, 0, 36);
 
 	wm_lib_message(WM_MSG_CLASS_SCSI | WM_MSG_LEVEL_INFO, "Sending SCSI inquiry command...\n");
-	if (sendscsi(d, buf, sizeof(buf), 1, SCMD_INQUIRY, 0, 0, 0, sizeof(buf), 0,0,0,0,0,0,0))
+	if (sendscsi(d, buf, 36, 1, SCMD_INQUIRY, 0, 0, 0, 36, 0,0,0,0,0,0,0))
 	  {
 		sprintf( vendor, WM_STR_GENVENDOR);
 		sprintf( model, WM_STR_GENMODEL);
 		sprintf( rev, WM_STR_GENREV);
 		wm_lib_message(WM_MSG_CLASS_SCSI | WM_MSG_LEVEL_ERROR, "SCSI Inquiry command not supported in this context\n");
-		return (WM_ERR_SCSI_INQUIRY_FAILED);
+		return -1;
 	  }
+
 	wm_lib_message(WM_MSG_CLASS_SCSI | WM_MSG_LEVEL_DEBUG, "sent.\n");
 
 	memcpy(vendor, buf + 8, 8);
@@ -238,9 +256,7 @@ wm_scsi_get_drive_type( struct wm_drive *d, char *vendor,
  * Send a SCSI-2 PAUSE/RESUME command.  "resume" is 1 to resume, 0 to pause.
  */
 int
-wm_scsi2_pause_resume(d, resume)
-	struct wm_drive	*d;
-	int		resume;
+wm_scsi2_pause_resume(struct wm_drive *d, int resume)
 {
 	return (sendscsi(d, NULL, 0, 0, SCMD_PAUSE_RESUME, 0, 0, 0, 0, 0, 0,
 			0, resume ? 1 : 0, 0,0,0));
@@ -251,9 +267,7 @@ wm_scsi2_pause_resume(d, resume)
  * caddy in.
  */
 int
-wm_scsi2_prevent(d, prevent)
-	struct wm_drive	*d;
-	int		prevent;
+wm_scsi2_prevent(struct wm_drive *d, int prevent)
 {
 	return (sendscsi(d, NULL, 0, 0, SCMD_PREVENT, 0, 0, 0, 0, 0, 0,
 			0, prevent ? 1 : 0, 0,0,0));
@@ -264,9 +278,7 @@ wm_scsi2_prevent(d, prevent)
  * frame numbers.
  */
 int
-wm_scsi2_play(d, sframe, eframe)
-	struct wm_drive	*d;
-	int		sframe, eframe;
+wm_scsi2_play(struct wm_drive *d, int sframe, int eframe)
 {
 	return (sendscsi(d, NULL, 0, 0, SCMD_PLAY_AUDIO_MSF, 0, 0,
 			sframe / (60 * 75), (sframe / 75) % 60, sframe % 75,
@@ -279,9 +291,8 @@ wm_scsi2_play(d, sframe, eframe)
  * Fill in track information from the returned data.
  */
 int
-wm_scsi2_get_trackinfo(d, track, data, startframe)
-	struct wm_drive	*d;
-	int		track, *data, *startframe;
+wm_scsi2_get_trackinfo(struct wm_drive *d, int track,
+	int *data, int *startframe)
 {
 	unsigned char	buf[12];	/* one track's worth of info */
 
@@ -301,13 +312,10 @@ wm_scsi2_get_trackinfo(d, track, data, startframe)
  * the length of the disc as far as WorkMan is concerned).
  */
 int
-wm_scsi2_get_cdlen(d, frames)
-	struct wm_drive	*d;
-	int		*frames;
+wm_scsi2_get_cdlen(struct wm_drive *d, int frames)
 {
 	int		tmp;
-
-	return (wm_scsi2_get_trackinfo(d, LEADOUT, &tmp, frames));
+  return (wm_scsi2_get_trackinfo(d, LEADOUT, &tmp, &frames));
 }
 
 /*
@@ -315,10 +323,8 @@ wm_scsi2_get_cdlen(d, frames)
  * READ SUB-CHANNEL command.
  */
 int
-wm_scsi2_get_drive_status(d, oldmode, mode, pos, track, index)
-	struct wm_drive	*d;
-	enum wm_cd_modes oldmode, *mode;
-	int		*pos, *track, *index;
+wm_scsi2_get_drive_status(struct wm_drive *d, int oldmode,
+	int *mode, int *pos, int *track, int *ind)
 {
 	unsigned char	buf[48];
 
@@ -351,7 +357,7 @@ wm_scsi2_get_drive_status(d, oldmode, mode, pos, track, index)
         case SUBQ_STATUS_PLAY:
 		*mode = WM_CDM_PLAYING;
 		*track = buf[6];
-		*index = buf[7];
+		*ind = buf[7];
 		*pos = buf[9] * 60 * 75 + buf[10] * 75 + buf[11];
 		break;
 
@@ -360,7 +366,7 @@ wm_scsi2_get_drive_status(d, oldmode, mode, pos, track, index)
 		{
 			*mode = WM_CDM_PAUSED;
 			*track = buf[6];
-			*index = buf[7];
+			*ind = buf[7];
 			*pos = buf[9] * 60 * 75 +
 				buf[10] * 75 +
 				buf[11];
@@ -415,9 +421,7 @@ wm_scsi2_get_drive_status(d, oldmode, mode, pos, track, index)
  * Get the number of tracks on the CD using the SCSI-2 READ TOC command.
  */
 int
-wm_scsi2_get_trackcount(d, tracks)
-	struct wm_drive	*d;
-	int		*tracks;
+wm_scsi2_get_trackcount(struct wm_drive *d, int *tracks)
 {
 	unsigned char	buf[4];
 
@@ -434,8 +438,7 @@ wm_scsi2_get_trackcount(d, tracks)
  * Pause the CD.
  */
 int
-wm_scsi2_pause(d)
-	struct wm_drive	*d;
+wm_scsi2_pause(struct wm_drive *d)
 {
 	return (wm_scsi2_pause_resume(d, 0));
 }
@@ -444,8 +447,7 @@ wm_scsi2_pause(d)
  * Resume playing after a pause.
  */
 int
-wm_scsi2_resume(d)
-	struct wm_drive	*d;
+wm_scsi2_resume(struct wm_drive *d)
 {
 	return (wm_scsi2_pause_resume(d, 1));
 }
@@ -454,8 +456,7 @@ wm_scsi2_resume(d)
  * Stop playing the CD by sending a START STOP UNIT command.
  */
 int
-wm_scsi2_stop(d)
-	struct wm_drive	*d;
+wm_scsi2_stop(struct wm_drive *d)
 {
 	return (sendscsi(d, NULL, 0, 0, SCMD_START_STOP, 0, 0,0,0,0,0,0,0,0,0,0));
 }
@@ -491,9 +492,7 @@ wm_scsi2_closetray(struct wm_drive *d)
  * Get the volume by doing a MODE SENSE command.
  */
 int
-wm_scsi2_get_volume(d, left, right)
-	struct wm_drive	*d;
-	int		*left, *right;
+wm_scsi2_get_volume(struct wm_drive *d, int *left, int *right)
 {
 	unsigned char	mode[16];
 
@@ -513,9 +512,7 @@ wm_scsi2_get_volume(d, left, right)
  * Set the volume by doing a MODE SELECT command.
  */
 int
-wm_scsi2_set_volume(d, left, right)
-	struct wm_drive	*d;
-	int		left, right;
+wm_scsi2_set_volume(struct wm_drive *d, int left, int right)
 {
 	unsigned char	mode[16];
 
@@ -538,14 +535,14 @@ wm_scsi2_set_volume(d, left, right)
  *
  *
  *------------------------------------------------------------------------*/
+  
 int
 wm_scsi_get_cdtext(struct wm_drive *d, unsigned char **pp_buffer, int *p_buffer_length)
 {
-  int ret, capability;
+  int ret;
   unsigned char temp[8];
   unsigned char *dynamic_temp;
   int cdtext_possible;
-  int pi_buffer_length = *p_buffer_length;
   unsigned short cdtext_data_length;
   unsigned long feature_list_length;
 #define IGNORE_FEATURE_LIST
@@ -558,27 +555,19 @@ wm_scsi_get_cdtext(struct wm_drive *d, unsigned char **pp_buffer, int *p_buffer_
   cdtext_possible = 0;
   wm_lib_message(WM_MSG_LEVEL_DEBUG|WM_MSG_CLASS, "wm_scsi_get_cdtext entered\n");
 
-#ifndef NDEBUG
-  printf("CDTEXT INFO: use GET_FEATURE_LIST(0x46)...\n");
-#endif
+  wm_lib_message(WM_MSG_LEVEL_INFO|WM_MSG_CLASS, "CDTEXT INFO: use GET_FEATURY_LIST(0x46)...\n");
   ret = sendscsi(d, temp, 8, 1,
     0x46, 0x02, 0x00, 0x1E, 0,
     0, 0, 0, 8, 0, 0, 0);
 
   if(ret)
   {
-#ifndef NDEBUG
-    printf("CDTEXT ERROR: GET_FEATURE_LIST(0x46) not implemented or broken. ret = %i!\n", ret);
-#endif
+    wm_lib_message(WM_MSG_LEVEL_INFO|WM_MSG_CLASS, "CDTEXT ERROR: GET_FEATURY_LIST(0x46) not implemented or broken. ret = %i!\n", ret);
 #ifndef IGNORE_FEATURE_LIST
-#ifndef NDEBUG
-    printf("CDTEXT ERROR: Try #define IGNORE_FEATURE_LIST in libwm/scsi.c\n");
-#endif
+    wm_lib_message(WM_MSG_LEVEL_INFO|WM_MSG_CLASS, "CDTEXT ERROR: Try #define IGNORE_FEATURE_LIST in libwm/scsi.c\n");
 #else
     cdtext_possible = 1;
-#ifndef NDEBUG
-    printf("CDTEXT INFO: GET_FEATURE_LIST(0x46) ignored. It's OK, becose many CDROMS don't implement this featury\n");
-#endif
+    wm_lib_message(WM_MSG_LEVEL_INFO|WM_MSG_CLASS, "CDTEXT INFO: GET_FEATURY_LIST(0x46) ignored. It's OK, becose many CDROMS don't implement this featury\n");
 #endif /* IGNORE_FEATURE_LIST */
   }
   else
@@ -623,57 +612,46 @@ wm_scsi_get_cdtext(struct wm_drive *d, unsigned char **pp_buffer, int *p_buffer_
 
   if(!cdtext_possible)
   {
-#ifndef NDEBUG
-    printf("CDTEXT INFO: GET_FEATURE_LIST(0x46) says, CDTEXT is not present!\n");
-#endif
+    wm_lib_message(WM_MSG_LEVEL_INFO|WM_MSG_CLASS, "CDTEXT INFO: GET_FEATURY_LIST(0x46) says, CDTEXT is not present!\n");
     return EXIT_SUCCESS;
   }
 
-#ifndef NDEBUG
-  printf("CDTEXT INFO: try to read, how long CDTEXT is?\n");
-#endif
+  wm_lib_message(WM_MSG_LEVEL_INFO|WM_MSG_CLASS, "CDTEXT INFO: try to read, how long CDTEXT is?\n");
   ret = sendscsi(d, temp, 4, 1,
     SCMD_READ_TOC, 0x00, 0x05, 0, 0, 0,
     0, 0, 4, 0, 0, 0);
 
   if(ret)
   {
-#ifndef NDEBUG
-    printf("CDTEXT ERROR: READ_TOC(0x43) with format code 0x05 not implemented or broken. ret = %i!\n", ret);
-#endif
+    wm_lib_message(WM_MSG_LEVEL_INFO|WM_MSG_CLASS, 
+      "CDTEXT ERROR: READ_TOC(0x43) with format code 0x05 not implemented or broken. ret = %i!\n", ret);
   }
   else
   {
     cdtext_data_length = temp[0]*0xFF + temp[1] + 4 + 1; /* divide by 18 + 4 ? */
     /* cdtext_data_length%18 == 0;? */
-#ifndef NDEBUG
-    printf("CDTEXT INFO: CDTEXT is a %i byte(s) long\n", cdtext_data_length);
-#endif
+    wm_lib_message(WM_MSG_LEVEL_INFO|WM_MSG_CLASS, "CDTEXT INFO: CDTEXT is a %i byte(s) long\n", cdtext_data_length);
     /* cdc_buffer[2];  cdc_buffer[3]; reserwed */
     dynamic_temp = malloc(cdtext_data_length);
     if(!dynamic_temp)
       return -1;
 
     memset(dynamic_temp, 0, cdtext_data_length);
-#ifndef NDEBUG
-    printf("CDTEXT INFO: try to read CDTEXT\n");
-#endif
+    wm_lib_message(WM_MSG_LEVEL_INFO|WM_MSG_CLASS, "CDTEXT INFO: try to read CDTEXT\n");
     ret = sendscsi(d, dynamic_temp, cdtext_data_length, 1,
       SCMD_READ_TOC, 0x00, 0x05, 0, 0, 0,
       0, (cdtext_data_length>>8) & 0xFF, cdtext_data_length & 0xFF, 0, 0, 0);
    
     if(ret)	
     {
-#ifndef NDEBUG
-      printf("CDTEXT ERROR: READ_TOC(0x43) with format code 0x05 not implemented or broken. ret = %i!\n", ret);
-#endif
+      wm_lib_message(WM_MSG_LEVEL_INFO|WM_MSG_CLASS,
+      "CDTEXT ERROR: READ_TOC(0x43) with format code 0x05 not implemented or broken. ret = %i!\n", ret);
     }
     else
     {
       cdtext_data_length = temp[0]*0xFF + temp[1] + 4 + 1; /* divide by 18 + 4 ? */
-#ifndef NDEBUG
-      printf("CDTEXT INFO: read %i byte(s) of CDTEXT\n", cdtext_data_length);
-#endif
+      wm_lib_message(WM_MSG_LEVEL_INFO|WM_MSG_CLASS, "CDTEXT INFO: read %i byte(s) of CDTEXT\n", cdtext_data_length);
+
       /* send cdtext only 18 bytes packs * ? */
       *(p_buffer_length) = cdtext_data_length - 4;
       *pp_buffer = malloc(*p_buffer_length);

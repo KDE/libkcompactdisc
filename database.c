@@ -54,7 +54,18 @@ static char database_id[] = "$Id$";
 
 #define WM_MSG_CLASS WM_MSG_CLASS_DB
 
-#define SWALLOW_LINE(fp) { int c; while ((c = getc(fp)) != '\n' && c != EOF); }
+#define SWALLOW_LINE(fp) { int _c; while ((_c = getc(fp)) != '\n' && _c != EOF); }
+
+/* local prototypes */
+char *print_cdinfo(struct wm_cdinfo *pcd, int prefs);
+FILE *open_rcfile(const char *name, const char *mode);
+int *reset_tracks(void);
+int search_db( FILE *fp, int prefs, int scan, int holesize_wanted );
+void spinwheels(int secs);
+int lockit(int fd, int type);
+void save_globals(FILE *fp);
+int save_entry(char *filename, int pref);
+/* local prototypes END */
 
 int	suppress_locking = 0;	/* Turn off locking of datafile (dangerous) */
 
@@ -366,7 +377,7 @@ print_cdinfo(struct wm_cdinfo *cd, int prefs)
  *	mode		"r" or "w"
  */
 FILE *
-open_rcfile(char *name, char *mode)
+open_rcfile(const char *name, const char *mode)
 {
 	FILE		*fp;
 	struct stat	st;

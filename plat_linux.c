@@ -90,6 +90,10 @@ typedef unsigned long long __u64;
 # define SCSI_IOCTL_SEND_COMMAND 1
 #endif
 
+#ifdef BUILD_CDDA
+int gen_cdda_init( struct wm_drive *d );
+#endif
+
 int	min_volume = 0;
 int	max_volume = 255;
 
@@ -97,9 +101,8 @@ int	max_volume = 255;
 int mixer;
 char mixer_dev_name[20] = "/dev/mixer";
 #endif
-extern char	*cd_device, *cddaslave_path;
-
-int	cdda_slave = -1;
+/*const char *cddaslave_path = "/home/kernalex/devel/kdemultimedia-3.0.6/kscd/libwm/.libs/cddaslave";*/
+const char *cddaslave_path = "cddaslave";
 
 /*-------------------------------------------------------*
  *
@@ -126,11 +129,10 @@ wmcd_open( struct wm_drive *d )
 {
   int		fd;
   static int	warned = 0;
-  int		retval = 0;
   char vendor[32], model[32], rev[32];
   
-  if (cd_device == NULL)
-    cd_device = DEFAULT_CD_DEVICE;
+  if (d->cd_device == NULL)
+    d->cd_device = DEFAULT_CD_DEVICE;
     
   
   if (d->fd >= 0)		/* Device already open? */
@@ -139,7 +141,7 @@ wmcd_open( struct wm_drive *d )
       return (0);
     }
   
-  fd = open(cd_device, O_RDONLY | O_NONBLOCK);
+  fd = open(d->cd_device, O_RDONLY | O_NONBLOCK);
 
   if (fd < 0)
     {
@@ -157,23 +159,30 @@ wmcd_open( struct wm_drive *d )
 	}
       
       /* No CD in drive. */
-      retval = 1;
+      return 1;
     }
   
-  
-#ifdef LINUX_SCSI_PASSTHROUGH
-  /* Can we figure out the drive type? */
-  retval = wm_scsi_get_drive_type(d, vendor, model, rev);
-  if (retval == WM_ERR_SCSI_INQUIRY_FAILED)
-    wm_lib_message(WM_MSG_LEVEL_DEBUG|WM_MSG_CLASS, "wmcd_open(): After failed inquiry\n");
-#endif
-
-  *d = *(find_drive_struct(vendor, model, rev));
-  wm_drive_settype(vendor, model, rev);
-  
+  /* Now fill in the relevant parts of the wm_drive structure. */
   d->fd = fd;
-  (d->init)(d);
-  return retval;
+
+
+  /* Can we figure out the drive type? */
+  if (wm_scsi_get_drive_type(d, vendor, model, rev)) {
+    wm_lib_message(WM_MSG_LEVEL_DEBUG|WM_MSG_CLASS, "wmcd_open(): inquiry failed\n");
+    strcpy(vendor, "Generic");
+    strcpy(model, "drive type");
+    strcpy(rev, "");
+  }
+
+  if(find_drive_struct(vendor, model, rev) < 0) {
+    gen_close(d);
+    return -1;
+  }
+
+  if(d->proto->gen_init)
+    return (d->proto->gen_init)(d);
+  
+  return 0;
 } /* wmcd_open() */
 
 /*
@@ -187,12 +196,7 @@ wmcd_reopen( struct wm_drive *d )
   
   do {
     wm_lib_message(WM_MSG_LEVEL_DEBUG|WM_MSG_CLASS, "wmcd_reopen\n");
-    if (d->fd >= 0)		/* Device really open? */
-      {
-	wm_lib_message(WM_MSG_LEVEL_DEBUG|WM_MSG_CLASS, "closing the device\n");
-	if(!close( d->fd ))   /* close it! */
-	  d->fd = -1;      /* closed */
-      }
+    gen_close(d);
     wm_susleep( 1000 );
     wm_lib_message(WM_MSG_LEVEL_DEBUG|WM_MSG_CLASS, "calls wmcd_open()\n");
     status = wmcd_open( d ); /* open it as usual */
@@ -258,7 +262,7 @@ wm_scsi( struct wm_drive *d, unsigned char *cdb, int cdblen,
 
   struct cdrom_generic_command cdc;
   struct request_sense sense;
-  int ret, capability;
+  int capability;
 
   wm_lib_message(WM_MSG_LEVEL_DEBUG|WM_MSG_CLASS, "wm_scsi over CDROM_SEND_PACKET entered\n");
 
@@ -267,9 +271,6 @@ wm_scsi( struct wm_drive *d, unsigned char *cdb, int cdblen,
   if(!(capability & CDC_GENERIC_PACKET))
   {
     wm_lib_message(WM_MSG_LEVEL_DEBUG|WM_MSG_CLASS, "your CDROM or/and kernel don't support CDC_GENERIC_PACKET ...\n");
-#ifndef NDEBUG
-    printf("your CDROM or/and kernel don't support CDC_GENERIC_PACKET ...\n");
-#endif
     return -1;
   }
 
@@ -292,6 +293,17 @@ wm_scsi( struct wm_drive *d, unsigned char *cdb, int cdblen,
   return (-1);
 #endif
 } /* wm_scsi */
+
+int
+gen_close( struct wm_drive *d )
+{
+  if(d->fd != -1) {
+    wm_lib_message(WM_MSG_LEVEL_DEBUG|WM_MSG_CLASS, "closing the device\n");
+    close(d->fd);
+    d->fd = -1;
+  }
+  return 0;
+}
 
 /*--------------------------------*
  * Keep the CD open all the time.
@@ -340,8 +352,8 @@ keep_cd_open( void )
  * numbers if the CD is playing or paused.
  *--------------------------------------------------------------------------*/
 int
-gen_get_drive_status( struct wm_drive *d, enum wm_cd_modes oldmode,
-                      enum wm_cd_modes *mode, int *pos, int *track, int *index )
+gen_get_drive_status( struct wm_drive *d, int oldmode,
+  int *mode, int *pos, int *track, int *ind )
 {
   struct cdrom_subchnl		sc;
   
@@ -373,13 +385,13 @@ gen_get_drive_status( struct wm_drive *d, enum wm_cd_modes oldmode,
   sc.cdsc_format = CDROM_MSF;
  
   if (ioctl(d->fd, CDROMSUBCHNL, &sc))
-    return (0);
+    return 1;
   
   switch (sc.cdsc_audiostatus) {
   case CDROM_AUDIO_PLAY:
     *mode = WM_CDM_PLAYING;
     *track = sc.cdsc_trk;
-    *index = sc.cdsc_ind;
+    *ind = sc.cdsc_ind;
     *pos = sc.cdsc_absaddr.msf.minute * 60 * 75 +
       sc.cdsc_absaddr.msf.second * 75 +
       sc.cdsc_absaddr.msf.frame;
@@ -403,7 +415,7 @@ gen_get_drive_status( struct wm_drive *d, enum wm_cd_modes oldmode,
       {
 	*mode = WM_CDM_PAUSED;
 	*track = sc.cdsc_trk;
-	*index = sc.cdsc_ind;
+	*ind = sc.cdsc_ind;
 	*pos = sc.cdsc_absaddr.msf.minute * 60 * 75 +
 	  sc.cdsc_absaddr.msf.second * 75 +
 	  sc.cdsc_absaddr.msf.frame;
@@ -477,7 +489,7 @@ gen_get_cdlen(struct wm_drive *d, int *frames)
  * Play the CD from one position to another (both in frames.)
  *------------------------------------------------------------*/
 int
-gen_play(struct wm_drive *d, int start, int end)
+gen_play(struct wm_drive *d, int start, int end, int realstart)
 {
   struct cdrom_msf		msf;
 
@@ -584,7 +596,7 @@ gen_eject(struct wm_drive *d)
     }
   while ((mnt = getmntent (fp)) != NULL)
     {
-      if (strcmp (mnt->mnt_fsname, cd_device) == 0)
+      if (strcmp (mnt->mnt_fsname, d->cd_device) == 0)
 	{
 	  wm_lib_message(WM_MSG_LEVEL_ERROR|WM_MSG_CLASS, "CDROM already mounted (according to mtab). Operation aborted.\n");
 	  endmntent (fp);
@@ -616,10 +628,7 @@ gen_eject(struct wm_drive *d)
      * device open.
      */
     if (intermittent_dev)
-      {
-	close(d->fd);
-	d->fd = -1;
-      }			  
+      gen_close(d);
 #endif
   
   return (0);
@@ -639,9 +648,8 @@ gen_closetray(struct wm_drive *d)
     return (-1);
 #else
   wm_lib_message(WM_MSG_LEVEL_DEBUG|WM_MSG_CLASS, "wmcd_reopen() closing tray...\n");
-  if(!close(d->fd))
+  if(!gen_close(d))
     {
-      d->fd=-1;
       return(wmcd_reopen(d));
     } else {
       return(-1);
@@ -692,6 +700,19 @@ gen_set_volume( struct wm_drive *d, int left, int right )
   return (ioctl(d->fd, CDROMVOLCTRL, &v));
 } /* gen_set_volume() */
 
+/*---------------------------------------------------------------------*
+ * Read the initial volume from the drive, if available.  Each channel
+ * ranges from 0 to 100, with -1 indicating data not available.
+ *---------------------------------------------------------------------*/
+int
+gen_get_volume( struct wm_drive *d, int *left, int *right )
+{
+  /* Suns, HPs, Linux, NEWS can't read the volume; oh well */
+  *left = *right = -1;
+
+  return 0;
+} /* gen_get_volume() */
+
 /*------------------------------------------------------------------------*
  * gen_get_cdtext(drive, buffer, lenght)
  *
@@ -708,40 +729,8 @@ gen_get_cdtext(struct wm_drive *d, unsigned char **pp_buffer, int *p_buffer_leng
   return wm_scsi_get_cdtext(d, pp_buffer, p_buffer_lenght);
 } /* gen_get_cdtext() */
 
-/*---------------------------------------------------------------------*
- * Read the initial volume from the drive, if available.  Each channel
- * ranges from 0 to 100, with -1 indicating data not available.
- *---------------------------------------------------------------------*/
-int
-gen_get_volume( struct wm_drive *d, int *left, int *right )
-{
-#if defined(BUILD_CDDA) && defined(WMCDDA_DONE) /* { */
-  struct cdda_block	blk;
   
-  if (cdda_slave > -1)
-    {
-      write(cdda_slave, "G", 1);
-      get_ack(cdda_slave);
-      read(cdda_slave, &blk, sizeof(blk));
-      
-      *left = *right = (blk.volume * 100 + 254) / 255;
-      
-      if (blk.balance < 110)
-	{
-	  *right = (((blk.volume * blk.balance + 127) / 128) *
-		    100 + 254) / 255;
-	} else if (blk.balance > 146) {
-	  *left = (((blk.volume * (255 - blk.balance) +
-		     127) / 128) * 100 + 254) / 255;
-	}
-      return (0);
-    }
-#else /* } */
-  /* Suns, HPs, Linux, NEWS can't read the volume; oh well */
-  *left = *right = -1;
-#endif
-  return (0);
-} /* gen_get_volume() */
+#ifdef BUILD_CDDA
 
 /*-------------------------------------------------------*
  *
@@ -751,19 +740,17 @@ gen_get_volume( struct wm_drive *d, int *left, int *right )
  *
  *-------------------------------------------------------*/
 
-#ifdef BUILD_CDDA /* { */
-
 /*
  * Try to initialize the CDDA slave.  Returns 0 on error.
  */
 int
-cdda_init( struct wm_drive *d )
+gen_cdda_init( struct wm_drive *d )
 {
-#if defined(WMCDDA_DONE) /* { */
+#if defined(WMCDDA_DONE)
   int	slavefds[2];
   
-  if (cdda_slave > -1)
-    return (1);
+  if (d->cdda_slave > -1)
+    return (0);
   
 #ifndef NDEBUG
   fprintf( stderr, "slave okay\n" );
@@ -771,7 +758,7 @@ cdda_init( struct wm_drive *d )
   if (socketpair(AF_UNIX, SOCK_STREAM, 0, slavefds))
     {
       perror("socketpair");
-      return (0);
+      return (-2);
     }
   
 #ifndef NDEBUG
@@ -785,9 +772,9 @@ cdda_init( struct wm_drive *d )
     close(slavefds[1]);
     close(d->fd);
     /* Try the default path first. */
-    execl(cddaslave_path, cddaslave_path, cd_device, (void *)0);
+    execl(cddaslave_path, cddaslave_path, d->cd_device, (void *)0);
     /* Search $PATH if that didn't work. */
-    execlp("cddaslave", "cddaslave", cd_device, (void *)0);
+    execlp("cddaslave", "cddaslave", d->cd_device, (void *)0);
     perror(cddaslave_path);
     exit(1);
     
@@ -795,137 +782,31 @@ cdda_init( struct wm_drive *d )
     close(slavefds[0]);
     close(slavefds[1]);
     perror("fork");
-    return (0);
+    return (-3);
   }
   
   close(slavefds[1]);
-  cdda_slave = slavefds[0];
+  d->cdda_slave = slavefds[0];
   
-  if (!get_ack(cdda_slave))
+  if (!get_ack(d->cdda_slave))
     {
 #ifndef NDEBUG
       fprintf( stderr, "get_ack failed\n" );
 #endif
-      cdda_slave = -1;
+      d->cdda_slave = -1;
       /*		codec_start(); */
-      return (0);
+      return (-4);
     }
-  return (1);
+  return (0);
 
-#else /* BUILD_CDDA only } { */
+#else
   /*
    * If we're not building CDDA support, don't even bother trying.
    */
-  return (0);
-#endif
+  return (-1);
+#endif /*  defined(WMCDDA_DONE) */
 } /* cdda_init()  */
 
-/*
- * Wait for an acknowledgement from the CDDA slave.
- */
-static int
-get_ack(int fd)
-{
-#if defined(WMCDDA_DONE) /* { */
-  struct cdda_block	blk;
-  
-  do {
-    if (read(fd, &blk, sizeof(blk)) <= 0)
-      {
-	return (0);
-      }
-  } while (blk.status != WMCDDA_ACK);
-#endif /* } */
-	return (1);
-} /* get_ack() */
-
-/*
- * Turn off the CDDA slave.
- */
-void
-cdda_kill( struct wm_drive *d )
-{
-  if (cdda_slave > -1)
-    {
-      write(cdda_slave, "Q", 1);
-      get_ack(cdda_slave);
-      wait(NULL);
-      cdda_slave = -1;
-      /*		codec_start(); */
-    }
-} /* cdda_kill() */
-
-
-/*
- * Tell the CDDA slave to set the play direction.
- */
-void
-gen_set_direction( int newdir )
-{
-  unsigned char	buf[2];
-  
-  if (cdda_slave > -1)
-    {
-      buf[0] = 'd';
-      buf[1] = newdir;
-      write(cdda_slave, buf, 2);
-      get_ack(cdda_slave);
-    }
-}
-
-/*
- * Tell the CDDA slave to set the play speed.
- */
-void
-gen_set_speed( int speed )
-{
-  unsigned char	buf[2];
-  
-  if (cdda_slave > -1)
-    {
-      buf[0] = 's';
-      buf[1] = speed;
-      write(cdda_slave, buf, 2);
-      get_ack(cdda_slave);
-    }
-} /* gen_set_speed() */
-
-/*
- * Tell the CDDA slave to set the loudness level.
- */
-void
-gen_set_loudness( int loud )
-{
-  unsigned char	buf[2];
-  
-  if (cdda_slave > -1)
-    {
-      buf[0] = 'L';
-      buf[1] = loud;
-      write(cdda_slave, buf, 2);
-      get_ack(cdda_slave);
-    }
-} /* gen_set_loudness() */
-
-/*
- * Tell the CDDA slave to start (or stop) saving to a file.
- */
-void
-gen_save( char *filename )
-{
-  int	len;
-  
-  if (filename == NULL || filename[0] == '\0')
-    len = 0;
-  else
-    len = strlen(filename);
-  write(cdda_slave, "F", 1);
-  write(cdda_slave, &len, sizeof(len));
-  if (len)
-    write(cdda_slave, filename, len);
-  get_ack(cdda_slave);
-} /* gen_save() */
-
-#endif /* BUILD_CDDA } */
+#endif /* BUILD_CDDA */
 
 #endif /* __linux__ */

@@ -51,6 +51,9 @@ static char cdrom_id[] = "$Id$";
 #include <fcntl.h>
 #endif
 
+/* local prototypes */
+int read_toc(void);
+
 #define WM_MSG_CLASS WM_MSG_CLASS_CDROM
 
 /* extern struct wm_drive generic_proto, toshiba_proto, sony_proto; */
@@ -62,10 +65,10 @@ static char cdrom_id[] = "$Id$";
  * put long names before their shorter prefixes.)
  */
 struct drivelist {
-	char		*ven;
-	char		*mod;
-	char		*rev;
-	struct wm_drive	*proto;
+  const char *ven;
+  const char *mod;
+  const char *rev;
+  struct wm_drive_proto *proto;
 } drives[] = {
 {	"TOSHIBA",		"XM-3501",		NULL,		&toshiba_proto	},
 {	"TOSHIBA",		"XM-3401",		NULL,		&toshiba_proto	},
@@ -81,89 +84,135 @@ struct drivelist {
  * Solaris 2.2 will remove the device out from under us.  Getting an ENOENT
  * is therefore sometimes not a problem.
  */
-int	intermittent_dev = 0;
-
-/*
- * Do we want to keep the CD device open after quitting by default?
- *
-   int	keep_open = 0;
- */
-
-#if defined DEFAULT_CD_DEVICE
-char	*cd_device = DEFAULT_CD_DEVICE;
-#else
-char	*cd_device = NULL;
-#endif
-
+int intermittent_dev = 0;
 
 int wm_cd_cur_balance = 10;
+int wm_cur_cdmode = WM_CDM_UNKNOWN;
+char *wm_cd_device = NULL; /* do not use this extern */
 
-struct wm_drive	drive = { -1, "", "", "", NULL, NULL };
+struct wm_drive drive = {
+  0,
+  NULL,
+  NULL,
+  NULL,
+  NULL,
+  -1,
+  -1,
+  NULL,
+  NULL,
+  NULL,
+  NULL,
+  NULL,
 
-char _wm_drive_vendor[32] = 	"Generic";
-char _wm_drive_model[32] = 	"drive type";
-char _wm_drive_revision[32] =	"";
+  NULL
+};
 
+extern struct wm_cdinfo thiscd;
+
+/*
+ * Macro magic
+ *
+ */
+#define FREE(x); if(x) free(x); x = NULL;
+
+#define STRDUP(old, neu); \
+  if(old) free(old); old = NULL;\
+  if(neu) old = strdup(neu);
+
+#define CARRAY(id) ((id)-1)
+
+#define DATATRACK 1
+/*
+ * init the workmanlib
+ */
+int wm_cd_init( int cdin, const char *cd_device, const char *soundsystem,
+  const char *sounddevice, const char *ctldevice )
+{
+  drive.cdda = (WM_CDDA == cdin);
+#if 1
+  if(drive.cdda) {
+    return -1;
+  }
+#endif
+  wm_cd_destroy();
+
+  STRDUP(wm_cd_device, cd_device);
+  drive.cd_device = wm_cd_device;
+  STRDUP(drive.soundsystem, soundsystem);
+  STRDUP(drive.sounddevice, sounddevice);
+  STRDUP(drive.ctldevice, ctldevice);
+
+  return wm_cd_status();
+}
+
+int wm_cd_destroy( void )
+{
+  free_cdtext();
+
+  if(drive.fd != -1) {
+    /* first free one old */
+    if(drive.proto && drive.proto->gen_close)
+      drive.proto->gen_close(&drive);
+    else
+      close(drive.fd);
+  }
+  drive.fd = -1;
+  FREE(wm_cd_device);
+  FREE(drive.soundsystem);
+  FREE(drive.sounddevice);
+  FREE(drive.ctldevice);
+  FREE(drive.vendor);
+  FREE(drive.model);
+  FREE(drive.revision);
+
+  return 0;
+}
 /*
  * Give information about the drive we found during wmcd_open()
  */
-
-char *wm_drive_vendor( void )
+const char *wm_drive_vendor( void )
 {
-	char *s = NULL;
-
-	wm_strmcpy( &s, _wm_drive_vendor );
-	return s;
+  return drive.vendor?drive.vendor:"";
 }
 
-char *wm_drive_model( void )
+const char *wm_drive_model( void )
 {
-	char *s = NULL;
-
-	wm_strmcpy( &s, _wm_drive_model );
-	return s;
+  return drive.model?drive.model:"";
 }
 
-char *wm_drive_revision( void )
+const char *wm_drive_revision( void )
 {
-	char *s = NULL;
-
-	wm_strmcpy( &s, _wm_drive_revision );
-	return s;
-}
-
-void wm_drive_settype( char *vendor, char *model, char *revision )
-{
-	sprintf( _wm_drive_vendor, "%s", vendor );
-	sprintf( _wm_drive_model, "%s", model );
-	sprintf( _wm_drive_revision, "%s", revision );
+  return drive.revision?drive.revision:"";
 }
 
 /*
  * Figure out which prototype drive structure we should be using based
  * on the vendor, model, and revision of the current drive.
  */
-struct wm_drive *
-find_drive_struct(char *vendor, char *model, char *rev)
+int
+find_drive_struct(const char *vendor, const char *model, const char *rev)
 {
 	struct drivelist	*d;
 
-	for (d = drives; d; d++)
-	{
+  for (d = drives; d; d++) {
 		if( ( (d->ven != NULL) && strncmp(d->ven, vendor, strlen(d->ven)) ) ||
 		    ( (d->mod != NULL) && strncmp(d->mod, model, strlen(d->mod)) ) ||
 		    ( (d->rev != NULL) && strncmp(d->rev, rev, strlen(d->rev)) ) )
 			continue;
 		
-		if (d->proto->vendor[0] == '\0')
-			strcpy(d->proto->vendor, vendor);
-		if (d->proto->model[0] == '\0')
-			strcpy(d->proto->model, model);
+    if(!(d->proto))
+      goto fail;
 
-		return (d->proto);
-	}
+    STRDUP(drive.vendor, vendor);
+    STRDUP(drive.model, model);
+    STRDUP(drive.revision, rev);
 
-	return (NULL);	/* this means the list is badly terminated. */
+    drive.proto = d->proto;
+    return 0;
+  }
+
+fail:
+  return -1;
 } /* find_drive_struct() */
 
 /*
@@ -175,469 +224,251 @@ find_drive_struct(char *vendor, char *model, char *rev)
  *
  * XXX allocates one trackinfo too many.
  */
-struct wm_cdinfo *
-read_toc()
+int
+read_toc( void )
 {
-
         struct wm_playlist *l;
         int    i;
         int    pos;
 
-	if(drive.get_trackcount == NULL)
-	{
-		perror("trackcount: function pointer NULL");
-		return (NULL);
-	}
+  if(drive.proto->gen_get_trackcount &&
+    (drive.proto->gen_get_trackcount)(&drive, &thiscd.ntracks) < 0) {
+    return -1 ;
+  }
 
-	if ((drive.get_trackcount)(&drive, &thiscd.ntracks) < 0)
-	{
-		perror("trackcount");
-		return NULL ;
-	}
+  thiscd.artist[0] = thiscd.cdname[0] = '\0';
+  thiscd.whichdb = thiscd.otherrc = thiscd.otherdb = thiscd.user = NULL;
+  thiscd.length = 0;
+  thiscd.autoplay = thiscd.playmode = thiscd.volume = 0;
 
-	thiscd.artist[0] = thiscd.cdname[0] = '\0';
-	thiscd.whichdb = thiscd.otherrc = thiscd.otherdb = thiscd.user = NULL;
-	thiscd.length = 0;
-	thiscd.autoplay = thiscd.playmode = thiscd.volume = 0;
+  /* Free up any left-over playlists. */
+  if (thiscd.lists != NULL) {
+    for (l = thiscd.lists; l->name != NULL; l++) {
+      free(l->name);
+      free(l->list);
+    }
+    free(thiscd.lists);
+    thiscd.lists = NULL;
+  }
 
-	/* Free up any left-over playlists. */
-	if (thiscd.lists != NULL)
-	{
-		for (l = thiscd.lists; l->name != NULL; l++)
-		{
-			free(l->name);
-			free(l->list);
-		}
-		free(thiscd.lists);
-		thiscd.lists = NULL;
-	}
+  if (thiscd.trk != NULL)
+    free(thiscd.trk);
 
-	if (thiscd.trk != NULL)
-		free(thiscd.trk);
+  thiscd.trk = malloc((thiscd.ntracks + 1) * sizeof(struct wm_trackinfo));
+  if (thiscd.trk == NULL) {
+    perror("malloc");
+    return -1;
+  }
 
-	thiscd.trk = malloc((thiscd.ntracks + 1) * sizeof(struct wm_trackinfo));
-	if (thiscd.trk == NULL)
-	{
-		perror("malloc");
-		return (NULL);
-	}
+  for (i = 0; i < thiscd.ntracks; i++) {
+    if(drive.proto->gen_get_trackinfo &&
+      (drive.proto->gen_get_trackinfo)(&drive, i + 1, &thiscd.trk[i].data,
+      &thiscd.trk[i].start) < 0) {
+      return -1;
+    }
 
-	for (i = 0; i < thiscd.ntracks; i++)
-	{
-		if(drive.get_trackinfo == NULL)
-		{
-			perror("CD track info read: function pointer null");
-			return (NULL);
-		}
+    thiscd.trk[i].avoid = thiscd.trk[i].data;
+    thiscd.trk[i].length = thiscd.trk[i].start / 75;
 
-		if ((drive.get_trackinfo)(&drive, i + 1, &thiscd.trk[i].data,
-					&thiscd.trk[i].start) < 0)
-		{
-			perror("CD track info read");
-			return (NULL);
-		}
+    thiscd.trk[i].songname = thiscd.trk[i].otherrc =
+    thiscd.trk[i].otherdb = NULL;
+    thiscd.trk[i].contd = 0;
+    thiscd.trk[i].volume = 0;
+    thiscd.trk[i].track = i + 1;
+    thiscd.trk[i].section = 0;
+  }
 
-		thiscd.trk[i].avoid = thiscd.trk[i].data;
-		thiscd.trk[i].length = thiscd.trk[i].start / 75;
-
-		thiscd.trk[i].songname = thiscd.trk[i].otherrc =
-		thiscd.trk[i].otherdb = NULL;
-		thiscd.trk[i].contd = 0;
-		thiscd.trk[i].volume = 0;
-		thiscd.trk[i].track = i + 1;
-		thiscd.trk[i].section = 0;
-	}
-
-	if(drive.get_cdlen == NULL)
-	{
-		perror("CD length read: function pointer null");
-		return (NULL);
-	}
-
-	if ((drive.get_cdlen)(&drive, &thiscd.trk[i].start) < 0)
-	{
-		perror("CD length read");
-		return (NULL);
-	}
-	thiscd.trk[i].length = thiscd.trk[i].start / 75;
+  if(drive.proto->gen_get_cdlen &&
+     (drive.proto->gen_get_cdlen)(&drive, &thiscd.trk[i].start) < 0) {
+    return -1;
+  }
+  thiscd.trk[i].length = thiscd.trk[i].start / 75;
 
 /* Now compute actual track lengths. */
-	pos = thiscd.trk[0].length;
+  pos = thiscd.trk[0].length;
+  for (i = 0; i < thiscd.ntracks; i++) {
+    thiscd.trk[i].length = thiscd.trk[i+1].length - pos;
+    pos = thiscd.trk[i+1].length;
+    if (thiscd.trk[i].data)
+      thiscd.trk[i].length = (thiscd.trk[i + 1].start - thiscd.trk[i].start) * 2;
+      if (thiscd.trk[i].avoid)
+        wm_strmcpy(&thiscd.trk[i].songname, "DATA TRACK");
+  }
 
-	for (i = 0; i < thiscd.ntracks; i++)
-	{
-		thiscd.trk[i].length = thiscd.trk[i+1].length - pos;
-		pos = thiscd.trk[i+1].length;
-		if (thiscd.trk[i].data)
-			thiscd.trk[i].length = (thiscd.trk[i + 1].start -
-				thiscd.trk[i].start) * 2;
-		if (thiscd.trk[i].avoid)
-			wm_strmcpy(&thiscd.trk[i].songname, "DATA TRACK");
-	}
-
-	thiscd.length = thiscd.trk[thiscd.ntracks].length;
-        thiscd.cddbid = cddb_discid(drive);
+  thiscd.length = thiscd.trk[thiscd.ntracks].length;
+  thiscd.cddbid = cddb_discid();
         
-	wm_lib_message(WM_MSG_LEVEL_DEBUG|WM_MSG_CLASS_MISC, "read_toc() returning &thiscd\n");
-	return (&thiscd);
+  wm_lib_message(WM_MSG_LEVEL_DEBUG|WM_MSG_CLASS, "read_toc() successful\n");
+  return 0;
 } /* read_toc() */
 
 /*
  * wm_cd_status()
  *
  * Return values:
- *
- *	0	No CD in drive.
- *	1	CD in drive.
- *	2	CD has just been inserted (TOC has been read)
- *
- * Updates cur_track, cur_pos_rel, cur_pos_abs and other variables.
+ *     see wm_cdrom.h
+ * 
+ * Updates variables.
  */
 int
 wm_cd_status( void )
 {
-	static enum wm_cd_modes	oldmode = WM_CDM_UNKNOWN;
-	enum wm_cd_modes		mode;
-	int			status, trackno = cur_track;
-	int			ret = WM_CDS_DISC_READY;
+  static int oldmode = WM_CDM_UNKNOWN;
+  int mode;
+  int status;
+
+  if(wm_cur_cdmode == WM_CDM_EJECTED ||
+     wm_cur_cdmode == WM_CDM_DEVICECHANGED) {
+    /* device was be changed */
+
+    if(drive.proto && drive.proto->gen_close)
+      drive.proto->gen_close(&drive);
+    wm_cur_cdmode = WM_CDM_UNKNOWN;
+
+    cur_pos_abs = cur_pos_rel = cur_frame = 0;
+    cur_pos_rel = cur_pos_abs = 0;
+  }
+
+  if(wm_cur_cdmode == WM_CDM_UNKNOWN) {
+    /*
+     * Open the drive.
+     * This returns >0 if the device isn't ready and <0 if error.
+     */
         
-	if( cur_cdmode == WM_CDM_DEVICECHANGED )
-	  {
-	    /* Don't open the device now */
-	    close( drive.fd );
-	    drive.fd = -1;
-	    status = 0;
-	    wmcd_open( &drive );
-	  } else {
-	    /* Open the drive.  This returns 1 if the device isn't ready. */
-	    status = wmcd_open( &drive );
-	    if (status < 0)
-	      return (status);
-	    if (status > 0)
-	      return (WM_CDS_NO_DISC);
-	  }
+    status = wmcd_open( &drive );
 
-	/* If the user hit the stop button, don't pass PLAYING as oldmode.
-         * Likewise, if we've just started playing, don't remember that
-         * we were stopped before (or the state machine in get_drive_status
-         * can get confused.)
-         */
-	if( (cur_cdmode == WM_CDM_STOPPED) || (cur_cdmode == WM_CDM_PLAYING) )
-		oldmode = cur_cdmode;
+    if (status < 0)
+      return status;
+    if (status > 0)
+      return WM_CDM_NO_DISC;
 
-	if(drive.get_drive_status == NULL)
-	{
-		perror("CD get drive status: function pointer NULL");
-		return (WM_CDM_UNKNOWN);
-	}
+    if(read_toc())
+      return WM_CDM_NO_DISC;
 
-	if( (drive.get_drive_status)(&drive, oldmode, &mode, &cur_frame,
-					&trackno, &cur_index) < 0)
-	{
-		perror("CD get drive status");
-		return (WM_CDM_UNKNOWN);
-	}
-	oldmode = mode;
+    /* fresh cdtext info */
+    get_glob_cdtext(&drive, 1);
 
-        if ((mode == WM_CDM_EJECTED || mode == WM_CDM_UNKNOWN) && (cur_cdmode != WM_CDM_DEVICECHANGED) )
-	{
-		cur_cdmode = WM_CDM_EJECTED;
-		cur_track = -1;
-		cur_cdlen = cur_tracklen = 1;
-		cur_pos_abs = cur_pos_rel = cur_frame = 0;
+    wm_cur_cdmode = WM_CDM_STOPPED;
+    thiscd.curtrack = 0;
+  }
 
-		return (WM_CDS_NO_DISC);
-	}
+  /* If the user hit the stop button, don't pass PLAYING as oldmode.
+   * Likewise, if we've just started playing, don't remember that
+   * we were stopped before (or the state machine in get_drive_status
+   * can get confused.)
+   */
+  if( (wm_cur_cdmode == WM_CDM_STOPPED) || (wm_cur_cdmode == WM_CDM_PLAYING) )
+    oldmode = wm_cur_cdmode;
 
-	/* If there wasn't a CD before and there is now, learn about it. 
-	 * If the device has changed, this will close the old fd and     
-         * re-open the device before gathering information */
-	if (cur_cdmode == WM_CDM_EJECTED || cur_cdmode == WM_CDM_DEVICECHANGED)
-	{
+  if(drive.proto->gen_get_drive_status &&
+    (drive.proto->gen_get_drive_status)(&drive, oldmode, &mode, &cur_frame,
+    &(thiscd.curtrack), &cur_index) < 0) {
+    perror("WM gen_get_drive_status");
+    return -1;
+  }
 
-	        cur_track = -1;
-		cur_pos_abs = cur_pos_rel = cur_frame = 0;
+  oldmode = mode;
 
-		cur_pos_rel = cur_pos_abs = 0;
+  if((mode == WM_CDM_EJECTED || mode == WM_CDM_UNKNOWN) &&
+    (wm_cur_cdmode != WM_CDM_DEVICECHANGED)) {
+    wm_cur_cdmode = WM_CDM_EJECTED;
+    thiscd.curtrack = -1;
+    thiscd.length = thiscd.curtracklen = 1;
+    cur_pos_abs = cur_pos_rel = cur_frame = 0;
+  
+    return wm_cur_cdmode;
+  }
+  
+  /*
+   * it seems all driver have'nt state for stop
+   */
+  if(WM_CDM_PAUSED == mode && 0 == cur_frame) {
+    mode = WM_CDM_STOPPED;
+    thiscd.curtrack = 0;
+  }
 
-		status = wmcd_reopen( &drive );
+  switch (mode) {
+  case WM_CDM_PLAYING:
+  case WM_CDM_PAUSED:
+    cur_pos_abs = cur_frame / 75;
+    /* search for right track */
+    for(thiscd.curtrack = thiscd.ntracks;
+        thiscd.curtrack > 1 && cur_frame < thiscd.trk[CARRAY(thiscd.curtrack)].start;
+        thiscd.curtrack--)
+      ;
 
-		if ((cd = read_toc()) == NULL)
-                {
-		    wm_lib_message(WM_MSG_LEVEL_DEBUG|WM_MSG_CLASS_MISC,"status: returned toc was NULL\n");
-		    cur_cdmode = WM_CDM_NO_DISC;
-		    return (WM_CDM_UNKNOWN);
-		}
+    /* Fall through */
 
-		cur_nsections = 0;
-		cur_ntracks = cd->ntracks;
-		cur_cdlen = cd->length;
-		cur_artist = cd->artist;
-		cur_cdname = cd->cdname;
-		cur_cdmode = WM_CDM_STOPPED;
-		ret = WM_CDS_JUST_INSERTED;
-	}
 
-	switch (mode) {
-	case WM_CDM_PLAYING:
-	case WM_CDM_PAUSED:
-		cur_pos_abs = cur_frame / 75;
+  case WM_CDM_UNKNOWN:
+    if (mode == WM_CDM_UNKNOWN)
+    {
+      mode = WM_CDM_STOPPED;
+      cur_lasttrack = cur_firsttrack = -1;
+    }
+    /* Fall through */
 
-		/* Only look up the current track number if necessary. */
-		if (cur_track < 1 || cur_frame < cd->trk[cur_track-1].start ||
-				cur_frame >= (cur_track >= cur_ntracks ?
-				(cur_cdlen + 1) * 75 :
-				cd->trk[cur_track].start))
-		{
-			cur_track = 0;
-			while (cur_track < cur_ntracks && cur_frame >=
-					cd->trk[cur_track].start)
-				cur_track++;
-		}
-		if (cur_track >= 1 && trackno > cd->trk[cur_track-1].track)
-			cur_track++;
-		/* Fall through */
+  case WM_CDM_STOPPED:
+    if(thiscd.curtrack >= 1 && thiscd.curtrack <= thiscd.ntracks && thiscd.trk != NULL) {
+      cur_trackname = thiscd.trk[CARRAY(thiscd.curtrack)].songname;
+      cur_avoid = thiscd.trk[CARRAY(thiscd.curtrack)].avoid;
+      cur_contd = thiscd.trk[CARRAY(thiscd.curtrack)].contd;
+      cur_pos_rel = (cur_frame - thiscd.trk[CARRAY(thiscd.curtrack)].start) / 75;
+      if (cur_pos_rel < 0)
+        cur_pos_rel = -cur_pos_rel;
+    }
+    if((playlist != NULL) && playlist[0].start & (cur_listno > 0)) {
+      cur_pos_abs -= thiscd.trk[playlist[CARRAY(cur_listno)].start - 1].start / 75;
+      cur_pos_abs += playlist[CARRAY(cur_listno)].starttime;
+    }
+    if (cur_pos_abs < 0)
+      cur_pos_abs = cur_frame = 0;
 
-	case WM_CDM_UNKNOWN:
-		if (mode == WM_CDM_UNKNOWN)
-		{
-			mode = WM_CDM_STOPPED;
-			cur_lasttrack = cur_firsttrack = -1;
-		}
-		/* Fall through */
+    if (thiscd.curtrack < 1)
+      thiscd.curtracklen = thiscd.length;
+    else
+      thiscd.curtracklen = thiscd.trk[CARRAY(thiscd.curtrack)].length;
+    /* Fall through */
 
-	case WM_CDM_STOPPED:
-		if (cur_track >= 1 && cur_track <= cur_ntracks && cd->trk != NULL)
-		{
-			cur_trackname = cd->trk[cur_track-1].songname;
-			cur_avoid = cd->trk[cur_track-1].avoid;
-			cur_contd = cd->trk[cur_track-1].contd;
-			cur_pos_rel = (cur_frame -
-				cd->trk[cur_track-1].start) / 75;
-			if (cur_pos_rel < 0)
-				cur_pos_rel = -cur_pos_rel;
-		}
-
-		if( (playlist != NULL) && playlist[0].start & (cur_listno > 0))
-		{
-			cur_pos_abs -= cd->trk[playlist[cur_listno-1].
-				start - 1].start / 75;
-			cur_pos_abs += playlist[cur_listno-1].starttime;
-		}
-		if (cur_pos_abs < 0)
-			cur_pos_abs = cur_frame = 0;
-
-		if (cd == NULL)
-        {
-            ret = WM_CDM_UNKNOWN;
-			cur_tracklen = 0;
-        }
-		else if (cur_track < 1)
-			cur_tracklen = cd->length;
-		else
-			cur_tracklen = cd->trk[cur_track-1].length;
-		/* Fall through */
-
-	case WM_CDM_TRACK_DONE:
-		cur_cdmode = mode;
-		break;
-	case WM_CDM_FORWARD:
-	case WM_CDM_EJECTED:
-        case WM_CDM_DEVICECHANGED: /* to shut up the compiler */
-        case WM_CDM_NO_DISC:       /* ditto */
-		break;
-	}
-
-	return (ret);
+  case WM_CDM_TRACK_DONE:
+    wm_cur_cdmode = mode;
+    break;
+  case WM_CDM_FORWARD:
+  case WM_CDM_EJECTED:
+    break;	
+  }
+  wm_lib_message(WM_MSG_LEVEL_DEBUG|WM_MSG_CLASS,
+    "wm_cd_status returning %s\n", gen_status(wm_cur_cdmode));
+  return wm_cur_cdmode;
 }
 
-#undef CLIF_VOL 
-#ifdef CLIF_VOL
-/*
- * cd_volume(vol, bal, max)
- *
- * Set the volume levels.  "vol" and "bal" are the volume and balance knob
- * settings, respectively.  "max" is the maximum value of the volume knob
- * (the balance knob is assumed to always go from 0 to 20.)
- */
-void
-cd_volume(vol, bal, max)
-	int	vol, bal, max;
+int
+wm_cd_getcurtrack( void )
 {
-	int	left, right, scale;
-
-/*
- * Set "left" and "right" to volume-slider values accounting for the
- * balance setting.
- */
-/*	printf("Vol = %d, Bal = %d, Max = %d\n", vol, bal, max);
-*/
-
-        vol  = (vol * 100 + max - 16) / max;  
-	scale = (vol + 5) / 10;
-
-        if (bal < 9)
-	{
-                right = vol - scale * (10 - bal);
-#ifdef SYMETRIC_BALANCE
-		left  = vol + scale * (10 - bal);
-#else
-		left = vol;
-#endif
-        }
-	else if (bal > 11)
-	{
-#ifdef SYMETRIC_BALANCE		
-                right = vol + scale * (bal - 10);
-#else
-		right = vol;
-#endif
-		left  = vol - scale * (bal - 10);
-        }
-	else
-                left = right = vol;
-
-/*
- * some plat_*.c is missing the limitation
- */
-	left = left < 0 ? 0 : left > 100 ? 100 : left;
-	right = right < 0 ? 0 : right > 100 ? 100 : right;
-/*	printf("Left = %d, Right = %d\n", left, right);
-*/
-	if(drive.set_volume != NULL)
-		(void) (drive.set_volume)(&drive, left, right);
-} /* cd_volume() */
-
-#else
-
-/*
- * cd_volume(vol, bal, max)
- *
- * Set the volume levels.  "vol" and "bal" are the volume and balance knob
- * settings, respectively.  "max" is the maximum value of the volume knob
- * (the balance knob is assumed to always go from 0 to 20.)
- */
-void
-cd_volume( int vol, int bal, int max )
+  if(WM_CDS_NO_DISC(wm_cur_cdmode))
+    return 0;
+    
+  return thiscd.curtrack;
+}
+  
+int
+wm_cd_getcurtracklen( void )
 {
-	int	left, right;
-
-/*
- * Set "left" and "right" to volume-slider values accounting for the
- * balance setting.
- *
- * XXX - the maximum volume setting is assumed to be in the 20-30 range.
- */
-	if (bal < 9)
-		right = vol - (9 - bal) * 2;
-	else
-		right = vol;
-	if (bal > 11)
-		left = vol - (bal - 11) * 2;
-	else
-		left = vol;
-
-	left = (left * 100 + max - 1) / max;
-	right = (right * 100 + max - 1) / max;
-	if (left > 100)
-		left = 100;
-	if (right > 100)
-		right = 100;
-
-	if(drive.set_volume != NULL)
-		(void) (drive.set_volume)(&drive, left, right);
-} /* cd_volume() */
-
-#endif /* CLIF_VOL */
-
-
-/*
- * wm_cd_pause()
- *
- * Pause the CD, if it's in play mode.  If it's already paused, go back to
- * play mode.
- */
-void
-wm_cd_pause( void )
-{
-	static int paused_pos;
-
-	if (cur_cdmode == WM_CDM_EJECTED)	/* do nothing if there's no CD! */
-		return;
-
-	switch (cur_cdmode) {
-	case WM_CDM_PLAYING:		/* playing */
-		cur_cdmode = WM_CDM_PAUSED;
-		if(drive.pause != NULL)
-			(drive.pause)(&drive);
-
-		paused_pos = cur_pos_rel;
-		break;
-
-	case WM_CDM_PAUSED:		/* paused */
-		cur_cdmode = WM_CDM_PLAYING;
-/*		(drive.resume)(&drive); */
-		if(drive.resume != NULL)
-			if ((drive.resume)(&drive) > 0 )
-      	wm_cd_play(cur_track, paused_pos, playlist[cur_listno-1].end);
-		break;
-
-	default: /* */
-		break;	
-	}
-} /* wm_cd_pause() */
-
-/*
- * wm_cd_stop()
- *
- * Stop the CD if it's not already stopped.
- */
-void
-wm_cd_stop( void )
-{
-	if (cur_cdmode == WM_CDM_EJECTED)
-		return;
-
-	if (cur_cdmode != WM_CDM_STOPPED)
-	{
-		cur_lasttrack = cur_firsttrack = -1;
-		cur_cdmode = WM_CDM_STOPPED;
-		
-    if(drive.stop != NULL)
-			(drive.stop)(&drive);
-
-		cur_track = 1;
-	}
-} /* wm_cd_stop() */
-
-
-void
-wm_cd_get_cdtext( void )
-{
-  wm_get_cdtext(&drive);
+  if(WM_CDS_NO_DISC(wm_cur_cdmode))
+    return 0;
+    
+  return thiscd.curtracklen;
 }
 
-/*
- * wm_cd_play_chunk(start, end)
- *
- * Play the CD from one position to another (both in frames.)
- */
-void
-wm_cd_play_chunk( int start, int end, int realstart )
+int
+wm_cd_getcountoftracks( void )
 {
-        if(drive.get_drive_status == NULL)
-	  return;
-
-	if (cur_cdmode == WM_CDM_EJECTED || cd == NULL)
-		return;
-
-	end--;
-	if (start >= end)
-		start = end-1;
-
-	if(drive.play != NULL)
-		(drive.play)(&drive, start, end, realstart);
+  if(WM_CDS_NO_DISC(wm_cur_cdmode))
+    return 0;
+    
+  return thiscd.ntracks;
 }
+
 
 /*
  * wm_cd_play(starttrack, pos, endtrack)
@@ -645,74 +476,143 @@ wm_cd_play_chunk( int start, int end, int realstart )
  * Start playing the CD or jump to a new position.  "pos" is in seconds,
  * relative to start of track.
  */
-void
+int
 wm_cd_play( int start, int pos, int end )
 {
-        if(drive.get_drive_status == NULL)
-	  return;
+  int real_start, real_end;
+  
+  wm_cd_status();
+  if(wm_cur_cdmode == WM_CDM_EJECTED || thiscd.ntracks < 1)
+    return -1;
 
-        if (cur_cdmode == WM_CDM_EJECTED || cd == NULL)
-		return;
+  /*
+   * check ranges
+   */
+  for(real_end = thiscd.ntracks; (thiscd.trk[CARRAY(real_end)].data == DATATRACK); real_end--)
+    ;
+  for(real_start = 1; (thiscd.trk[CARRAY(real_start)].data == DATATRACK); real_start++)
+    ;
+  
+  if(end == WM_ENDTRACK) end = real_end;
+  if(end > real_end) end = real_end;
+  
+  /*
+   * handle as overrun
+   */
+  if(start < real_start) start = real_end;
+  if(start > real_end) start = real_start;
+  
+  /*
+   * Try to avoid mixed mode and CD-EXTRA data tracks
+   */
+  if(start > end || thiscd.trk[CARRAY(start)].data == DATATRACK) {
+    wm_cd_stop();
+    return -1;
+  }
+  
+  cur_firsttrack = start;
+  cur_lasttrack = end;
 
-        /*
-         * Try to avoid mixed mode and CD-EXTRA data tracks
-         */
-        if( (start == 1) && (cd->trk[start-1].data == 1))
-          {
-            start++;
-          }
+  wm_cd_play_chunk(thiscd.trk[CARRAY(start)].start + pos * 75, end = thiscd.ntracks ?
+    thiscd.length * 75 : thiscd.trk[CARRAY(end)].start - 1, thiscd.trk[CARRAY(start)].start);
+  /* So we don't update the display with the old frame number */
+  wm_cd_status();
 
-        /* -2: -1 (array-index) + -1 (leadout->last track)*/
-        if( (cd->trk[end-2].data == 1 ) )
-          {
-            end--;
-          }
-
-        /* CD-EXTRA: The data track was requested to play.
-         * Play the last audio track instead.
-         */
-        if( start >= end )
-          {
-            start = end-1;
-          }
-
-	cur_firsttrack = start;
-	start--;
-	end--;
-	cur_lasttrack = end;
-
-        /* Don't play if it's just one data track or still a data track */
-        if( start < 0 ) start = 0;
-        if( cd->trk[start].data == 1 )
-          {
-            wm_cd_status();
-            cur_cdmode = WM_CDM_STOPPED;
-            return;
-          }
-
-        wm_cd_play_chunk(cd->trk[start].start + pos * 75, end >= cur_ntracks ?
-                         cur_cdlen * 75 : cd->trk[end].start - 1,
-                         cd->trk[start].start);
-	/* So we don't update the display with the old frame number */
-	wm_cd_status();
-	cur_frame = cd->trk[start].start + pos * 75;
-	cur_track = cur_firsttrack;
-	cur_cdmode = WM_CDM_PLAYING;
+  return thiscd.curtrack;
 }
+  
+/*
+ * wm_cd_play_chunk(start, end)
+ *
+ * Play the CD from one position to another (both in frames.)
+ */
+int
+wm_cd_play_chunk( int start, int end, int realstart )
+{
+  if (wm_cur_cdmode == WM_CDM_EJECTED)
+    return -1;
+  
+  end--;
+  if (start >= end)
+    start = end-1;
+  
+  if(!(drive.proto) || !(drive.proto->gen_play)) {
+    perror("WM gen_play:  function pointer NULL");
+    return -1;
+  }
 
+  return (drive.proto->gen_play)(&drive, start, end, realstart);
+}
+  
 /*
  * Set the offset into the current track and play.  -1 means end of track
  * (i.e., go to next track.)
  */
-void
+int
 wm_cd_play_from_pos( int pos )
 {
-	if (pos == -1)
-		if (cd)
-			pos = cd->trk[cur_track - 1].length - 1;
-	if (cur_cdmode == WM_CDM_PLAYING)
-		wm_cd_play(cur_track, pos, playlist[cur_listno-1].end);
+  if (pos == -1)
+    pos = thiscd.trk[thiscd.curtrack - 1].length - 1;
+
+  if (wm_cur_cdmode == WM_CDM_PLAYING)
+    return wm_cd_play(thiscd.curtrack, pos, playlist[cur_listno-1].end);
+  else
+    return -1;
 } /* wm_cd_play_from_pos() */
+
+/*
+ * wm_cd_pause()
+ *
+ * Pause the CD, if it's in play mode.  If it's already paused, go back to
+ * play mode.
+ */
+int
+wm_cd_pause( void )
+{
+  static int paused_pos;
+  int status = wm_cd_status();
+
+  if(WM_CDS_NO_DISC(status)) /* do nothing if there's no CD! */
+    return -1;
+
+  if(WM_CDM_PLAYING == wm_cur_cdmode) {
+    if(drive.proto->gen_pause)
+      (drive.proto->gen_pause)(&drive);
+
+    paused_pos = cur_pos_rel;
+  } else if(WM_CDM_PAUSED == status) {
+    if(!(drive.proto->gen_resume) || (drive.proto->gen_resume(&drive) > 0)) {
+      wm_cd_play(thiscd.curtrack, paused_pos, playlist[cur_listno-1].end);
+    }
+  } else {
+    return -1;
+  }
+  wm_cd_status();
+  return 0;
+} /* wm_cd_pause() */
+
+/*
+ * wm_cd_stop()
+ *
+ * Stop the CD if it's not already stopped.
+ */
+int
+wm_cd_stop( void )
+{
+  int status = wm_cd_status();
+
+  if(WM_CDS_NO_DISC(status)) /* do nothing if there's no CD! */
+    return -1;
+
+  if (status != WM_CDM_STOPPED) {
+    if(drive.proto->gen_stop)
+      (drive.proto->gen_stop)(&drive);
+
+    status = wm_cd_status();
+  }
+  
+  return (status != WM_CDM_STOPPED);
+} /* wm_cd_stop() */
 
 /*
  * Eject the current CD, if there is one, and set the mode to 5.
@@ -723,43 +623,41 @@ wm_cd_play_from_pos( int pos )
 int
 wm_cd_eject( void )
 {
-	int	status;
+  int status = -1;
 
-	if(drive.eject == NULL)
-	{
-		perror("Could not eject CD: function pointer NULL");
-		return (1);
-	}
+  wm_cd_stop();
 
-	status = (drive.eject)(&drive);
-	if (status < 0)
-	{
-		if (status == -3)
-		{
-			return (2);
-		} else {
-			return (1);
-		}
-	}
-	
-	cur_track = -1;
-	cur_cdlen = cur_tracklen = 1;
-	cur_pos_abs = cur_pos_rel = cur_frame = 0;
-	cur_cdmode = WM_CDM_EJECTED;
+  if(drive.proto->gen_eject)
+    status = (drive.proto->gen_eject)(&drive);
 
-	return (0);
+  if (status < 0) {
+    if (status == -3) {
+      return 2;
+    } else {
+      return 1;
+    }
+  }
+
+  wm_cd_status();
+
+  return 0;
 }
 
 int wm_cd_closetray(void)
 {
-	if(drive.closetray == NULL)
-	{
-		perror("Could not close drive tray: function pointer NULL");
-		return (1);
-	}
+  int err = -1;
+  if(drive.proto->gen_closetray)
+    err = (drive.proto->gen_closetray)(&drive);
 
-	return((drive.closetray)(&drive) ? 0 : wm_cd_status()==2 ? 1 : 0);
+  return(err ? 0 : wm_cd_status()==2 ? 1 : 0);
 } /* wm_cd_closetray() */
+
+struct cdtext_info*
+wm_cd_get_cdtext( void )
+{
+  wm_cd_status();
+  return get_glob_cdtext(&drive, 0);
+}
 
 /*
  * find_trkind(track, index, start)
@@ -775,23 +673,26 @@ int wm_cd_closetray(void)
  * it's a fair bet the index in question doesn't exist.
  */
 int
-find_trkind( int track, int index, int start )
+wm_find_trkind( int track, int ind, int start )
 {
 	int	top = 0, bottom, current, interval, ret = 0, i;
 
-	if( cur_cdmode == WM_CDM_EJECTED || cd == NULL )
-		return ( 0 ); /* WARNING: was nothing */
+  if(wm_cur_cdmode == WM_CDM_EJECTED)
+    return 0; /* WARNING: was nothing */
 
-	for (i = 0; i < cur_ntracks; i++)
-		if (cd->trk[i].track == track)
+  for (i = 0; i < thiscd.ntracks; i++) {
+    if (thiscd.trk[i].track == track)
 			break;
-	bottom = cd->trk[i].start;
+  }
 
-	for (; i < cur_ntracks; i++)
-		if (cd->trk[i].track > track)
+  bottom = thiscd.trk[i].start;
+
+  for (; i < thiscd.ntracks; i++) {
+    if (thiscd.trk[i].track > track)
 			break;
+  }
 
-	top = i == cur_ntracks ? (cd->length - 1) * 75 : cd->trk[i].start;
+  top = i == thiscd.ntracks ? (thiscd.length - 1) * 75 : thiscd.trk[i].start;
 
 	if (start > bottom && start < top)
 		bottom = start;
@@ -803,85 +704,131 @@ find_trkind( int track, int index, int start )
 		wm_cd_play_chunk(current, current + 75, current);
 
 		if (wm_cd_status() != 1)
-			return (0);
-		while (cur_frame < current)
-			if (wm_cd_status() != 1 || cur_cdmode != WM_CDM_PLAYING)
-				return (0);
+      return 0;
+    while (cur_frame < current) {
+      if (wm_cd_status() != 1 || wm_cur_cdmode != WM_CDM_PLAYING)
+        return 0;
 			else
 				wm_susleep(1);
+    }
 
-		if (cd->trk[cur_track - 1].track > track)
+    if (thiscd.trk[thiscd.curtrack - 1].track > track)
 			break;
 
-		if (cur_index >= index)
-		{
+    if (cur_index >= ind) {
 			ret = current;
 			current -= interval;
-		}
-		else
+    } else {
 			current += interval;
+    }
+
 		interval /= 2;
+
 	} while (interval > 2);
 
-	return (ret);
+  return ret;
 } /* find_trkind() */
 
-/*
- * Read the initial volume from the drive, if available.  Set cur_balance to
- * the balance level (0-20, 10=centered) and return the proper setting for
- * the volume knob.
- *
- * "max" is the maximum value of the volume knob.
- */
 int
-wm_cd_read_initial_volume( int max )
+wm_cd_set_verbosity( int level )
 {
-	int	left, right;
+  wm_lib_set_verbosity(level);
+  return wm_lib_get_verbosity();
+}
 
-	if(drive.get_volume != NULL)
-		if ((drive.get_volume)(&drive, &left, &right) < 0 || left == -1)
-			return (max);
+/*
+ * volume is valid WM_VOLUME_MUTE <= vol <= WM_VOLUME_MAXIMAL,
+ * balance is valid WM_BALANCE_ALL_LEFTS <= balance <= WM_BALANCE_ALL_RIGHTS
+ */
 
-	left = (left * max + 99) / 100;
-	right = (right * max + 99) / 100;
+int
+wm_cd_volume( int vol, int bal )
+{
+  int left, right;
+  const int bal1 = (vol - WM_VOLUME_MUTE)/(WM_BALANCE_ALL_RIGHTS - WM_BALANCE_SYMMETRED);
 
-	if (left < right)
-	{
-		wm_cd_cur_balance = (right - left) / 2 + 11;
-		if (wm_cd_cur_balance > 20)
-			wm_cd_cur_balance = 20;
+/*
+ * Set "left" and "right" to volume-slider values accounting for the
+ * balance setting.
+ *
+ */
+  if(vol < WM_VOLUME_MUTE) vol = WM_VOLUME_MUTE;
+  if(vol > WM_VOLUME_MAXIMAL) vol = WM_VOLUME_MAXIMAL;
+  if(bal < WM_BALANCE_ALL_LEFTS) bal = WM_BALANCE_ALL_LEFTS;
+  if(bal > WM_BALANCE_ALL_RIGHTS) bal = WM_BALANCE_ALL_RIGHTS;
+  
+  left = vol - (bal * bal1);
+  right = vol + (bal * bal1);
+  
+  wm_lib_message(WM_MSG_LEVEL_DEBUG|WM_MSG_CLASS, "calculate volume left %i, right %i\n", left, right);
+  
+  if (left > WM_VOLUME_MAXIMAL)
+    left = WM_VOLUME_MAXIMAL;
+  if (right > WM_VOLUME_MAXIMAL)
+    right = WM_VOLUME_MAXIMAL;
 
-		return (right);
-	}
-	else if (left == right)
-	{
-		wm_cd_cur_balance = 10;
-		return (left);
-	}
-	else
-	{
-		wm_cd_cur_balance = (right - left) / 2 + 9;
-		if (wm_cd_cur_balance < 0)
-			wm_cd_cur_balance = 0;
+  if(!(drive.proto) || !(drive.proto->gen_set_volume))
+    return -1;
+  else
+    return (drive.proto->gen_set_volume)(&drive, left, right);
+} /* cd_volume() */
 
-		return (left);
-	}
-} /* wm_cd_read_initial_volume() */
+int
+wm_cd_getvolume( void )
+{
+  int left, right;
+
+  if(!(drive.proto) || !(drive.proto->gen_get_volume) ||
+    (drive.proto->gen_get_volume)(&drive, &left, &right) < 0 || left == -1)
+    return -1;
+
+  if (left < right) {
+    wm_cd_cur_balance = (right - left) / 2;
+    if (wm_cd_cur_balance > WM_BALANCE_ALL_RIGHTS)
+      wm_cd_cur_balance = WM_BALANCE_ALL_RIGHTS;
+    return right;
+  } else if (left == right) {
+    wm_cd_cur_balance = WM_BALANCE_SYMMETRED;
+    return left;
+  } else {
+    wm_cd_cur_balance = (right - left) / 2;
+    if (wm_cd_cur_balance < WM_BALANCE_ALL_LEFTS)
+      wm_cd_cur_balance = WM_BALANCE_ALL_LEFTS;
+    return left;
+  }
+}
+
+int
+wm_cd_getbalance( void )
+{
+  int left, right;
+
+  if(!(drive.proto) || !(drive.proto->gen_get_volume) ||
+    (drive.proto->gen_get_volume)(&drive, &left, &right) < 0 || left == -1)
+    return WM_BALANCE_SYMMETRED;
+
+  if (left < right) {
+    wm_cd_cur_balance = (right - left) / 2;
+    if (wm_cd_cur_balance > WM_BALANCE_ALL_RIGHTS)
+      wm_cd_cur_balance = WM_BALANCE_ALL_RIGHTS;
+  } else if (left == right) {
+    wm_cd_cur_balance = WM_BALANCE_SYMMETRED;
+  } else {
+    wm_cd_cur_balance = (right - left) / 2;
+    if (wm_cd_cur_balance < WM_BALANCE_ALL_LEFTS)
+      wm_cd_cur_balance = WM_BALANCE_ALL_LEFTS;
+  }
+  return wm_cd_cur_balance;
+}
 
 /*
  * Prototype wm_drive structure, with generic functions.  The generic functions
  * will be replaced with drive-specific functions as appropriate once the drive
  * type has been sensed.
  */
-struct wm_drive generic_proto = {
-	-1,			/* fd */
-	"Generic\0",		/* vendor */
-	"drive type\0     ",	/* model */
-	"\0",			/* revision */
-	NULL,			/* aux */
-	NULL,			/* daux */
-
-	gen_init,		/* functions... */
+struct wm_drive_proto generic_proto = {
+	gen_init, /* functions... */
+	gen_close,
 	gen_get_trackcount,
 	gen_get_cdlen,
 	gen_get_trackinfo,
@@ -896,3 +843,38 @@ struct wm_drive generic_proto = {
 	gen_closetray,
 	gen_get_cdtext
 };
+
+const char*
+gen_status(int status)
+{
+  static char tmp[250];
+  switch(status) {
+  case WM_CDM_TRACK_DONE:
+    return "WM_CDM_TRACK_DONE";
+  case WM_CDM_PLAYING:
+    return "WM_CDM_PLAYING";
+  case WM_CDM_FORWARD:
+    return "WM_CDM_FORWARD";
+  case WM_CDM_PAUSED:
+    return "WM_CDM_PAUSED";
+  case WM_CDM_STOPPED:
+    return "WM_CDM_STOPPED";
+  case WM_CDM_EJECTED:
+    return "WM_CDM_EJECTED";
+  case WM_CDM_DEVICECHANGED:
+    return "WM_CDM_DEVICECHANGED";
+  case WM_CDM_NO_DISC:
+    return "WM_CDM_NO_DISC";
+  case WM_CDM_UNKNOWN:
+    return "WM_CDM_UNKNOWN";
+  case WM_CDM_CDDAERROR:
+    return "WM_CDM_CDDAERROR";
+  case WM_CDM_CDDAACK:
+    return "WM_CDM_CDDAACK";
+  default:
+    {
+      sprintf(tmp, "unexpected status %i", status);
+      return tmp;
+    }
+  }
+}

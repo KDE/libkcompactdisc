@@ -60,8 +60,6 @@ wmcd_open(struct wm_drive *d)
   char  model[32] = WM_STR_GENMODEL;
   char    rev[32] = WM_STR_GENREV;
 
-  int fd;
-
   if( ! d )
     {
       errno = EFAULT;
@@ -74,29 +72,20 @@ wmcd_open(struct wm_drive *d)
       return 0;
     }
 
-  if( cd_device == (char *)NULL )
-    cd_device = DEFAULT_CD_DEVICE;
+  if( d->cd_device == (char *)NULL )
+    d->cd_device = DEFAULT_CD_DEVICE;
 
   /* open() goes here */
 
-  *d = *(find_drive_struct(vendor, model, rev));
-  wm_drive_settype(vendor, model, rev);
+  if(find_drive_struct(vendor, model, rev)) {
+    gen_close(d);
+    return -1;
+  }
   
-  d->fd = fd;
   d->init(d);
 
   return (0);
 } /* wmcd_open() */
-
-/*
- * close the CD device
- */
-
-int
-wmcd_close( int fd )
-{
-    return close( fd );
-} /* wmcd_close() */
 
 /*
  * Re-Open the device if it is open.
@@ -108,13 +97,7 @@ wmcd_reopen( struct wm_drive *d )
 
 	do {
           wm_lib_message(WM_MSG_LEVEL_DEBUG, "wmcd_reopen\n");
-	  if (d->fd >= 0)		/* Device really open? */
-	    {
-               wm_lib_message(WM_MSG_LEVEL_DEBUG, "closing the device\n");
-	       status = wmcd_close( d->fd );   /* close it! */
-	       /* we know, that the file is closed, do we? */
-               d->fd = -1;
-	    }
+	  status = gen_close( d );
 	  wm_susleep( 1000 );
           wm_lib_message(WM_MSG_LEVEL_DEBUG, "calling wmcd_open()\n");
 	  status = wmcd_open( d ); /* open it as usual */
@@ -134,14 +117,29 @@ wm_scsi(struct wm_drive *d,
   return (0);
 } /* wm_scsi() */
 
+/*
+ * close the CD device
+ */
+
+int
+gen_close(struct wm_drive *d)
+{
+    if(d->fd != -1) {
+      wm_lib_message(WM_MSG_LEVEL_DEBUG, "closing the device\n");
+      close(d->fd);
+      d->fd = -1;
+    }
+    return 0;
+} /* gen_close() */
+
 /* 
  * gen_get_drive_status()
  *
  */
 int 
 gen_get_drive_status(struct wm_drive *d,
-			 enum wm_cd_modes oldmode,
-			 enum wm_cd_modes *mode,
+			 int oldmode,
+			 int *mode,
 			 int *pos,
 			 int *track,
 			 int *index)

@@ -54,8 +54,6 @@ static char plat_aix_id[] = "$Id$";
 
 #define LEADOUT 0xaa
 
-extern char *cd_device;
-
 int min_volume = 128;
 int max_volume = 255;
 
@@ -101,18 +99,17 @@ wmcd_open(struct wm_drive *d)
       return 0;
     }
 
-  if( cd_device == (char *)NULL )
-    cd_device = DEFAULT_CD_DEVICE;
+  if( d->cd_device == (char *)NULL )
+    d->cd_device = DEFAULT_CD_DEVICE;
 
-  if( (fd = openx(cd_device,O_RDONLY,NULL,SC_SINGLE)) < 0 )
+  if( (fd = openx(d->cd_device,O_RDONLY,NULL,SC_SINGLE)) < 0 )
     {
       perror("openx");
       return -6;
       /* return 1 */
     }
   
-  *d = *(find_drive_struct(vendor, model, rev));
-  wm_drive_settype(vendor, model, rev);
+  find_drive_struct(vendor, model, rev);
   
   d->fd = fd;
   d->init(d);
@@ -129,13 +126,7 @@ wmcd_reopen( struct wm_drive *d )
   
   do {
     wm_lib_message(WM_MSG_LEVEL_DEBUG|WM_MSG_CLASS, "wmcd_reopen\n");
-    if (d->fd >= 0)		/* Device really open? */
-      {
-	wm_lib_message(WM_MSG_LEVEL_DEBUG|WM_MSG_CLASS, "closing the device\n");
-	status = close( d->fd );   /* close it! */
-	/* we know, that the file is closed, do we? */
-	d->fd = -1;
-      }
+    status = gen_close( d );
     wm_susleep( 1000 );
     wm_lib_message(WM_MSG_LEVEL_DEBUG|WM_MSG_CLASS, "calling wmcd_open()\n");
     status = wmcd_open( d ); /* open it as usual */
@@ -159,6 +150,16 @@ wm_scsi(struct wm_drive *d,
   return 0;
 } /* wm_scsi() */
 
+int
+gen_close( struct wm_drive *d )
+{
+  if(d->fd != -1) {
+    wm_lib_message(WM_MSG_LEVEL_DEBUG|WM_MSG_CLASS, "closing the device\n");
+    close(d->fd);
+    d->fd = -1;
+  }
+  return 0;
+}
 
 /* NAME: gen_get_drive_status
  *
@@ -168,8 +169,8 @@ wm_scsi(struct wm_drive *d,
  */
 int 
 gen_get_drive_status(struct wm_drive *d,
-		     enum wm_cd_modes oldmode,
-		     enum wm_cd_modes *mode,
+		     int oldmode,
+		     int *mode,
 		     int *pos,
 		     int *track,
 		     int *index)

@@ -49,6 +49,7 @@ static char cddb_id[] = "$Id$";
 #include "include/wm_struct.h"
 #include "include/wm_cdinfo.h"
 #include "include/wm_helpers.h"
+#include "include/wm_cddb.h"
 
 /*
  * This is for identifying WorkMan at CDDB servers
@@ -58,11 +59,27 @@ static char cddb_id[] = "$Id$";
 
 struct wm_cddb cddb;
 
+extern struct wm_cdinfo thiscd;
 int cur_cddb_protocol;
 char *cur_cddb_server;
 char *cur_cddb_mail_adress;
 char *cur_cddb_path_to_cgi;
 char *cur_cddb_proxy_server;
+
+/* local prototypes */
+int cddb_sum(int);
+char *string_split(char *line, char delim);
+void string_makehello(char *line, char delim);
+int connect_open(void);
+void connect_close(void);
+void connect_getline(char *line);
+void connect_read_entry(void);
+void cddbp_send(const char *line);
+void cddbp_read(char *category, unsigned int id);
+void http_send(char* line);
+void http_read(char *category, unsigned int id);
+void cddb_request(void);
+/* local prototypes END */
 
 int Socket;
 FILE *Connection;
@@ -357,7 +374,7 @@ connect_read_entry(void)
  * Send a command to the server using cddbp
  */
 void
-cddbp_send(char *line)
+cddbp_send(const char *line)
 {
 	write(Socket, line, strlen(line));
 	write(Socket, "\n", 1);

@@ -53,7 +53,7 @@ int	cur_tracklen;	/* Length in seconds of current track */
 int	cur_cdlen;	/* Length in seconds of entire CD */
 int	cur_ntracks;	/* Number of tracks on CD (= tracks + sections) */
 int	cur_nsections;	/* Number of sections currently defined */
-enum wm_cd_modes	cur_cdmode = WM_CDM_EJECTED;
+
 int	cur_listno;	/* Current index into the play list, if playing */
 char *	cur_artist;	/* Name of current CD's artist */
 char *	cur_cdname;	/* Album name */
@@ -343,7 +343,7 @@ listentry( int num )
  *
  * Return a track's name.
  */
-char *
+const char *
 trackname( int num )
 {
 	if (num >= 0 && num < cur_ntracks) 

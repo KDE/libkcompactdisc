@@ -43,15 +43,9 @@ static int	sony_get_volume( struct wm_drive *d, int *left, int *right );
 
 extern int	min_volume, max_volume;
 
-struct wm_drive sony_proto = {
-	-1,			/* fd */
-	"Sony",			/* vendor */
-	"CDU-8012",		/* model */
-	"",			/* revision */
-	NULL,			/* aux */
-	NULL,			/* daux */
-
+struct wm_drive_proto sony_proto = {
 	sony_init,		/* functions... */
+	gen_close,
 	gen_get_trackcount,
 	gen_get_cdlen,
 	gen_get_trackinfo,
@@ -63,7 +57,8 @@ struct wm_drive sony_proto = {
 	gen_stop,
 	gen_play,
 	gen_eject,
-	gen_closetray
+	gen_closetray,
+	NULL /* gen_get_cdtext */
 };
 
 /*

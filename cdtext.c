@@ -2,7 +2,7 @@
                           cdtext.c  -  description
                              -------------------
     begin                : Mon Feb 12 2001
-    copyright            : (C) 2001 by Alex Kern
+    copyright            : (C) 2001,2003 by Alex Kern
     email                : alex.kern@gmx.de
  ***************************************************************************/
 
@@ -27,7 +27,7 @@
 
 #include "include/wm_config.h"
 #include "include/wm_struct.h"
-/*#include "include/wm_cdrom.h"*/
+#include "include/wm_cdrom.h"
 #include "include/wm_database.h"
 #include "include/wm_platform.h"
 #include "include/wm_helpers.h"
@@ -36,8 +36,16 @@
 
 #define WM_MSG_CLASS WM_MSG_CLASS_MISC
 
-struct cdtext_info wm_cdtext_info;
-static int first_initialise = 1;
+/* local prototypes */
+int free_cdtext_info_block(struct cdtext_info_block* cdtextinfoblock);
+int free_cdtext_info(struct cdtext_info* cdtextinfo);
+struct cdtext_info_block* malloc_cdtext_info_block(int count_of_tracks);
+void get_data_from_cdtext_pack(
+  const struct cdtext_pack_data_header *pack,
+  const struct cdtext_pack_data_header *pack_previous,
+  cdtext_string *p_componente);
+
+struct cdtext_info wm_cdtext_info = { 0, 0, 0, 0 };
 
 int free_cdtext_info_block(struct cdtext_info_block* cdtextinfoblock)
 {
@@ -199,7 +207,8 @@ void get_data_from_cdtext_pack(
 #endif
 }
 
-int wm_get_cdtext(struct wm_drive *d)
+struct cdtext_info*
+get_glob_cdtext(struct wm_drive *d, int redo)
 {
   /* alloc cdtext_info */
  
@@ -210,27 +219,23 @@ int wm_get_cdtext(struct wm_drive *d)
   struct cdtext_pack_data_header *pack, *pack_previous;
   cdtext_string *p_componente;
   struct cdtext_info_block *lp_block;
-  if(d->get_drive_status == NULL)
-    return;
- 
-  if(1 == first_initialise)
-  {
-    memset(&wm_cdtext_info, 0, sizeof(struct cdtext_info));
-    first_initialise = 0;
-  }
+  if(!d->proto || d->proto->gen_get_cdtext == NULL || d->proto->gen_get_trackcount == NULL)
+    return NULL;
+
+  if(!redo)
+    return &wm_cdtext_info;
+  else
+    free_cdtext_info(&wm_cdtext_info);
 
   lp_block = 0;
   p_componente = 0;
   buffer = 0;
   buffer_length = 0;
 
-  ret = (d->get_cdtext)(d, &buffer, &buffer_length);
-
-  free_cdtext_info(&wm_cdtext_info);
-  memset(&wm_cdtext_info, 0, sizeof(struct cdtext_info));
+  ret = (d->proto->gen_get_cdtext)(d, &buffer, &buffer_length);
   if(!ret)
   {
-    (d->get_trackcount)(d, &(wm_cdtext_info.count_of_entries));
+    (d->proto->gen_get_trackcount)(d, &(wm_cdtext_info.count_of_entries));
     if( wm_cdtext_info.count_of_entries < 0 )
       wm_cdtext_info.count_of_entries = 1;
     else
@@ -301,7 +306,7 @@ int wm_get_cdtext(struct wm_drive *d)
               wm_lib_message(WM_MSG_LEVEL_ERROR | WM_MSG_CLASS,
                 "CDTEXT ERROR: out of memory, can't create a new language block\n");
               free_cdtext_info(&wm_cdtext_info);
-              return ENOMEM;
+              return NULL /*ENOMEM*/;
             }
             else
             {
@@ -410,16 +415,11 @@ int wm_get_cdtext(struct wm_drive *d)
   if(0 == ret && wm_cdtext_info.count_of_valid_packs > 0)
     wm_cdtext_info.valid = 1;
 
-  return ret;
+  return &wm_cdtext_info;
 }
 
-void wm_free_cdtext(void)
+void free_cdtext(void)
 {
-#ifndef NDEBUG
-  printf("CDTEXT INFO: wm_free_cdtext() called, this function will be called at the end from USERSPACE(KSCD etc.)\n");
-#endif
-  if (0 == first_initialise)
+  if (wm_cdtext_info.valid)
     free_cdtext_info(&wm_cdtext_info);
-
-  first_initialise = 1;	
 }

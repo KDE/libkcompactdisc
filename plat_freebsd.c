@@ -82,8 +82,6 @@ void *malloc();
 int	min_volume = 10;
 int	max_volume = 255;
 
-extern char	*cd_device;
-
 
 /*--------------------------------------------------------*
  * Initialize the drive.  A no-op for the generic driver.
@@ -113,10 +111,10 @@ wmcd_open( struct wm_drive *d )
       return (0);
     }
   
-  if (cd_device == NULL)
-    cd_device = DEFAULT_CD_DEVICE;
+  if (d->cd_device == NULL)
+    d->cd_device = DEFAULT_CD_DEVICE;
   
-  d->fd = open(cd_device, 0);
+  d->fd = open(d->cd_device, 0);
   if (d->fd < 0)
     {
       if (errno == EACCES)
@@ -131,8 +129,7 @@ wmcd_open( struct wm_drive *d )
   /* Now fill in the relevant parts of the wm_drive structure. */
   fd = d->fd;
   
-  *d = *(find_drive_struct(vendor, model, rev));
-  wm_drive_settype(vendor, model, rev);
+  find_drive_struct(vendor, model, rev);
   
   (d->init)(d);
   
@@ -151,13 +148,7 @@ wmcd_reopen( struct wm_drive *d )
   
   do {
     wm_lib_message(WM_MSG_LEVEL_DEBUG|WM_MSG_CLASS, "wmcd_reopen\n");
-    if (d->fd >= 0)		/* Device really open? */
-      {
-	wm_lib_message(WM_MSG_LEVEL_DEBUG|WM_MSG_CLASS, "closing the device\n");
-	status = close( d->fd );   /* close it! */
-	/* we know, that the file is closed, do we? */
-	d->fd = -1;
-      }
+    status = gen_close( d );
     wm_susleep( 1000 );
     wm_lib_message(WM_MSG_LEVEL_DEBUG|WM_MSG_CLASS, "calling wmcd_open()\n");
     status = wmcd_open( d ); /* open it as usual */
@@ -179,14 +170,25 @@ wm_scsi(struct wm_drive *d, unsigned char *cdb, int cdblen,
   return (-1);
 } /* wm_scsi() */
 
+int
+gen_close( struct wm_drive *d )
+{
+  if(d->fd != -1) {
+    wm_lib_message(WM_MSG_LEVEL_DEBUG|WM_MSG_CLASS, "closing the device\n");
+    close(d->fd);
+    d->fd = -1;
+  }
+  return 0;
+}
+
 /*--------------------------------------------------------------------------*
  * Get the current status of the drive: the current play mode, the absolute
  * position from start of disc (in frames), and the current track and index
  * numbers if the CD is playing or paused.
  *--------------------------------------------------------------------------*/
 int
-gen_get_drive_status(struct wm_drive *d, enum wm_cd_modes oldmode,
-                     enum wm_cd_modes *mode, int *pos, int *track, int *index)
+gen_get_drive_status(struct wm_drive *d, int oldmode,
+                     int *mode, int *pos, int *track, int *index)
 {
   struct ioc_read_subchannel	sc;
   struct cd_sub_channel_info	scd;

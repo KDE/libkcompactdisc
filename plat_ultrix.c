@@ -65,8 +65,7 @@ char *strchr();
 int	min_volume = 128;
 int	max_volume = 255;
 
-extern char	*cd_device;
-
+char * ultrix_cd_device = NULL;
 /*
  * fgetline()
  *
@@ -130,20 +129,21 @@ fgetline( FILE *fp )
  * address of the CD-ROM.  If the "CDROM" environment variable is set,
  * use that instead.
  */
-int
+const char*
 find_cdrom()
 {
   char	*data;
   FILE	*uerf;
   int	fds[2];
   int	pid;
+  const char* device = NULL;
   
-  cd_device = getenv("CDROM");
+  device = getenv("CDROM");
   
-  if (cd_device != NULL)
+  if (device != NULL)
     {
-      if(strncmp("/dev/", cd_device, 5) || strstr(cd_device, "/../"))
-	return 0;
+      if(strncmp("/dev/", device, 5) || strstr(device, "/../"))
+	return NULL;
     }
   
   pipe(fds);
@@ -154,10 +154,10 @@ find_cdrom()
       dup2(fds[1], 1);
       execl("/etc/uerf", "uerf", "-R", "-r", "300", (void *)0);
       execl("/usr/sbin/uerf", "uerf", "-R", "-r", "300", (void *)0);
-      return 0; /* _exit(1); */
+      return NULL; /* _exit(1); */
     } else if (pid < 0) {
       perror("fork");
-      return 0; /* exit(1); */
+      return NULL; /* exit(1); */
     }
   
   close(fds[1]);
@@ -166,29 +166,29 @@ find_cdrom()
   while (data = fgetline(uerf))
     if (strstr(data, "RRD42")) 
       {
-	char	*device;
+	char	*device_p;
 	
-	cd_device = (char *)malloc(sizeof("/dev/rrz##c"));
-	strcpy(cd_device, "/dev/r");
-	device = strstr(data, "rz");
-	device[(int)(strchr(device, ' ') - device)] = '\0';
-	strcat(cd_device, device);
-	strcat(cd_device, "c");
+	ultrix_cd_device = (char *)malloc(sizeof("/dev/rrz##c"));
+	strcpy(ultrix_cd_device, "/dev/r");
+	device_p = strstr(data, "rz");
+	device_p[(int)(strchr(device_p, ' ') - device_p)] = '\0';
+	strcat(ultrix_cd_device, device_p);
+	strcat(ultrix_cd_device, "c");
+	device = ultrix_cd_device;
 	break;
       }
   
   fclose(uerf);
   
-  if (cd_device == NULL) 
+  if (device == NULL) 
     {
-      fprintf(stderr,
-	      "No cdrom (RRD42) is installed on this system\n");
-      return 0; /* exit(1); */
+      fprintf(stderr, "No cdrom (RRD42) is installed on this system\n");
+      return NULL; /* exit(1); */
     }
   
   kill(pid, 15);
   (void)wait((int *)NULL);
-  return 1;
+  return device;
 } /* find_cdrom() */
 
 /*
@@ -216,10 +216,10 @@ wmcd_open( struct wm_drive *d )
       return (0);
     }
   
-  if (cd_device == NULL)
-    find_cdrom();
+  if (d->cd_device == NULL)
+    d->cd_device = find_cdrom();
   
-  d->fd = open(cd_device, 0);
+  d->fd = open(d->cd_device, 0);
   if (d->fd < 0)
     {
       if (errno == EACCES)
@@ -236,8 +236,7 @@ wmcd_open( struct wm_drive *d )
     }
   
   /* Now fill in the relevant parts of the wm_drive structure. */
-  fd = d->fd;
-  *d = *(find_drive_struct("", "", ""));
+  find_drive_struct("", "", "");
   d->fd = fd;
   
   (d->init)(d);
@@ -255,13 +254,7 @@ wmcd_reopen( struct wm_drive *d )
   
   do {
     wm_lib_message(WM_MSG_LEVEL_DEBUG|WM_MSG_CLASS, "wmcd_reopen\n");
-    if (d->fd >= 0)		/* Device really open? */
-      {
-	wm_lib_message(WM_MSG_LEVEL_DEBUG|WM_MSG_CLASS, "closing the device\n");
-	status = close( d->fd );   /* close it! */
-	/* we know, that the file is closed, do we? */
-	d->fd = -1;
-      }
+    status = gen_close( d );
     wm_susleep( 1000 );
     wm_lib_message(WM_MSG_LEVEL_DEBUG|WM_MSG_CLASS, "calling wmcd_open()\n");
     status = wmcd_open( d ); /* open it as usual */
@@ -281,6 +274,16 @@ wm_scsi( struct wm_drive *d, unsigned char *cdb, int cdblen,
 	return (-1);
 } /* wm_scsi() */
 
+int
+gen_close( struct wm_drive *d )
+{
+  if(d->fd != -1) {
+    wm_lib_message(WM_MSG_LEVEL_DEBUG|WM_MSG_CLASS, "closing the device\n");
+    close(d->fd);
+    d->fd = -1;
+  }
+  return 0;
+}
 
 /*
  * Get the current status of the drive: the current play mode, the absolute
@@ -288,8 +291,8 @@ wm_scsi( struct wm_drive *d, unsigned char *cdb, int cdblen,
  * numbers if the CD is playing or paused.
  */
 int
-gen_get_drive_status( struct wm_drive *d, enum wm_cd_modes oldmode, 
-		      enum wm_cd_modes *mode, int *pos, int *track, int *index)
+gen_get_drive_status( struct wm_drive *d, int oldmode, 
+		      int *mode, int *pos, int *track, int *index)
 {
   struct cd_sub_channel		sc;
   struct cd_subc_channel_data	scd;
