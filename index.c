@@ -26,8 +26,6 @@
  * Uses the Berkeley libdb library, available from ftp.cs.berkeley.edu.
  */
 
-static char index_id[] = "$Id$";
-
 #ifdef LIBDB
 
 #include <stdio.h>

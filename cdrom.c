@@ -27,8 +27,6 @@
  * platform- or drive-dependent code here.
  */
 
-static char cdrom_id[] = "$Id$";
-
 #include <errno.h>
 #include <stdio.h>
 #include <unistd.h>
@@ -88,11 +86,11 @@ struct drivelist {
  */
 int intermittent_dev = 0;
 
-int wm_cd_cur_balance = 10;
-int wm_cur_cdmode = WM_CDM_UNKNOWN;
-char *wm_cd_device = NULL; /* do not use this extern */
+static int wm_cd_cur_balance = 10;
+static int wm_cur_cdmode = WM_CDM_UNKNOWN;
+static char *wm_cd_device = NULL; /* do not use this extern */
 
-struct wm_drive drive = {
+static struct wm_drive drive = {
   0,
   NULL,
   NULL,

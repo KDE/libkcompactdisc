@@ -25,8 +25,6 @@
  * Vendor-specific drive control routines for Sony CDU-8012 series.
  */
 
-static char drv_sony_id[] = "$Id$";
-
 #include <stdio.h>
 #include <errno.h>
 #include "include/wm_config.h"
