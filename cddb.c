@@ -237,7 +237,7 @@ connect_open(void)
 		int inet_addr();
 		
 		defaddr.s_addr = inet_addr(host);
-		if (defaddr.s_addr == -1) 
+		if ((int) defaddr.s_addr == -1) 
 		{
 #ifndef NDEBUG
 			printf("unknown host: %s\n", host);

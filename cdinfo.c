@@ -73,7 +73,7 @@ int info_modified;
  * entry in the track list -- 0 will make this the first track, 1 the second,
  * etc.  The new entry will be zeroed out.
  */
-void
+static void
 insert_trackinfo(int num)
 {
 	struct wm_trackinfo *newtrk;
@@ -275,7 +275,7 @@ listentry( int num )
 {
 	static char	buf[600];
 	const char *name;
-    char* tracknum[20];
+    char tracknum[20];
 	int		digits;
 	int		sdigits;
 

@@ -2,6 +2,9 @@
 
 #include <string.h>
 
+struct audio_oops* setup_arts(const char *dev, const char *ctl);
+struct audio_oops* setup_alsa(const char *dev, const char *ctl);
+
 struct audio_oops* setup_soundsystem(const char* ss, const char* dev, const char* ctl)
 {
 #ifdef USE_ARTS
