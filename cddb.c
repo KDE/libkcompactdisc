@@ -52,11 +52,11 @@
 struct wm_cddb cddb;
 
 extern struct wm_cdinfo thiscd;
-int cur_cddb_protocol;
-char *cur_cddb_server;
-char *cur_cddb_mail_adress;
-char *cur_cddb_path_to_cgi;
-char *cur_cddb_proxy_server;
+static int cur_cddb_protocol;
+static char *cur_cddb_server;
+static char *cur_cddb_mail_adress;
+static char *cur_cddb_path_to_cgi;
+static char *cur_cddb_proxy_server;
 
 /* local prototypes */
 int cddb_sum(int);
@@ -73,8 +73,8 @@ void http_read(char *category, unsigned int id);
 void cddb_request(void);
 /* local prototypes END */
 
-int Socket;
-FILE *Connection;
+static int Socket;
+static FILE *Connection;
 
 /*
  *
