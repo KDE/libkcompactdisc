@@ -628,7 +628,7 @@ gen_eject( struct wm_drive *d )
       if (d->cdda_slave > -1)
 	{
 	  write(d->cdda_slave, "E", 1);
-	  get_ack(d->cdda_slave);
+	  cdda_get_ack(d->cdda_slave);
 	}
     }
   
