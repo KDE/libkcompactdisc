@@ -193,8 +193,6 @@ receive_command(struct cdda_device *dev, struct cdda_block* blk)
 	case 'P':
 		read(0, inbuf, 9);
 
-    oops->wmaudio_stop();
-
 		wmcdda_setup(inbuf[0] * 60 * 75 + inbuf[1] * 75 + inbuf[2],
 			inbuf[3] * 60 * 75 + inbuf[4] * 75 + inbuf[5],
 			inbuf[6] * 60 * 75 + inbuf[7] * 75 + inbuf[8]);
