@@ -7,10 +7,10 @@ subdirs = include
 SUBDIRS = audio
 INCLUDES = $(all_includes) 
 
-lib_LTLIBRARIES  = libworkman.la
+noinst_LTLIBRARIES  = libworkman.la
 
 libworkman_la_LDFLAGS = -version-info 6:0:1 $(all_libraries)
-libworkman_la_LIBADD = audio/libworkmanaudio.a $(ARTSC_LIBS) $(ARTS_LIBASOUND)
+libworkman_la_LIBADD = audio/libworkmanaudio.la $(ARTSC_LIBS) $(ARTS_LIBASOUND)
 
 libworkman_la_SOURCES = cddb.c cdinfo.c cdrom.c wm_helpers.c cdtext.c\
 database.c index.c scsi.c cdda.c plat_linux_cdda.c plat_sun_cdda.c\
@@ -19,5 +19,5 @@ plat_linux.c plat_svr4.c plat_ultrix.c plat_news.c plat_openbsd.c \
 plat_osf1.c plat_sun.c plat_scor5.c \
 drv_sony.c drv_toshiba.c
 
-libworkmanincludedir = $(includedir)/libwm
-libworkmaninclude_HEADERS = include/wm_cdrom.h include/wm_cdtext.h
+#libworkmanincludedir = $(includedir)/libwm
+#libworkmaninclude_HEADERS = include/wm_cdrom.h include/wm_cdtext.h
