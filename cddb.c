@@ -322,14 +322,16 @@ connect_read_entry(void)
 					t2 = t;
 				if(*t2 == ' ')
 				  t2++;
-				strcpy(cd->cdname,t2);
+				strncpy(cd->cdname,t2,sizeof(cd->cdname)-1);
+                                cd->cdname[sizeof(cd->cdname)-1]='\0';
 				
 				for(t2=t;*t2;t2++)
 				{
 					if((*t2 == ' ') && (*(t2+1) == 0))
 					  *t2=0;
 				}
-				strcpy(cd->artist,t);
+				strncpy(cd->artist,t,sizeof(cd->artist)-1);
+                                cd->artist[sizeof(cd->artist)-1]='\0';
 			}
 			
 			if('T' == type)

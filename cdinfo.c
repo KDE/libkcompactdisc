@@ -544,11 +544,13 @@ stash_cdinfo(char *artist, char *cdname, int autoplay, int playmode )
 	{
 		if (strcmp(cd->artist, artist))
 			info_modified = 1;
-		strcpy(cd->artist, artist);
+		strncpy(cd->artist, artist,sizeof(cd->artist)-1);
+                cd->artist[sizeof(cd->artist)-1]='\0';
 
 		if (strcmp(cd->cdname, cdname))
 			info_modified = 1;
-		strcpy(cd->cdname, cdname);
+		strncpy(cd->cdname, cdname,sizeof(cd->cdname)-1);
+                cd->cdname[sizeof(cd->cdname)-1]='\0';
 
 		if (!!cd->autoplay != !!autoplay)
 			info_modified = 1;
