@@ -443,7 +443,9 @@ wm_cd_status( void )
 		break;
 	case WM_CDM_FORWARD:
 	case WM_CDM_EJECTED:
-		break;	
+        case WM_CDM_DEVICECHANGED: /* to shut up the compiler */
+        case WM_CDM_NO_DISC:       /* ditto */
+		break;
 	}
 
 	return (ret);
