@@ -15,6 +15,7 @@ AC_ARG_WITH(kscd-cdda, [  --with-kscd-cdda             build CDDA support in ksc
 if test "$libwm_with_cdda" = "yes"; then
 case $host in
   *-*-linux*)
+  AC_CHECK_HEADERS(pthread.h)
   AC_TRY_COMPILE(
   [
 #include <linux/types.h>
@@ -28,6 +29,7 @@ ioctl(1, CDROMREADAUDIO, 0);
   ],, libwm_with_cdda=no)
   ;;
   *-*-sunos*)
+  AC_CHECK_HEADERS(pthread.h)
   AC_TRY_COMPILE(
   [
 #include <sys/types.h>

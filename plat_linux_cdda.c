@@ -69,18 +69,19 @@ static char plat_linux_cdda_id[] = "$Id$";
 #define CDDABLKSIZE 2352
 
 /* Address of next block to read. */
-int	current_position = 0;
+int current_position = 0;
 
 /* Address of first and last blocks to read. */
-int	starting_position = 0;
-int	ending_position = 0;
+int starting_position = 0;
+int ending_position = 0;
 
 /* Playback direction. */
-int	direction = 1;
+int direction = 1;
 
 /* Number of blocks to read at once */
-int numblocks = 75; /* we need 75 blocks / second */
-
+/* we need 75 blocks / second */
+int numblocks = /* seconds */ 1 * 75;
+  
 struct cdrom_subchnl subchnl;
 
 /*
@@ -111,15 +112,15 @@ wmcdda_init(struct cdda_device* pdev, struct cdda_block *block)
 
     if (ioctl(pdev->fd, CDROMREADAUDIO, &cdda) < 0) {
       wmcdda_close(pdev);
-      block->status = WMCDDA_STOPPED;
+      block->status = WM_CDM_STOPPED;
       return -1;
     } else {
-      block->status = WMCDDA_STOPPED;
+      block->status = WM_CDM_STOPPED;
       return 0;
     }
   } else {
     free(pdev->buf);
-    block->status = WMCDDA_EJECTED;
+    block->status = WM_CDM_EJECTED;
     return -1;
   }
 }
@@ -147,17 +148,12 @@ wmcdda_close(struct cdda_device* pdev)
 int
 wmcdda_setup(int start, int end, int realstart)
 {
-  current_position = start;
-  ending_position = end;
-  starting_position = realstart;
-/*
-  starting_position = start;
-  ending_position = end;
-  current_position = realstart;
-*/
-  return 0;
-}
+	current_position = start;
+	ending_position = end;
+	starting_position = realstart;
 
+	return 0;
+}
 
 /*
  * Read some blocks from the CD.  Stop if we hit the end of the current region.
@@ -174,64 +170,45 @@ wmcdda_read(struct cdda_device* pdev, struct cdda_block *block)
   }
 
   if (current_position >= ending_position) {
-    block->status = WMCDDA_DONE;
+    block->status = WM_CDM_TRACK_DONE;
     return 0;
   }
-/*
-  cdda.addr_format = CDROM_MSF;
-  cdda.addr.msf.cdmsf_minute = current_position / (60*75);
-  cdda.addr.msf.cdmsf_second = (current_position % (60*75)) / 75;
-  cdda.addr.msf.cdmsf_frame = current_position % 75;
-*/
+
   cdda.addr_format = CDROM_LBA;
   cdda.addr.lba = current_position;
-	if (ending_position && current_position + numblocks > ending_position)
+  if (ending_position && current_position + numblocks > ending_position)
     cdda.nframes = ending_position - current_position;
-	else
+  else
     cdda.nframes = numblocks;
+    
+  if(cdda.nframes < 1) {
+    /* Hit the end of the CD, probably. */
+    block->status = WM_CDM_TRACK_DONE;
+    return 0;
+  }
+    
   cdda.buf = (unsigned char*)pdev->buf;
 
   if (ioctl(pdev->fd, CDROMREADAUDIO, &cdda) < 0) {
-    if (errno == ENXIO) { /* CD ejected! */
-			block->status = WMCDDA_EJECTED;
+    if (errno == ENXIO) {
+      /* CD ejected! */
+      block->status = WM_CDM_EJECTED;
       return -1;
-		}
+    }
 
-    if (current_position + numblocks > ending_position) {
-			/*
-			 * Hit the end of the CD, probably.
-			 */
-			block->status = WMCDDA_DONE;
-      return 0;
-		}
-
-		/* Sometimes it fails once, dunno why */
+    /* Sometimes it fails once, dunno why */
     perror("CDROMREADAUDIO");
-					block->status = WMCDDA_ERROR;
+    block->status = WM_CDM_CDDAERROR;
     return -1;
-	}
+  }
 
   current_position = current_position + cdda.nframes;
 
-/*
-  subchnl.cdsc_format = CDROM_MSF;
-  if(ioctl(pdev->fd, CDROMSUBCHNL, &subchnl) < 0) {
-    perror("CDROMSUBCHNL");
-    block->status = WMCDDA_ERROR;
-    return -1;
-  } else */
-		{
-    block->status = WMCDDA_PLAYING;
-    block->track =  -1;
-    block->index =  0;
-    block->minute = current_position / (60 * 75);
-    block->second = (current_position % (60*75)) / 75;
-    block->frame  = current_position % 75;
-/*    DEBUGLOG("in wmcdda_read wir sind current_position %i: track %i, index %i, %02i:%02i.%02i\n",
-      current_position, block->track, block->index,
-      block->minute, block->second, block->frame);*/
-	}
-
+  block->track =  -1;
+  block->index =  0;
+  block->frame  = current_position;
+  block->status = WM_CDM_PLAYING;
+  
   return (cdda.nframes * CDDABLKSIZE);
 }
 
@@ -271,16 +248,13 @@ wmcdda_normalize(struct cdda_device* pdev, struct cdda_block *block)
 void
 wmcdda_direction(int newdir)
 {
-	if (newdir == 0)
-	{
-		numblocks = 20;
-		direction = 1;
-	}
-	else
-	{
-		numblocks = 30;
-		direction = -1;
-	}
+  if (newdir == 0) {
+    numblocks = 20;
+    direction = 1;
+  } else {
+    numblocks = 30;
+    direction = -1;
+  }
 }
 
 /*
@@ -289,10 +263,10 @@ wmcdda_direction(int newdir)
 void
 wmcdda_speed(int speed)
 {
-	if (speed > 128)
-		numblocks = 12;
-	else
-		numblocks = direction > 0 ? 20 : 30;
+  if (speed > 128)
+    numblocks = 12;
+  else
+    numblocks = direction > 0 ? 20 : 30;
 }
 
 #endif
