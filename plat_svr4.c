@@ -58,12 +58,40 @@ int	max_volume = 255;
 
 extern char	*cd_device;
 
+find_cdrom()
+{
+  /*
+  ** the path of the device has to start w/ /dev
+  ** otherwise we are vulnerable to race conditions
+  ** Thomas Biege <thomas@suse.de>
+  */
+  
+  cd_device = getenv("CDROM");
+  if ( (cd_device != NULL) && 
+	!(strncmp("/dev/", cd_device, 5) || 
+	  strstr(cd_device, "/../") ))
+       return 1;
+
+  if (access("/dev/cdrom/cdrom1", F_OK) == 0)
+    {
+      cd_device = "/dev/cdrom/cdrom1";
+      return 1;
+    }
+  else if (access("/dev/cdrom/cdrom2", F_OK) == 0)
+    {
+      cd_device = "/dev/cdrom/cdrom2";
+      return 1;
+    } else {
+      fprintf(stderr, "Couldn't find a CD device!\n");
+      return 0;
+    }
+} // find_cdrom
+
 /*
  * Initialize the drive.  A no-op for the generic driver.
  */
 int
-gen_init(d)
-	struct wm_drive	*d;
+gen_init(struct wm_drive *d)
 {
 	return (0);
 }
@@ -72,9 +100,7 @@ gen_init(d)
  * Get the number of tracks on the CD.
  */
 int
-gen_get_trackcount(d, tracks)
-	struct wm_drive	*d;
-	int		*tracks;
+gen_get_trackcount(struct wm_drive *d, int *tracks)
 {
 	return (wm_scsi2_get_trackcount(d, tracks));
 }
@@ -83,9 +109,7 @@ gen_get_trackcount(d, tracks)
  * Get the start time and mode (data or audio) of a track.
  */
 int
-gen_get_trackinfo(d, track, data, startframe)
-	struct wm_drive	*d;
-	int		track, *data, *startframe;
+gen_get_trackinfo(struct wm_drive *d, int track, int *data, int *startframe)
 {
 	return (wm_scsi2_get_trackinfo(d, track, data, startframe));
 }
@@ -94,9 +118,7 @@ gen_get_trackinfo(d, track, data, startframe)
  * Get the number of frames on the CD.
  */
 int
-gen_get_cdlen(d, frames)
-	struct wm_drive	*d;
-	int		*frames;
+gen_get_cdlen(struct wm_drive *d, int *frames)
 {
 	int		tmp;
 
@@ -109,10 +131,8 @@ gen_get_cdlen(d, frames)
  * numbers if the CD is playing or paused.
  */
 int
-gen_get_drive_status(d, oldmode, mode, pos, track, index)
-	struct wm_drive	*d;
-	enum wm_cd_modes oldmode, *mode;
-	int		*pos, *track, *index;
+gen_get_drive_status(struct wm_drive *d, enum wm_cd_modes oldmode,
+	enum wm_cd_modes *mode, int *pos, int *track, int *index)
 {
 	return (wm_scsi2_get_drive_status(d, oldmode, mode, pos, track, index));
 }
@@ -122,9 +142,7 @@ gen_get_drive_status(d, oldmode, mode, pos, track, index)
  * range from 0 to 100.
  */
 int
-gen_set_volume(d, left, right)
-	struct wm_drive	*d;
-	int		left, right;
+gen_set_volume(struct wm_drive *d, int left, int right)
 {
 	return (wm_scsi2_set_volume(d, left, right));
 }
@@ -134,9 +152,7 @@ gen_set_volume(d, left, right)
  * ranges from 0 to 100, with -1 indicating data not available.
  */
 int
-gen_get_volume(d, left, right)
-	struct wm_drive	*d;
-	int		*left, *right;
+gen_get_volume(struct wm_drive *d, int *left, int *right)
 {
 	return (wm_scsi2_get_volume(d, left, right));
 }
@@ -145,8 +161,7 @@ gen_get_volume(d, left, right)
  * Pause the CD.
  */
 int
-gen_pause(d)
-	struct wm_drive	*d;
+gen_pause(struct wm_drive *d)
 {
 	return (wm_scsi2_pause(d));
 }
@@ -155,8 +170,7 @@ gen_pause(d)
  * Resume playing the CD (assuming it was paused.)
  */
 int
-gen_resume(d)
-	struct wm_drive	*d;
+gen_resume(struct wm_drive *d)
 {
 	return (wm_scsi2_resume(d));
 }
@@ -165,8 +179,7 @@ gen_resume(d)
  * Stop the CD.
  */
 int
-gen_stop(d)
-	struct wm_drive	*d;
+gen_stop(struct wm_drive *d)
 {
 	return (wm_scsi2_stop(d));
 }
@@ -175,9 +188,7 @@ gen_stop(d)
  * Play the CD from one position to another (both in frames.)
  */
 int
-gen_play(d, start, end)
-	struct wm_drive	*d;
-	int		start, end;
+gen_play(struct wm_drive *d, int start, int end)
 {
 	return (wm_scsi2_play(d, start, end));
 }
@@ -212,7 +223,7 @@ create_cdrom_node(char *dev_name)
 	int ccode;
 
 
-	strcpy(pass_through, dev_name);
+	strncpy(pass_through, dev_name, sizeof(pass_through) - 2);
 	strcat(pass_through, "p" );
 
 	if (setreuid(-1,0) < 0)
@@ -275,8 +286,7 @@ create_cdrom_node(char *dev_name)
  * Open the CD and figure out which kind of drive is attached.
  */
 int
-wmcd_open(d)
-	struct wm_drive	*d;
+wmcd_open(struct wm_drive *d)
 {
 	int		fd, flag = 1;
 	static int	warned = 0;

@@ -7,7 +7,7 @@ INCLUDES=  $(all_includes)
 
 lib_LTLIBRARIES  = libworkman.la
 
-libworkman_la_LDFLAGS = -version-info 5:2:4 $(all_libraries)
+libworkman_la_LDFLAGS = -version-info 5:3:4 $(all_libraries)
 
 #
 # Headers come later...

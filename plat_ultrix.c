@@ -73,7 +73,7 @@ extern char	*cd_device;
  * address of the CD-ROM.  If the "CDROM" environment variable is set,
  * use that instead.
  */
-void
+int
 find_cdrom()
 {
 	char	*data, *fgetline();
@@ -81,8 +81,13 @@ find_cdrom()
 	int	fds[2];
 	int	pid;
 
-	if ((cd_device = getenv("CDROM")) != NULL)
-		return;
+	cd_device = getenv("CDROM");
+
+	if (cd_device != NULL)
+	{
+	    if(strncmp("/dev/", cd_device, 5) || strstr(cd_device, "/../"))
+		return 0;
+	}
 
 	pipe(fds);
 
@@ -91,10 +96,10 @@ find_cdrom()
 		dup2(fds[1], 1);
 		execl("/etc/uerf", "uerf", "-R", "-r", "300", NULL);
 		execl("/usr/sbin/uerf", "uerf", "-R", "-r", "300", NULL);
-		_exit(1);
+		return 0; /* _exit(1); */
 	} else if (pid < 0) {
 		perror("fork");
-		exit(1);
+		return 0; /* exit(1); */
 	}
 
 	close(fds[1]);
@@ -118,11 +123,12 @@ find_cdrom()
 	if (cd_device == NULL) {
 		fprintf(stderr,
 			"No cdrom (RRD42) is installed on this system\n");
-		exit(1);
+		return 0; /* exit(1); */
 	}
 
 	kill(pid, 15);
 	(void)wait((int *)NULL);
+	return 1;
 }
 
 /*

@@ -72,7 +72,7 @@ extern char	*cd_device;
  * Read through the boot records (via a call to uerf) and find the SCSI
  * address of the CD-ROM.
  */
-void
+int
 find_cdrom()
 {
 	char	*data, *fgetline();
@@ -84,17 +84,26 @@ find_cdrom()
 	pipe(fds);
 
 	cd_device = getenv("CDROM");
-	if (cd_device != NULL)
-	    return;
+	/*
+	** the path of the device has to start w/ /dev
+	** otherwise we are vulnerable to race conditions
+        ** Thomas Biege <thomas@suse.de>
+	*/
+	if ( cd_device == NULL || 
+	     strncmp("/dev/", cd_device, 5) || 
+             strstr(cd_device, "/../") 
+	   )
+	   return 0;
+
 	if ((pid = fork()) == 0) {
-		close(fds[0]);
-		dup2(fds[1], 1);
-		execl("/etc/uerf", "uerf", "-R", "-r", "300", NULL);
-		execl("/usr/sbin/uerf", "uerf", "-R", "-r", "300", NULL);
-		_exit(1);
+	        close(fds[0]);
+	        dup2(fds[1], 1);
+	        execl("/etc/uerf", "uerf", "-R", "-r", "300", NULL);
+	        execl("/usr/sbin/uerf", "uerf", "-R", "-r", "300", NULL);
+	        return 0; /* _exit(1); */
 	} else if (pid < 0) {
 		perror("fork");
-		exit(1);
+		return 0;
 	}
 
 	close(fds[1]);
@@ -118,19 +127,19 @@ find_cdrom()
 	if (cd_device == NULL) {
 		fprintf(stderr,
 			"No cdrom (RRD42) is installed on this system\n");
-		exit(1);
+		return 0;
 	}
 
 	kill(pid, 15);
 	(void)wait((int *)NULL);
+	return 1;
 }
 
 /*
  * Initialize the drive.  A no-op for the generic driver.
  */
 int
-gen_init(d)
-	struct wm_drive	*d;
+gen_init( struct wm_drive *d )
 {
 	return (0);
 }
@@ -139,9 +148,7 @@ gen_init(d)
  * Get the number of tracks on the CD.
  */
 int
-gen_get_trackcount(d, tracks)
-	struct wm_drive	*d;
-	int		*tracks;
+gen_get_trackcount(struct wm_drive *d, int *tracks)
 {
 	struct cd_toc_header	hdr;
 

@@ -104,7 +104,9 @@ wmaudio_init( void )
 	int			linval;
 
 	audiodev = getenv("AUDIODEV");
-	if (audiodev == NULL)
+	if (audiodev == NULL || 
+	    strncmp("/dev/", audiodev, 5) || 
+	    strstr(audiodev, "/../") )
 		audiodev = "/dev/audio";
 
 	acdev = malloc(strlen(audiodev) + 4);

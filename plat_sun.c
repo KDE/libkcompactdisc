@@ -123,7 +123,7 @@ void sigthawinit( void )
  * there if there's no CD in the drive.)  This is done so a single SunOS 4.x
  * binary can be used on any 4.x or higher Sun system.
  */
-void
+int
 find_cdrom( void )
 {
 	if (access("/vol/dev/aliases", X_OK) == 0)
@@ -133,7 +133,14 @@ find_cdrom( void )
 
 		/* If vold is running us, it'll tell us the device name. */
 		cd_device = getenv("VOLUME_DEVICE");
-		if (cd_device == NULL)
+		/*
+		** the path of the device has to include /dev
+		** otherwise we are vulnerable to race conditions
+		** Thomas Biege <thomas@suse.de>
+		*/
+		if (cd_device == NULL || 
+		    strncmp("/vol/dev/", cd_device, 9) || 
+		    strstr(cd_device, "/../") )
 			cd_device = "/vol/dev/aliases/cdrom0";
 	}
 	else if (access("/dev/rdsk/c0t6d0s2", F_OK) == 0)
@@ -150,8 +157,9 @@ find_cdrom( void )
 	else
 	{
 		fprintf(stderr, "Couldn't find a CD device!\n");
-		exit(1);
+		return 0;
 	}
+	return 1;
 }
 
 /*
