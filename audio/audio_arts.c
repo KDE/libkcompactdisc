@@ -43,7 +43,7 @@ arts_open(void)
     ERRORLOG("cannot open ARTS stream for playback\n");
     return -1;
   }
-  /* 1000 ms becose we read 75 frames = 1 sec */
+  /* 1000 ms because we read 75 frames = 1 sec */
   if((err = arts_stream_set(arts_stream, ARTS_P_BUFFER_TIME, 1000)) < 0) {
     ERRORLOG("arts_stream_set failed (%s)\n", arts_error_text(err));
     return -1;

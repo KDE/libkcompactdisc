@@ -567,7 +567,7 @@ wm_scsi_get_cdtext(struct wm_drive *d, unsigned char **pp_buffer, int *p_buffer_
     wm_lib_message(WM_MSG_LEVEL_INFO|WM_MSG_CLASS, "CDTEXT ERROR: Try #define IGNORE_FEATURE_LIST in libwm/scsi.c\n");
 #else
     cdtext_possible = 1;
-    wm_lib_message(WM_MSG_LEVEL_INFO|WM_MSG_CLASS, "CDTEXT INFO: GET_FEATURY_LIST(0x46) ignored. It's OK, becose many CDROMS don't implement this featury\n");
+    wm_lib_message(WM_MSG_LEVEL_INFO|WM_MSG_CLASS, "CDTEXT INFO: GET_FEATURY_LIST(0x46) ignored. It's OK, because many CDROMS don't implement this feature\n");
 #endif /* IGNORE_FEATURE_LIST */
   }
   else
@@ -630,7 +630,7 @@ wm_scsi_get_cdtext(struct wm_drive *d, unsigned char **pp_buffer, int *p_buffer_
   {
     cdtext_data_length = temp[0]*0xFF + temp[1] + 4 + 1; /* divide by 18 + 4 ? */
     /* cdtext_data_length%18 == 0;? */
-    wm_lib_message(WM_MSG_LEVEL_INFO|WM_MSG_CLASS, "CDTEXT INFO: CDTEXT is a %i byte(s) long\n", cdtext_data_length);
+    wm_lib_message(WM_MSG_LEVEL_INFO|WM_MSG_CLASS, "CDTEXT INFO: CDTEXT is %i byte(s) long\n", cdtext_data_length);
     /* cdc_buffer[2];  cdc_buffer[3]; reserwed */
     dynamic_temp = malloc(cdtext_data_length);
     if(!dynamic_temp)
