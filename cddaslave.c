@@ -65,7 +65,7 @@ void send_status(struct cdda_block *);
 #define SEND_STATUS(b); { (b)->status &= ~WMCDDA_ACK; send_status(b); }
 #define SEND_STATUS_ACK(b, s); { (b)->status = ((s) | WMCDDA_ACK); send_status(b); }
 
-int recieve_command(struct cdda_device *, struct cdda_block *);
+int receive_command(struct cdda_device *, struct cdda_block *);
 
 int	playing = 0;		/* Should the CD be playing now? */
 int pausing = 0;
@@ -154,7 +154,7 @@ send_status(struct cdda_block *blk)
  *   I                  Get status, current frame
  */
 int
-recieve_command(struct cdda_device *dev, struct cdda_block* blk)
+receive_command(struct cdda_device *dev, struct cdda_block* blk)
 {
 	unsigned char		inbuf[10];
 	char			*filename;
@@ -542,7 +542,7 @@ int main(int argc, char **argv)
 		}
 
     if (FD_ISSET(0, &readfd)) {
-      recieve_command(&dev, &blockinfo);
+      receive_command(&dev, &blockinfo);
 			/*
 			 * Process all commands in rapid succession, rather
 			 * than possibly waiting for a CDDA read.
