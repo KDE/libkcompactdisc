@@ -214,7 +214,7 @@ int alsa_close( void )
 #if (SND_LIB_MAJOR < 1)
    err = snd_pcm_close(handle);
 #else
-   err = snd_pcm_close(&handle);
+   err = snd_pcm_close(handle);
 #endif
 
   free(device);
