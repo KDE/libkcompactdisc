@@ -27,7 +27,6 @@
 
 #include "include/wm_cdda.h"
 
-static char plat_sun_cdda_id[] = "$Id$";
 #if defined(sun) || defined(__sun__) && defined(SYSV) && defined(BUILD_CDDA)
 
 
