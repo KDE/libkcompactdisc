@@ -90,7 +90,7 @@ struct cdda_block {
  * standard interface for CDROM CDDA functions that aren't available
  * if there is no support.
  */
-#ifdef linux
+#ifdef __linux
 /*# include <bytesex.h>*/
 # include <endian.h>
 /*

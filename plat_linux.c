@@ -25,7 +25,8 @@
  * Linux-specific drive control routines.  Very similar to the Sun module.
  */
 
-#ifdef linux
+#ifdef __linux
+
 
 /* Id for ident command */
 static char plat_linux_id[] = "$Id$";
