@@ -25,8 +25,6 @@
  * Linux-specific drive control routines.  Very similar to the Sun module.
  */
 
-static char plat_linux_id[] = "$Id$";
-
 #if defined(__linux__)
 
 #include <errno.h>
