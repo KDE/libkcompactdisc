@@ -41,6 +41,8 @@ static char plat_linux_id[] = "$Id$";
 #include <sys/socket.h>
 #include <sys/stat.h>
 #include <sys/wait.h>
+/* Try to get around bug #29274 */
+#include <linux/version.h>
 
 #include "include/wm_config.h"
 #include "include/wm_struct.h"
@@ -247,7 +249,7 @@ wm_scsi( struct wm_drive *d, unsigned char *cdb, int cdblen,
  * send packet over cdrom interface
  * kernel >= 2.2.16
  *----------------------------------------*/
-#ifdef CDROM_SEND_PACKET	
+#if (LINUX_VERSION_CODE > KERNEL_VERSION(2,2,15))	
 
   struct cdrom_generic_command cdc;
   struct request_sense sense;
