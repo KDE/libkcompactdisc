@@ -260,7 +260,7 @@ read_toc()
         
 	wm_lib_message(WM_MSG_LEVEL_DEBUG|WM_MSG_CLASS_MISC, "read_toc() returning &thiscd\n");
 	return (&thiscd);
-} // read_toc()
+} /* read_toc() */
 
 /*
  * wm_cd_status()
