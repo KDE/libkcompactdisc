@@ -137,10 +137,10 @@ int alsa_open( void )
 {
   int err, chn;
 
-  DEBUGLOG("alsa_open\n");
-
   snd_pcm_hw_params_t *hwparams;
   snd_pcm_sw_params_t *swparams;
+
+  DEBUGLOG("alsa_open\n");
 
   snd_pcm_hw_params_alloca(&hwparams);
   snd_pcm_sw_params_alloca(&swparams);
