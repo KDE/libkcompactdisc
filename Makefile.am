@@ -19,11 +19,10 @@ plat_osf1.c plat_sun.c plat_scor5.c \
 drv_sony.c drv_toshiba.c
 
 if libwm_with_cdda
-bin_PROGRAMS = cddaslave
-else
-bin_PROGRAMS =
+CDDA_SLAVE = cddaslave
 endif
 
+bin_PROGRAMS = $(CDDA_SLAVE)
 EXTRA_PROGRAMS = cddaslave
 cddaslave_SOURCES = cddaslave.c plat_linux_cdda.c plat_sun_cdda.c
 
