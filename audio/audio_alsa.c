@@ -10,11 +10,13 @@
  *
  * This file comes under GPL license.
  */
-#include "audio.h"
+
+
+/*#include "audio.h"*/	
 
 #if defined(HAVE_ARTS_LIBASOUND2)
-
 #include <alsa/asoundlib.h>
+
 
 char* device = NULL;
 snd_pcm_t *handle;
@@ -27,6 +29,11 @@ int period_time = 100000;                        /* period time in us */
 
 snd_pcm_sframes_t buffer_size;
 snd_pcm_sframes_t period_size;
+
+int alsa_open(void);
+int alsa_close(void);
+int alsa_stop(void);
+int alsa_play(char *rawbuf, long buflen, struct cdda_block *blk);
 
 static int set_hwparams(snd_pcm_hw_params_t *params,
                         snd_pcm_access_t access)
