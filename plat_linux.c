@@ -117,8 +117,6 @@ int	max_volume = 255;
 int mixer;
 char mixer_dev_name[20] = "/dev/mixer";
 #endif
-/*const char *cddaslave_path = "/home/kernalex/devel/kdemultimedia-3.0.6/kscd/libwm/.libs/cddaslave";*/
-const char *cddaslave_path = "cddaslave";
 
 /*-------------------------------------------------------*
  *
@@ -397,9 +395,7 @@ gen_get_drive_status( struct wm_drive *d, int oldmode,
     }
  
 #if defined(BUILD_CDDA)
-  if (oldmode == WM_CDM_PAUSED || oldmode == WM_CDM_PLAYING || oldmode == WM_CDM_STOPPED) {
-       CDDARETURN(d) cdda_get_drive_status(d, oldmode, mode, pos, track, ind);
-  }
+  CDDARETURN(d) cdda_get_drive_status(d, oldmode, mode, pos, track, ind);
 #endif
 
   /* Try to get rid of the door locking    */
