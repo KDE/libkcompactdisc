@@ -111,6 +111,7 @@ gen_cdda_init( struct wm_drive *d )
     dev.frames_at_once = NUMFRAMES;
     dev.blocks = blks;
     dev.numblocks = NUMBLOCKS;
+    dev.status = WM_CDM_UNKNOWN;
 
     if ((ret = wmcdda_init(&dev)))
         return ret;
@@ -144,7 +145,11 @@ cdda_get_drive_status( struct wm_drive *d, int oldmode,
   int *mode, int *frame, int *track, int *ind )
 {
     if (d->cdda_slave > -1) {
-        *mode = dev.status;
+        if(dev.status)
+          *mode = dev.status;
+        else
+          *mode = oldmode;
+
         if (*mode == WM_CDM_PLAYING) {
             *track = dev.track;
             *ind = dev.index;
