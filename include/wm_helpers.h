@@ -99,7 +99,11 @@ char *		wm_libver_string( void ); 	/* returns string: "<name> <number>" */
 char *		wm_libver_date( void );		/* returns string: date of compilation */
 void 		wm_lib_set_verbosity( int level ); /* set verbosity level */
 int 		wm_lib_get_verbosity( void );      /* get verbosity level */
-void 		wm_lib_message( unsigned int level, const char *format, ... ); /* put out a message on stderr */
+void 		wm_lib_message( unsigned int level, const char *format, ... )
+#ifdef __GNUC__
+    __attribute__ ((format(printf,2,3)))
+#endif
+    ; /* put out a message on stderr */
 int		wm_susleep( int usec );
 
 #endif /* WM_HELPERS_H */
