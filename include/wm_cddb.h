@@ -25,12 +25,6 @@
  *
  */
 
-
-extern struct wm_cddb cddb;
-extern int cur_cddb_protocol;
-extern char *cur_cddb_server, *cur_cddb_mail_adress,
-	*cur_cddb_path_to_cgi, *cur_cddb_proxy_server;
-
 unsigned long cddb_discid(void);
 void cddb_struct2cur(void);
 void cddb_cur2struct(void);
