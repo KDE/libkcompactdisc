@@ -129,8 +129,9 @@ int wm_cd_init( int cdin, const char *cd_device, const char *soundsystem,
   const char *sounddevice, const char *ctldevice )
 {
   drive.cdda = (WM_CDDA == cdin);
-#if 1
+#if !defined(BUILD_CDDA)
   if(drive.cdda) {
+    wm_lib_message(WM_MSG_LEVEL_DEBUG|WM_MSG_CLASS, "Libworkman library was compiled without cdda support\n");
     return -1;
   }
 #endif

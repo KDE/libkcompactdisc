@@ -235,10 +235,16 @@ wmcd_open( struct wm_drive *d )
   /*
    * See if we can do digital audio.
    */
-#if defined(BUILD_CDDA) && defined(WMCDDA_DONE)
-  if (cdda_init(d))
-    /* WARNING: Old GUI call. How could this survive? */
-    enable_cdda_controls(1);
+#if defined(BUILD_CDDA)
+  if(d->cdda) {
+    if (!gen_cdda_init(d))
+      /* WARNING: Old GUI call. How could this survive? */
+      enable_cdda_controls(1);
+    else {
+      wm_lib_message(WM_MSG_LEVEL_DEBUG|WM_MSG_CLASS, "wmcd_open(): failed in gen_cdda_init\n");
+      gen_close(d);
+      return -1;
+    }
 #endif
   
   /* Can we figure out the drive type? */
@@ -368,64 +374,11 @@ gen_get_drive_status( struct wm_drive *d,
 	}
     }
   
-#if defined(BUILD_CDDA) && defined(WMCDDA_DONE) /* { */
-  if ((oldmode == WM_CDM_PAUSED || oldmode == WM_CDM_PLAYING 
-       || oldmode == WM_CDM_STOPPED) && d->cdda_slave > -1)
-    {
-      struct cdda_block	blk;
-      struct pollfd		fds;
-      int			gotone = 0;
-      
-      fds.fd = d->cdda_slave;
-      fds.events = POLLRDNORM;
-      
-      *mode = oldmode;
-      
-      while (poll(&fds, 1, 0) > 0)
-	{
-	  read(d->cdda_slave, &blk, sizeof(blk));
-	  gotone = 1;
-	}
-      
-      /* We only want to use the latest status report. */
-      if (gotone)
-	{
-	  if (blk.status == WMCDDA_PLAYED)
-	    {
-	      *track = blk.track;
-	      *index = blk.index;
-	      *pos = blk.minute * 60 * 75 +
-		blk.second * 75 +
-		blk.frame;
-	      
-	      *mode = WM_CDM_PLAYING;
-	    }
-	  else if (blk.status == WMCDDA_DONE)
-	    *mode = WM_CDM_TRACK_DONE;
-	  else if (blk.status == WMCDDA_STOPPED)
-	    {
-	      if (oldmode == WM_CDM_PLAYING || oldmode == WM_CDM_PAUSED)
-		*mode = WM_CDM_PAUSED;
-	      else
-		*mode = WM_CDM_STOPPED;
-	    }
-	  else if (blk.status == WMCDDA_ERROR)
-	    {
-	      /*
-	       * An error near the end of the CD probably
-	       * just means we hit the end.
-	       */
-	      *mode = WM_CDM_TRACK_DONE;
-	    }
-	  else if (blk.status == WMCDDA_EJECTED)
-	    {
-	      *mode = WM_CDM_EJECTED;
-	    }
-	}
-      
-      return (0);
-    }
-#endif /* } */
+#if defined(BUILD_CDDA)
+  if (oldmode == WM_CDM_PAUSED || oldmode == WM_CDM_PLAYING || oldmode == WM_CDM_STOPPED) {
+       CDDARETURN(d) cdda_get_drive_status(d, oldmode, mode, pos, track, index);
+  }
+#endif
   
   /*
    * Solaris 2.2 hangs on this ioctl if someone else ejects the CD.
@@ -588,26 +541,7 @@ gen_play( struct wm_drive *d, int start, int end, int realstart)
   
   current_end = end;
   
-
-  if (d->cdda_slave > -1)
-    {
-      cmdbuf[0] = 'P';
-      cmdbuf[1] = start / (60 * 75);
-      cmdbuf[2] = (start % (60*75)) / 75;
-      cmdbuf[3] = start % 75;
-      cmdbuf[4] = end / (60*75);
-      cmdbuf[5] = (end % (60*75)) / 75;
-      cmdbuf[6] = end % 75;
-      cmdbuf[7] = realstart / (60 * 75);
-      cmdbuf[8] = (realstart % (60*75)) / 75;
-      cmdbuf[9] = realstart % 75;
-      
-      /* Write the play command and make sure the slave has it. */
-      write(d->cdda_slave, cmdbuf, 10);
-      get_ack(d->cdda_slave);
-      
-      return (0);
-    }
+  CDDARETURN(d) cdda_play(d, start, end, realstart);
   
   msf.cdmsf_min0 = start / (60*75);
   msf.cdmsf_sec0 = (start % (60*75)) / 75;
@@ -631,19 +565,7 @@ gen_play( struct wm_drive *d, int start, int end, int realstart)
 int
 gen_pause( struct wm_drive *d )
 {
-  if (d->cdda_slave > -1)
-    {
-      int	dummy, mode = WM_CDM_PLAYING;
-      
-      write(d->cdda_slave, "S", 1);
-      get_ack(d->cdda_slave);
-      /*
-      while (mode != WM_CDM_PAUSED)
-	gen_get_drive_status(d, WM_CDM_PAUSED, &mode, &dummy, &dummy,
-			     &dummy);
-      */
-      return (0);
-    }
+  CDDARETURN(d) cdda_pause(d);
   
   codec_stop();
   return (ioctl(d->fd, CDROMPAUSE));
@@ -655,8 +577,7 @@ gen_pause( struct wm_drive *d )
 int
 gen_resume( struct wm_drive *d )
 {
-  if (d->cdda_slave > -1)
-    return (1);
+  CDDARETURN(d) cdda_pause(d);
   
   codec_start();
   return (ioctl(d->fd, CDROMRESUME));
@@ -668,18 +589,8 @@ gen_resume( struct wm_drive *d )
 int
 gen_stop( struct wm_drive *d )
 {
-  if (d->cdda_slave > -1)
-    {
-      write(d->cdda_slave, "S", 1);
-      get_ack(d->cdda_slave);
-      
-      /*
-       * The WMCDDA_STOPPED status message will be caught by
-       * gen_get_drive_status.
-       */
-      
-      return (0);
-    }
+  CDDARETURN(d) cdda_stop(d);
+  
   codec_stop();
   return (ioctl(d->fd, CDROMSTOP));
 } /* gen_stop() */
@@ -700,11 +611,9 @@ gen_eject( struct wm_drive *d )
   if (ustat(stbuf.st_rdev, &ust) == 0)
     return (-3);
   
-  if (d->cdda_slave > -1)
-    {
-      write(d->cdda_slave, "S", 1);
-      get_ack(d->cdda_slave);
-    }
+  IFCDDA(d) {
+    cdda_eject(d);
+  }
   
   if (ioctl(d->fd, CDROMEJECT))
     return (-1);
@@ -765,34 +674,7 @@ gen_set_volume( struct wm_drive *d, int left, int right )
   thecd = d;
 #endif
   
-  if (d->cdda_slave > -1)
-    {
-      int		bal, vol;
-      unsigned char	cmd[2];
-      
-      bal = (right - left) + 100;
-      bal *= 255;
-      bal /= 200;
-      if (right > left)
-	vol = right;
-      else
-	vol = left;
-      vol *= 255;
-      vol /= 100;
-      
-      cmd[0] = 'B';
-      cmd[1] = bal;
-      write(d->cdda_slave, cmd, 2);
-      cmd[0] = 'V';
-      cmd[1] = vol;
-      write(d->cdda_slave, cmd, 2);
-      /*
-       * Don't wait for the ack, or the user won't be able to drag
-       * the volume slider smoothly.
-       */
-      
-      return (0);
-    }
+  CDDARETURN(d) cdda_set_volume(d, left, right);
   
   left = (left * (max_volume - min_volume)) / 100 + min_volume;
   right = (right * (max_volume - min_volume)) / 100 + min_volume;
@@ -804,58 +686,36 @@ gen_set_volume( struct wm_drive *d, int left, int right )
 } /* gen_set_volume() */
 
 /*
- * Read the initial volume from the drive, if available.  Each channel
+ * Read the volume from the drive, if available.  Each channel
  * ranges from 0 to 100, with -1 indicating data not available.
  */
 int
 gen_get_volume( struct wm_drive *d, int *left, int *right )
 {
-#if defined(BUILD_CDDA) && defined(WMCDDA_DONE) /* { */
-  struct cdda_block	blk;
-  
-  if (d->cdda_slave > -1)
-    {
-      write(d->cdda_slave, "G", 1);
-      get_ack(d->cdda_slave);
-      read(d->cdda_slave, &blk, sizeof(blk));
-      
-      *left = *right = (blk.volume * 100 + 254) / 255;
-      
-      if (blk.balance < 110)
-	*right = (((blk.volume * blk.balance + 127) / 128) *
-		  100 + 254) / 255;
-      else if (blk.balance > 146)
-	*left = (((blk.volume * (255 - blk.balance) +
-		   127) / 128) * 100 + 254) / 255;
-      
-      return (0);
-    }
-#endif /* } */
+  CDDARETURN(d) cdda_get_volume(d, left, right);
   
   *left = *right = -1;
   
   return (wm_scsi2_get_volume(d, left, right));
 } /* gen_get_volume() */
 
-/* Trying to patch things up. Yuck. */
-/* #ifdef BUILD_CDDA */
+#ifdef BUILD_CDDA
 
 /*
- * Try to initialize the CDDA slave.  Returns 0 on error.
+ * Try to initialize the CDDA slave.  Returns 0 on success.
  */
 int
-cdda_init( struct wm_drive *d )
+gen_cdda_init( struct wm_drive *d )
 {
-#if defined(BUILD_CDDA) && defined(WMCDDA_DONE) /* { */
   int	slavefds[2];
   
   if (d->cdda_slave > -1)
-    return (1);
+    return (0);
   
   if (socketpair(AF_UNIX, SOCK_STREAM, 0, slavefds))
     {
       perror("socketpair");
-      return (0);
+      return (-1);
     }
   
   switch (fork()) 
@@ -877,135 +737,23 @@ cdda_init( struct wm_drive *d )
       close(slavefds[0]);
       close(slavefds[1]);
       perror("fork");
-      return (0);
+      return (-2);
     }
   
   close(slavefds[1]);
   d->cdda_slave = slavefds[0];
   
-  if (!get_ack(d->cdda_slave))
+  if (!cdda_get_ack(d->cdda_slave))
     {
       d->cdda_slave = -1;
       codec_start();
-      return (0);
+      return (-3);
     }
   
-  return (1);
-  
-#else /* BUILD_CDDA only (WMCDDA_DONE } { */
-  /*
-   * If we're not building CDDA support, don't even bother trying.
-   */
   return (0);
-#endif
-} /* cdda_init() */
-
-/*
- * Wait for an acknowledgement from the CDDA slave.
- */
-static int
-get_ack(int fd)
-{
-#if defined(WMCDDA_DONE) /* { */
-  struct cdda_block	blk;
+}
   
-  do
-    if (read(fd, &blk, sizeof(blk)) <= 0)
-      return (0);
-  while (blk.status != WMCDDA_ACK);
-#endif /* } */
-  return (1);
-} /* get_ack() */
-
-/*
- * Turn off the CDDA slave.
- */
-void
-cdda_kill( struct wm_drive *d )
-{
-  if (d->cdda_slave > -1)
-    {
-      write(d->cdda_slave, "Q", 1);
-      get_ack(d->cdda_slave);
-      wait(NULL);
-      d->cdda_slave = -1;
-      codec_start();
-    }
-} /* cdda_kill() */
-
-/*
- * Tell the CDDA slave to set the play direction.
- */
-void
-gen_set_direction( int newdir )
-{
-  unsigned char	buf[2];
-  
-  if (d->cdda_slave > -1)
-    {
-      buf[0] = 'd';
-      buf[1] = newdir;
-      write(d->cdda_slave, buf, 2);
-      get_ack(d->cdda_slave);
-    }
-} /* gen_set_direction() */
-
-/*
- * Tell the CDDA slave to set the play speed.
- */
-void
-gen_set_speed( int speed )
-{
-  unsigned char	buf[2];
-  
-  if (d->cdda_slave > -1)
-    {
-      buf[0] = 's';
-      buf[1] = speed;
-      write(d->cdda_slave, buf, 2);
-      get_ack(d->cdda_slave);
-    }
-} /* gen_set_speed() */
-
-/*
- * Tell the CDDA slave to set the loudness level.
- */
-void
-gen_set_loudness( int loud )
-{
-  unsigned char	buf[2];
-  
-  if (d->cdda_slave > -1)
-    {
-      buf[0] = 'L';
-      buf[1] = loud;
-      write(d->cdda_slave, buf, 2);
-      get_ack(d->cdda_slave);
-    }
-} /* gen_set_loudness() */
-
-/*
- * Tell the CDDA slave to start (or stop) saving to a file.
- */
-void
-gen_save( char *filename )
-{
-  int	len;
-  
-  if (filename == NULL || filename[0] == '\0')
-    len = 0;
-  else
-    len = strlen(filename);
-  write(d->cdda_slave, "F", 1);
-  write(d->cdda_slave, &len, sizeof(len));
-  if (len)
-    write(d->cdda_slave, filename, len);
-  get_ack(d->cdda_slave);
-} /* gen_save() */
-
-/*
-#endif
-*/
+#endif /* BUILD_CDDA */
 
 /*
  * The following code activates the internal CD audio passthrough on
@@ -1221,4 +969,4 @@ gen_get_cdtext(struct wm_drive *d, unsigned char **pp_buffer, int *p_buffer_leng
   return wm_scsi_get_cdtext(d, pp_buffer, p_buffer_lenght);
 } /* gen_get_cdtext() */
 
-#endif /* sun } */
+#endif /* sun */

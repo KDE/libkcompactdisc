@@ -25,25 +25,30 @@
  * Linux CDDA functions. Derived from the SUN module.
  */
 
-#include "include/wm_config.h"
+#include "include/wm_cdda.h"
  
 static char plat_linux_cdda_id[] = "$Id$";
 
-#if defined(__linux__) && defined(BUILD_CDDA) /* { */
+#if defined(__linux__) && defined(BUILD_CDDA)
 
+#include "include/wm_struct.h"
 #include "include/wm_cdda.h"
-/* types.h and cdio.h are included by wmcdda.h */
+#include <linux/cdrom.h>
+/* types.h and cdio.h are included by wm_cdda.h */
 
 #include <stdio.h>
 #include <math.h>
 #include <sys/ioctl.h>
+#include <sys/types.h>
+#include <fcntl.h>
+#include <unistd.h>
 #include <malloc.h>
 #include <errno.h>
+#include <string.h>
 
 #define WM_MSG_CLASS WM_MSG_CLASS_PLATFORM
 
-#define CDDABLKSIZE 2368
-#define SAMPLES_PER_BLK 588
+#define CDDABLKSIZE 2352
 
 /* Address of next block to read. */
 int	current_position = 0;
@@ -55,118 +60,86 @@ int	ending_position = 0;
 /* Playback direction. */
 int	direction = 1;
 
-/* Number of blocks to read at once; initialize to the maximum. */
-int	numblocks = 30;
+/* Number of blocks to read at once */
+int numblocks = 75; /* we need 75 blocks / second */
 
-/*
- * This is the fastest way to convert from BCD to 8-bit.
- */
-unsigned char unbcd[256] = {
-  0,  1,  2,  3,  4,  5,  6,  7,  8,  9,  0,0,0,0,0,0,
- 10, 11, 12, 13, 14, 15, 16, 17, 18, 19,  0,0,0,0,0,0,
- 20, 21, 22, 23, 24, 25, 26, 27, 28, 29,  0,0,0,0,0,0,
- 30, 31, 32, 33, 34, 35, 36, 37, 38, 39,  0,0,0,0,0,0,
- 40, 41, 42, 43, 44, 45, 46, 47, 48, 49,  0,0,0,0,0,0,
- 50, 51, 52, 53, 54, 55, 56, 57, 58, 59,  0,0,0,0,0,0,
- 60, 61, 62, 63, 64, 65, 66, 67, 68, 69,  0,0,0,0,0,0,
- 70, 71, 72, 73, 74, 75, 76, 77, 78, 79,  0,0,0,0,0,0,
- 80, 81, 82, 83, 84, 85, 86, 87, 88, 89,  0,0,0,0,0,0,
- 90, 91, 92, 93, 94, 95, 96, 97, 98, 99,  0,0,0,0,0,0,
- 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
- 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
- 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
- 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
- 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
- 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
-};
+struct cdrom_subchnl subchnl;
 
 /*
  * Initialize the CDDA data buffer and open the appropriate device.
  *
- * NOTE: We allocate twice as much space as we need to actually read a block;
- * this lets us do audio manipulations without bothering to malloc a second
- * buffer.
- *
- * Also, test to see if we can actually *do* CDDA on this drive; if not, we
- * need to exit right away so the UI doesn't show the user any CDDA controls.
  */
 int
-wmcdda_init(char **bufadr, long *buflenadr, int init_fd, char *devname)
+wmcdda_init(struct cdda_device* pdev, struct cdda_block *block)
 {
-	struct cdrom_cdda	cdda;
+  struct cdrom_read_audio cdda;
 
-	*bufadr = malloc(numblocks * CDDABLKSIZE * 2);
-	if (*bufadr == NULL)
-		return (-1);
+  if (pdev->fd > -1)
+    return -1;
 
-	*buflenadr = numblocks * CDDABLKSIZE;
+  pdev->buf = malloc(numblocks * CDDABLKSIZE);
+  if (pdev->buf == NULL)
+    return -1;
 
-	/*init_fd = open(devname, 0);
-	if (init_fd == -1)
-		init_fd = open("/dev/rdsk/c0t6d0s2", 0);
-	*/
-	init_fd = wmcdda_open(devname);
+  pdev->buflen = numblocks * CDDABLKSIZE;
 
-	if (init_fd > -1)
-	{
-		cdda.cdda_addr = 200;
-		cdda.cdda_length = 1;
-		cdda.cdda_data = *bufadr;
-		cdda.cdda_subcode = CDROM_DA_SUBQ;
+  pdev->fd = open(pdev->devname?pdev->devname:"/dev/cdrom", 0);
 
-		if (ioctl(init_fd, CDROMCDDA, &cdda) < 0)
-		{
-			close(init_fd);
-			init_fd = -1;
-		}
-	}
+  if (pdev->fd > -1) {
+    cdda.addr_format = CDROM_LBA;
+    cdda.addr.lba = 200;
+    cdda.nframes = 1;
+    cdda.buf = (unsigned char*)pdev->buf;
 
-	return (init_fd);
+    if (ioctl(pdev->fd, CDROMREADAUDIO, &cdda) < 0) {
+      wmcdda_close(pdev);
+      block->status = WMCDDA_STOPPED;
+      return -1;
+    } else {
+      block->status = WMCDDA_STOPPED;
+      return 0;
+    }
+  } else {
+    free(pdev->buf);
+    block->status = WMCDDA_EJECTED;
+    return -1;
+  }
 }
-
-/*
- * Try to open the CD device
- */
-int
-wmcdda_open(char *devname)
-{
-    int fd;
-
-    fd = open(devname, 0); 
-    if (fd == -1)
-	fd = open("/dev/rdsk/c0t6d0s2", 0);
-
-    return(fd);
-}
-
 
 /*
  * Close the CD-ROM device in preparation for exiting.
  */
-void
-wmcdda_close(int fd)
+int
+wmcdda_close(struct cdda_device* pdev)
 {
-	close(fd);
+  if(-1 == pdev->fd)
+    return -1;
+
+  close(pdev->fd);
+  pdev->fd = -1;
+  free(pdev->buf);
+
+  return 0;
 }
 
 /*
  * Set up for playing the CD.  Actually this doesn't play a thing, just sets a
  * couple variables so we'll know what to do when we're called.
  */
-void
+int
 wmcdda_setup(int start, int end, int realstart)
 {
-	current_position = start - 150;
-	ending_position = end - 150;
-	starting_position = realstart - 150;
-
-	/*
-	 * Special case: don't start at the "end" of a track if we're
-	 * playing backwards!
-	 */
-	if (direction == -1 && start == realstart)
-		current_position = ending_position - numblocks;
+  current_position = start;
+  ending_position = end;
+  starting_position = realstart;
+/*
+  starting_position = start;
+  ending_position = end;
+  current_position = realstart;
+*/
+  return 0;
 }
+
 
 /*
  * Read some blocks from the CD.  Stop if we hit the end of the current region.
@@ -174,93 +147,74 @@ wmcdda_setup(int start, int end, int realstart)
  * Returns number of bytes read, -1 on error, 0 if stopped for a benign reason.
  */
 long
-wmcdda_read(int fd, unsigned char *rawbuf, long buflen,
-	struct cdda_block *block)
+wmcdda_read(struct cdda_device* pdev, struct cdda_block *block)
 {
-	struct cdrom_cdda	cdda;
-	int			blk;
-	unsigned char		*q;
-	extern int		speed;
+  struct cdrom_read_audio cdda;
 
-	if ((direction > 0 && current_position >= ending_position) ||
-	    (direction < 0 && current_position < starting_position))
-	{
-		block->status = WMCDDA_DONE;
-		return (0);
-	}
+  if(pdev->fd < 0 && (wmcdda_init(pdev, block) < 0)) {
+    return -1;
+  }
 
-	cdda.cdda_addr = current_position;
+  if (current_position >= ending_position) {
+    block->status = WMCDDA_DONE;
+    return 0;
+  }
+/*
+  cdda.addr_format = CDROM_MSF;
+  cdda.addr.msf.cdmsf_minute = current_position / (60*75);
+  cdda.addr.msf.cdmsf_second = (current_position % (60*75)) / 75;
+  cdda.addr.msf.cdmsf_frame = current_position % 75;
+*/
+  cdda.addr_format = CDROM_LBA;
+  cdda.addr.lba = current_position;
 	if (ending_position && current_position + numblocks > ending_position)
-		cdda.cdda_length = ending_position - current_position;
+    cdda.nframes = ending_position - current_position;
 	else
-		cdda.cdda_length = numblocks;
-	cdda.cdda_data = rawbuf;
-	cdda.cdda_subcode = CDROM_DA_SUBQ;
+    cdda.nframes = numblocks;
+  cdda.buf = (unsigned char*)pdev->buf;
 
-	if (ioctl(fd, CDROMCDDA, &cdda) < 0)
-	{
-		if (errno == ENXIO)	/* CD ejected! */
-		{
+  if (ioctl(pdev->fd, CDROMREADAUDIO, &cdda) < 0) {
+    if (errno == ENXIO) { /* CD ejected! */
 			block->status = WMCDDA_EJECTED;
-			return (-1);
+      return -1;
 		}
 
-		if (current_position + numblocks > ending_position)
-		{
+    if (current_position + numblocks > ending_position) {
 			/*
 			 * Hit the end of the CD, probably.
 			 */
 			block->status = WMCDDA_DONE;
-			return (0);
+      return 0;
 		}
 
 		/* Sometimes it fails once, dunno why */
-		if (ioctl(fd, CDROMCDDA, &cdda) < 0)
-		{
-			if (ioctl(fd, CDROMCDDA, &cdda) < 0)
-			{
-				if (ioctl(fd, CDROMCDDA, &cdda) < 0)
-				{
-					perror("CDROMCDDA");
+    perror("CDROMREADAUDIO");
 					block->status = WMCDDA_ERROR;
-					return (-1);
-				}
-			}
-		}
+    return -1;
 	}
 
-	if (speed > 148)
-	{
-		/*
-		 * We want speed=148 to advance by cdda_length, but
-		 * speed=256 to advance cdda_length * 4.
-		 */
-		current_position = current_position +
-			(cdda.cdda_length * direction * (speed - 112)) / 36;
-	}
-	else
-		current_position = current_position +
-			cdda.cdda_length * direction;
+  current_position = current_position + cdda.nframes;
 
-	for (blk = 0; blk < numblocks; blk++)
-	{
-		/*
-		 * New valid Q-subchannel information?  Update the block
-		 * status.
-		 */
-		q = &rawbuf[blk * CDDABLKSIZE + SAMPLES_PER_BLK * 4];
-		if (*q == 1)
+/*
+  subchnl.cdsc_format = CDROM_MSF;
+  if(ioctl(pdev->fd, CDROMSUBCHNL, &subchnl) < 0) {
+    perror("CDROMSUBCHNL");
+    block->status = WMCDDA_ERROR;
+    return -1;
+  } else */
 		{
-			block->status = WMCDDA_OK;
-			block->track =  unbcd[q[1]];
-			block->index =  unbcd[q[2]];
-			block->minute = unbcd[q[7]];
-			block->second = unbcd[q[8]];
-			block->frame =  unbcd[q[9]];
-		}
+    block->status = WMCDDA_PLAYING;
+    block->track =  -1;
+    block->index =  0;
+    block->minute = current_position / (60 * 75);
+    block->second = (current_position % (60*75)) / 75;
+    block->frame  = current_position % 75;
+/*    DEBUGLOG("in wmcdda_read wir sind current_position %i: track %i, index %i, %02i:%02i.%02i\n",
+      current_position, block->track, block->index,
+      block->minute, block->second, block->frame);*/
 	}
 
-	return (cdda.cdda_length * CDDABLKSIZE);
+  return (cdda.nframes * CDDABLKSIZE);
 }
 
 /*
@@ -273,68 +227,24 @@ wmcdda_read(int fd, unsigned char *rawbuf, long buflen,
  * XXX - do byte swapping on Intel boxes?
  */
 long
-wmcdda_normalize(unsigned char *rawbuf, long buflen, struct cdda_block *block)
+wmcdda_normalize(struct cdda_device* pdev, struct cdda_block *block)
 {
-	int		i, nextq;
-	int		blocks = buflen / CDDABLKSIZE;
-	unsigned char	*dest = rawbuf;
-	unsigned char	tmp;
-	long		*buf32 = (long *)rawbuf, tmp32;
-
-/*
- * this was #ifndef LITTLEENDIAN
- * in wmcdda it was called LITTLE_ENDIAN. Was this a flaw?
- */
 #if WM_BIG_ENDIAN
-	if (blocks--)
-		for (i = 0; i < SAMPLES_PER_BLK * 2; i++)
-		{
-			/* Only need to use temp buffer on first block. */
-			tmp = *rawbuf++;
-			*dest++ = *rawbuf++;
-			*dest++ = tmp;
-		}
+  int i;
+  int blocks = pdev->buflen / CDDABLKSIZE;
+  char *rawbuf = pdev->buf;
+  char *dest = pdev->buf;
+
+  while (blocks--) {
+    for (i = 0; i < CDDABLKSIZE / 2; i++) {
+      *dest++ = rawbuf[1];
+      *dest++ = rawbuf[0];
+      rawbuf += 2;
+    }
+  }
 #endif
 
-	while (blocks--)
-	{
-		/* Skip over Q data. */
-		rawbuf += 16;
-
-		for (i = 0; i < SAMPLES_PER_BLK * 2; i++)
-		{
-#if WM_LITTLE_ENDIAN
-			*dest++ = *rawbuf++;
-			*dest++ = *rawbuf++;
-#else
-			*dest++ = rawbuf[1];
-			*dest++ = rawbuf[0];
-			rawbuf += 2;
-#endif
-		}
-	}
-
-	buflen -= ((buflen / CDDABLKSIZE) * 16);
-
-	/*
-	 * Reverse the data here if we're playing backwards.
-	 * XXX - ideally this should be done above.
-	 */
-	if (direction < 0)
-	{
-		buflen /= 4;	/* we can move 32 bits at a time. */
-
-		for (i = 0; i < buflen / 2; i++)
-		{
-			tmp32 = buf32[i];
-			buf32[i] = buf32[buflen - i - 1];
-			buf32[buflen - i - 1] = tmp32;
-		}
-
-		buflen *= 4;
-	}
-
-	return (buflen);
+  return pdev->buflen;
 }
 
 /*
@@ -367,4 +277,4 @@ wmcdda_speed(int speed)
 		numblocks = direction > 0 ? 20 : 30;
 }
 
-#endif /* } */
+#endif

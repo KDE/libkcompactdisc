@@ -165,7 +165,18 @@ wmcd_open( struct wm_drive *d )
   /* Now fill in the relevant parts of the wm_drive structure. */
   d->fd = fd;
 
-
+  /*
+   * See if we can do digital audio.
+   */
+#if defined(BUILD_CDDA)
+  if(d->cdda && gen_cdda_init(d)) {
+    wm_lib_message(WM_MSG_LEVEL_DEBUG|WM_MSG_CLASS,
+      "wmcd_open(): failed in gen_cdda_init\n");
+    gen_close(d);
+    return -1;
+  }
+#endif
+  
   /* Can we figure out the drive type? */
   if (wm_scsi_get_drive_type(d, vendor, model, rev)) {
     wm_lib_message(WM_MSG_LEVEL_DEBUG|WM_MSG_CLASS, "wmcd_open(): inquiry failed\n");
@@ -376,6 +387,11 @@ gen_get_drive_status( struct wm_drive *d, int oldmode,
 	}
     }
  
+#if defined(BUILD_CDDA)
+  if (oldmode == WM_CDM_PAUSED || oldmode == WM_CDM_PLAYING || oldmode == WM_CDM_STOPPED) {
+       CDDARETURN(d) cdda_get_drive_status(d, oldmode, mode, pos, track, ind);
+  }
+#endif
 
   /* Try to get rid of the door locking    */
   /* Don't care about return value. If it  */
@@ -493,6 +509,8 @@ gen_play(struct wm_drive *d, int start, int end, int realstart)
 {
   struct cdrom_msf		msf;
 
+  CDDARETURN(d) cdda_play(d, start, end, realstart);
+
   msf.cdmsf_min0 = start / (60*75);
   msf.cdmsf_sec0 = (start % (60*75)) / 75;
   msf.cdmsf_frame0 = start % 75;
@@ -529,6 +547,7 @@ gen_play(struct wm_drive *d, int start, int end, int realstart)
 int
 gen_pause(struct wm_drive *d)
 {
+  CDDARETURN(d) cdda_pause(d);
   return (ioctl(d->fd, CDROMPAUSE));
 }
 
@@ -538,6 +557,7 @@ gen_pause(struct wm_drive *d)
 int
 gen_resume(struct wm_drive *d)
 {
+  CDDARETURN(d) cdda_pause(d);
   return (ioctl(d->fd, CDROMRESUME));
 }
 
@@ -547,6 +567,7 @@ gen_resume(struct wm_drive *d)
 int
 gen_stop(struct wm_drive *d)
 {
+  CDDARETURN(d) cdda_stop(d);
   return (ioctl(d->fd, CDROMSTOP));
 }
 
@@ -606,6 +627,10 @@ gen_eject(struct wm_drive *d)
   endmntent (fp);
 #endif /* BSD_MOUNTTEST */
  
+  IFCDDA(d) {
+    cdda_eject(d);
+  }
+
   ioctl( d->fd, CDROM_LOCKDOOR, 0 );
 
   if (ioctl(d->fd, CDROMEJECT))
@@ -690,6 +715,8 @@ gen_set_volume( struct wm_drive *d, int left, int right )
 {
   struct	cdrom_volctrl v;
   
+  CDDARETURN(d) cdda_set_volume(d, left, right);
+
   /* Adjust the volume to make up for the CD-ROM drive's weirdness. */
   left = scale_volume(left, 100);
   right = scale_volume(right, 100);
@@ -701,12 +728,14 @@ gen_set_volume( struct wm_drive *d, int left, int right )
 } /* gen_set_volume() */
 
 /*---------------------------------------------------------------------*
- * Read the initial volume from the drive, if available.  Each channel
+ * Read the volume from the drive, if available.  Each channel
  * ranges from 0 to 100, with -1 indicating data not available.
  *---------------------------------------------------------------------*/
 int
 gen_get_volume( struct wm_drive *d, int *left, int *right )
 {
+  CDDARETURN(d) cdda_get_volume(d, left, right);
+
   /* Suns, HPs, Linux, NEWS can't read the volume; oh well */
   *left = *right = -1;
 
@@ -741,29 +770,24 @@ gen_get_cdtext(struct wm_drive *d, unsigned char **pp_buffer, int *p_buffer_leng
  *-------------------------------------------------------*/
 
 /*
- * Try to initialize the CDDA slave.  Returns 0 on error.
+ * Try to initialize the CDDA slave.  Returns 0 on success.
  */
 int
 gen_cdda_init( struct wm_drive *d )
 {
-#if defined(WMCDDA_DONE)
   int	slavefds[2];
   
   if (d->cdda_slave > -1)
     return (0);
   
-#ifndef NDEBUG
-  fprintf( stderr, "slave okay\n" );
-#endif  
   if (socketpair(AF_UNIX, SOCK_STREAM, 0, slavefds))
     {
       perror("socketpair");
       return (-2);
     }
   
-#ifndef NDEBUG
-  fprintf( stderr, "going to fork\n" );
-#endif
+  wm_lib_message(WM_MSG_LEVEL_DEBUG|WM_MSG_CLASS, "gen_cdda_init(): going to fork\n" );
+
   switch (fork()) {
   case 0:
     close(slavefds[0]);
@@ -771,10 +795,9 @@ gen_cdda_init( struct wm_drive *d )
     dup2(slavefds[1], 0);
     close(slavefds[1]);
     close(d->fd);
-    /* Try the default path first. */
-    execl(cddaslave_path, cddaslave_path, d->cd_device, (void *)0);
-    /* Search $PATH if that didn't work. */
-    execlp("cddaslave", "cddaslave", d->cd_device, (void *)0);
+
+    execlp(cddaslave_path, cddaslave_path, d->cd_device,
+      d->soundsystem, d->sounddevice, d->ctldevice, NULL);
     perror(cddaslave_path);
     exit(1);
     
@@ -788,24 +811,19 @@ gen_cdda_init( struct wm_drive *d )
   close(slavefds[1]);
   d->cdda_slave = slavefds[0];
   
-  if (!get_ack(d->cdda_slave))
-    {
-#ifndef NDEBUG
-      fprintf( stderr, "get_ack failed\n" );
-#endif
-      d->cdda_slave = -1;
-      /*		codec_start(); */
-      return (-4);
-    }
-  return (0);
+  wm_lib_message(WM_MSG_LEVEL_DEBUG|WM_MSG_CLASS, "gen_cdda_init(): wait for slave reply\n");
 
-#else
-  /*
-   * If we're not building CDDA support, don't even bother trying.
-   */
-  return (-1);
-#endif /*  defined(WMCDDA_DONE) */
-} /* cdda_init()  */
+  if (!cdda_get_ack(d->cdda_slave)) {
+    fprintf( stderr, "get_ack failed slave fd %i\n", d->cdda_slave );
+    d->cdda_slave = -1;
+    return -4;
+  }
+
+  wm_lib_message(WM_MSG_LEVEL_DEBUG|WM_MSG_CLASS, "gen_cdda_init(): slave got reply\n");
+
+  return 0;
+} /* cdda_init() */
+  
 
 #endif /* BUILD_CDDA */
 

@@ -25,14 +25,15 @@
  * Sun (really Solaris) CDDA functions.
  */
 
-#include "include/wm_config.h"
+#include "include/wm_cdda.h"
 
 static char plat_sun_cdda_id[] = "$Id$";
-#if defined(sun) || defined(__sun__) && defined(SYSV) && defined(BUILD_CDDA) && defined(WMCDDA_DONE) /* { */
+#if defined(sun) || defined(__sun__) && defined(SYSV) && defined(BUILD_CDDA)
 
 
+#include "include/wm_struct.h"
 #include "include/wm_cdda.h"
-/* types.h and cdio.h are included by wmcdda.h */
+/* types.h and cdio.h are included by wm_cdda.h */
 
 #include <stdio.h>
 #include <math.h>
@@ -92,69 +93,67 @@ unsigned char unbcd[256] = {
  * need to exit right away so the UI doesn't show the user any CDDA controls.
  */
 int
-wmcdda_init(char **bufadr, long *buflenadr, int init_fd, char *devname)
+wmcdda_init(struct cdda_device* pdev, struct cdda_block *block)
 {
-	struct cdrom_cdda	cdda;
+  struct cdrom_cdda	cdda;
 
-	*bufadr = malloc(numblocks * CDDABLKSIZE * 2);
-	if (*bufadr == NULL)
-		return (-1);
+  if (pdev->fd > -1)
+    return -1;
+    
+  pdev->buf = malloc(numblocks * CDDABLKSIZE * 2);
+  if (pdev->bufr == NULL)
+    return (-1);
 
-	*buflenadr = numblocks * CDDABLKSIZE;
+  pdev->buflen = numblocks * CDDABLKSIZE;
 
-	/*init_fd = open(devname, 0);
-	if (init_fd == -1)
-		init_fd = open("/dev/rdsk/c0t6d0s2", 0);
-	*/
-	init_fd = wmcdda_open(devname);
+  pdev->fd = open(devname, 0);
+  if (pdev->fd == -1)
+    pdev->fd = open("/dev/rdsk/c0t6d0s2", 0);
 
-	if (init_fd > -1)
+	if (pdev->fd > -1)
 	{
 		cdda.cdda_addr = 200;
 		cdda.cdda_length = 1;
-		cdda.cdda_data = *bufadr;
+		cdda.cdda_data = pdev->buf;
 		cdda.cdda_subcode = CDROM_DA_SUBQ;
 
 		if (ioctl(init_fd, CDROMCDDA, &cdda) < 0)
 		{
-			close(init_fd);
-			init_fd = -1;
+			wmcdda_close(pdev);
+			block->status = WMCDDA_STOPPED;
+			return -1;
+		} else {
+		  block->status = WMCDDA_STOPPED;
+		  return 0;
 		}
+	} else {
+      free(pdev->buf);
+      block->status = WMCDDA_EJECTED;
+      return -1;
 	}
-
-	return (init_fd);
 }
-
-/*
- * Try to open the CD device
- */
-int
-wmcdda_open(char *devname)
-{
-    int fd;
-
-    fd = open(devname, 0); 
-    if (fd == -1)
-	fd = open("/dev/rdsk/c0t6d0s2", 0);
-
-    return(fd);
-}
-
 
 /*
  * Close the CD-ROM device in preparation for exiting.
  */
-void
+int
 wmcdda_close(int fd)
 {
-	close(fd);
+  if(-1 == pdev->fd)
+    return -1;
+
+  close(pdev->fd);
+  pdev->fd = -1;
+  free(pdev->buf);
+
+  return 0;
 }
 
 /*
  * Set up for playing the CD.  Actually this doesn't play a thing, just sets a
  * couple variables so we'll know what to do when we're called.
  */
-void
+int
 wmcdda_setup(int start, int end, int realstart)
 {
 	current_position = start - 150;
@@ -167,6 +166,7 @@ wmcdda_setup(int start, int end, int realstart)
 	 */
 	if (direction == -1 && start == realstart)
 		current_position = ending_position - numblocks;
+  return 0;
 }
 
 /*
@@ -175,13 +175,16 @@ wmcdda_setup(int start, int end, int realstart)
  * Returns number of bytes read, -1 on error, 0 if stopped for a benign reason.
  */
 long
-wmcdda_read(int fd, unsigned char *rawbuf, long buflen,
-	struct cdda_block *block)
+wmcdda_read(struct cdda_device* pdev, struct cdda_block *block)
 {
 	struct cdrom_cdda	cdda;
 	int			blk;
 	unsigned char		*q;
 	extern int		speed;
+
+  if(pdev->fd < 0 && (wmcdda_init(pdev, block) < 0)) {
+    return -1;
+  }
 
 	if ((direction > 0 && current_position >= ending_position) ||
 	    (direction < 0 && current_position < starting_position))
@@ -195,10 +198,10 @@ wmcdda_read(int fd, unsigned char *rawbuf, long buflen,
 		cdda.cdda_length = ending_position - current_position;
 	else
 		cdda.cdda_length = numblocks;
-	cdda.cdda_data = rawbuf;
+	cdda.cdda_data = pdev->buf;
 	cdda.cdda_subcode = CDROM_DA_SUBQ;
 
-	if (ioctl(fd, CDROMCDDA, &cdda) < 0)
+	if (ioctl(pdev->fd, CDROMCDDA, &cdda) < 0)
 	{
 		if (errno == ENXIO)	/* CD ejected! */
 		{
@@ -216,11 +219,11 @@ wmcdda_read(int fd, unsigned char *rawbuf, long buflen,
 		}
 
 		/* Sometimes it fails once, dunno why */
-		if (ioctl(fd, CDROMCDDA, &cdda) < 0)
+		if (ioctl(pdev->fd, CDROMCDDA, &cdda) < 0)
 		{
-			if (ioctl(fd, CDROMCDDA, &cdda) < 0)
+			if (ioctl(pdev->fd, CDROMCDDA, &cdda) < 0)
 			{
-				if (ioctl(fd, CDROMCDDA, &cdda) < 0)
+				if (ioctl(pdev->fd, CDROMCDDA, &cdda) < 0)
 				{
 					perror("CDROMCDDA");
 					block->status = WMCDDA_ERROR;
@@ -274,10 +277,12 @@ wmcdda_read(int fd, unsigned char *rawbuf, long buflen,
  * XXX - do byte swapping on Intel boxes?
  */
 long
-wmcdda_normalize(unsigned char *rawbuf, long buflen, struct cdda_block *block)
+wmcdda_normalize(struct cdda_device* pdev, struct cdda_block *block)
 {
 	int		i, nextq;
+	long buflen = pdev->buflen
 	int		blocks = buflen / CDDABLKSIZE;
+	unsigned char *rawbuf = pdev->buf;
 	unsigned char	*dest = rawbuf;
 	unsigned char	tmp;
 	long		*buf32 = (long *)rawbuf, tmp32;

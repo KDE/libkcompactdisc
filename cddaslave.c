@@ -42,7 +42,7 @@
  *
  */
 
-#include "include/wm_config.h"
+#include "include/wm_cdda.h"
 
 #ifdef BUILD_CDDA
  
@@ -51,11 +51,24 @@ static char cddaslave_id[] = "$Id$";
 #include <stdio.h>
 #include <sys/types.h>
 #include <sys/time.h>
+#include <unistd.h>
+#include <stdlib.h>
+#include <string.h>
+#include "include/wm_struct.h"
 #include "include/wm_cdda.h"
 #include "include/wm_platform.h"
+#include "audio/audio.h"
 
+void send_status(struct cdda_block *);
+
+#define SEND_ACK(b); { (b)->status |= WMCDDA_ACK; send_status(b); }
+#define SEND_STATUS(b); { (b)->status &= ~WMCDDA_ACK; send_status(b); }
+#define SEND_STATUS_ACK(b, s); { (b)->status = ((s) | WMCDDA_ACK); send_status(b); }
+
+int recieve_command(struct cdda_device *, struct cdda_block *);
 
 int	playing = 0;		/* Should the CD be playing now? */
+int pausing = 0;
 
 /*
  * Loudness setting, plus the floating volume multiplier and decaying-average
@@ -74,6 +87,12 @@ int		speed = 128;
  * This is non-null if we're saving audio to a file.
  */
 FILE		*output = NULL;
+
+/*
+ * These are driverdependent oops
+ *
+ */
+struct audio_oops *oops = NULL;
 
 /*
  * Audio file header format.
@@ -104,9 +123,10 @@ long cdda_transform();
  * Send status information upstream.
  */
 void
-send_status(blk)
-	struct cdda_block	*blk;
+send_status(struct cdda_block *blk)
 {
+  DEBUGLOG("send_status, send %i(%s | %s)\n", blk->status,
+    gen_status(blk->status & WMCDDA_ACK), gen_status(blk->status & ~WMCDDA_ACK));
 	write(1, blk, sizeof(*blk));
 }
 
@@ -130,114 +150,115 @@ send_status(blk)
  *   Fllllx...          Start saving to a file (length = l, followed by name)
  *   F0000              Stop saving.
  *   Ln			Set loudness level (0-255).
+ *   A                  Pause/Resume
+ *   I                  Get status, current frame
  */
 int
-command(cd_fd, blk)
-	int			cd_fd;
-	struct cdda_block	*blk;
+recieve_command(struct cdda_device *dev, struct cdda_block* blk)
 {
 	unsigned char		inbuf[10];
 	char			*filename;
 	int			namelen;
 	struct auheader		hdr;
 
-	if (read(0, inbuf, 1) <= 0)	/* Parent died. */
-	{
-		wmcdda_close();
-		wmaudio_close();
+  if (read(0, inbuf, 1) <= 0) {
+    wmcdda_close(dev);
+    oops->wmaudio_close();
+/*    ERRORLOG("cddaslave: parent died, exit\n");*/
 		exit(0);
 	}
 
+  DEBUGLOG("cddaslave: CMD %c\n", inbuf[0]);
+
 	switch (inbuf[0]) {
+  case 'I':
+    if(dev->fd < 0) wmcdda_init(dev, blk);
+    SEND_ACK(blk);
+    break;
+  case 'A': /* pause/resume */
+    if(WMCDDA_PLAYING & blk->status) {
+      oops->wmaudio_stop();
+      SEND_STATUS_ACK(blk, WMCDDA_PAUSED);
+    } else if (WMCDDA_PAUSED & blk->status) {
+      SEND_STATUS_ACK(blk, WMCDDA_PLAYING);
+    } else {
+      SEND_ACK(blk);
+    }
+    break;
 	case 'E':
-		playing = 0;
-		wmaudio_stop();
-		wmcdda_close(cd_fd);
-		cd_fd = -1;
-	        blk->status = WMCDDA_ACK;
-	        send_status(blk);
+    oops->wmaudio_stop();
+    wmcdda_close(dev);
+    SEND_ACK(blk);
 		break;
 	case 'P':
 		read(0, inbuf, 9);
-		playing = 1;
 
-		wmaudio_stop();
+    oops->wmaudio_stop();
 
 		wmcdda_setup(inbuf[0] * 60 * 75 + inbuf[1] * 75 + inbuf[2],
 			inbuf[3] * 60 * 75 + inbuf[4] * 75 + inbuf[5],
 			inbuf[6] * 60 * 75 + inbuf[7] * 75 + inbuf[8]);
 
-		wmaudio_ready();
-
 		level = 2500;
 		volume = 1 << 15;
 
-		blk->status = WMCDDA_ACK;
-		send_status(blk);
+    blk->track =  -1;
+    blk->index =  0;
+    blk->minute = inbuf[6];
+    blk->second = inbuf[7];
+    blk->frame  = inbuf[8];
+    SEND_STATUS_ACK(blk, WMCDDA_PLAYING);
 		break;
 
 	case 'S':
-		playing = 0;
-		wmaudio_stop();
-		blk->status = WMCDDA_ACK;
-		send_status(blk);
-		blk->status = WMCDDA_STOPPED;
-		send_status(blk);
+    oops->wmaudio_stop();
+    SEND_STATUS_ACK(blk, WMCDDA_STOPPED);
 		break;
 
 	case 'B':
 		read(0, inbuf, 1);
-		wmaudio_balance(inbuf[0]);
-		blk->status = WMCDDA_ACK;
-		send_status(blk);
+    if(oops->wmaudio_balance)
+      oops->wmaudio_balance(inbuf[0]);
 		break;
 
 	case 'V':
 		read(0, inbuf, 1);
-		wmaudio_volume(inbuf[0]);
-		blk->status = WMCDDA_ACK;
-		send_status(blk);
+    if(oops->wmaudio_balance)
+      oops->wmaudio_volume(inbuf[0]);
 		break;
-
-	case 'G':
-		blk->status = WMCDDA_ACK;
-		send_status(blk);
-
-		if (playing)
-			blk->status = WMCDDA_PLAYED;
-		else
-			blk->status = WMCDDA_STOPPED;
-		wmaudio_state(blk);
-		send_status(blk);
-		break;
-
-	case 'Q':
-		blk->status = WMCDDA_ACK;
-		send_status(blk);
-		wmcdda_close();
-		wmaudio_close();
+  case 'G':
+    {
+      SEND_ACK(blk);
+      if(!oops->wmaudio_state || oops->wmaudio_state(blk) == -1) {
+        blk->volume = -1;
+        blk->balance = 128;
+      }
+      send_status(blk);
+    }
+    break;
+  case 'Q':
+    SEND_ACK(blk);
+    wmcdda_close(dev);
+    oops->wmaudio_close();
 		exit(0);
-
+/*
 	case 's':
 		read(0, inbuf, 1);
 		speed = inbuf[0];
 		wmcdda_speed(speed);
-		blk->status = WMCDDA_ACK;
-		send_status(blk);
+    SEND_STATUS(blk, WMCDDA_ACK);
 		break;
 
 	case 'd':
 		read(0, inbuf, 1);
 		wmcdda_direction(inbuf[0]);
-		blk->status = WMCDDA_ACK;
-		send_status(blk);
+    SEND_STATUS(blk, WMCDDA_ACK);
 		break;
-
+*/
 	case 'L':
 		read(0, inbuf, 1);
 		loudness = inbuf[0];
-		blk->status = WMCDDA_ACK;
-		send_status(blk);
+    SEND_ACK(blk);
 		break;
 
 	case 'F':
@@ -253,8 +274,8 @@ command(cd_fd, blk)
 			if (filename == NULL)
 			{
 				perror("cddaslave");
-				wmcdda_close();
-				wmaudio_close();
+        wmcdda_close(dev);
+        oops->wmaudio_close();
 				exit(1);
 			}
 
@@ -280,12 +301,12 @@ command(cd_fd, blk)
 
 			free(filename);
 		}
-
-		blk->status = WMCDDA_ACK;
-		send_status(blk);
+    SEND_ACK(blk);
 	}
-	return(cd_fd);
+
+  return(dev->fd);
 }
+
 
 /*
  * Transform some CDDA data.
@@ -429,26 +450,48 @@ wmcdda_transform(unsigned char *rawbuf, long buflen, struct cdda_block *block)
 }
 
 
-main(argc, argv)
-	char	**argv;
+int main(int argc, char **argv)
 {
-	int			cd_fd = 3;
-	fd_set			readfd, dummyfd;
-	struct timeval		timeout;
-	char			*cddabuf;
-	long			cddabuflen;
-	struct cdda_block	blockinfo;
-	long			result;
-	int			nfds;
-	char			*devname;
+  fd_set			readfd, dummyfd;
+  struct timeval		timeout;
+  struct cdda_block	blockinfo;
+  long			result;
+  int			nfds;
+  struct cdda_device      dev;
+  const char      *sondsystem;
+  const char     *sounddevice;
+  const char  *sounddevicectl;
 
-	/*
-	 * Device name should be the command-line argument.
-	 */
-	if (argc < 2)
-		devname = "";
-	else
-		devname = argv[1];
+  memset(&blockinfo, 0, sizeof(struct cdda_block));
+  
+  /*
+   * Device name should be the command-line argument.
+   */
+  if (argc < 2)
+    dev.devname = NULL;
+  else
+    dev.devname = argv[1];
+
+  if (argc < 3)
+    sondsystem = "arts";
+  else
+    sondsystem = argv[2];
+
+  if (argc < 4)
+    sounddevice = NULL;
+  else
+    sounddevice = argv[3];
+
+  if (argc < 5)
+    sounddevicectl = NULL;
+  else
+    sounddevicectl = argv[3];
+
+  DEBUGLOG("cddaslave: called with %s %s %s %s\n",
+    dev.devname?dev.devname:"",
+    sondsystem?sondsystem:"",
+    sounddevice?sounddevice:"",
+    sounddevicectl?sounddevicectl:"");
 
 	/*
 	 * If we're running setuid root, bump up our priority then lose
@@ -462,21 +505,23 @@ main(argc, argv)
 
 	timerclear(&timeout);
 
-	cd_fd = wmcdda_init(&cddabuf, &cddabuflen, cd_fd, devname);
-	if (cd_fd < 0)
-		exit(1);
-	wmaudio_init();
+  dev.fd = -1;
+  wmcdda_init(&dev, &blockinfo);
 
-	blockinfo.status = WMCDDA_ACK;
-	send_status(&blockinfo);
-	blockinfo.status = WMCDDA_STOPPED;
+  oops = setup_soundsystem(sondsystem, sounddevice, sounddevicectl);
+  if (!oops) {
+    ERRORLOG("cddaslave: setup_soundsystem failed\n");
+    exit(1);
+  }
+
+  DEBUGLOG("cddaslave: sent first ACK\n");
+  SEND_ACK(&blockinfo);
 
 	/*
 	 * Accept commands as they come in, and play some sound if we're
 	 * supposed to be doing that.
 	 */
-	while (1)
-	{
+  while (1) {
 		FD_SET(0, &readfd);
 
 		/*
@@ -490,19 +535,14 @@ main(argc, argv)
 
 		nfds = select(1, &readfd, &dummyfd, &dummyfd, &timeout);
 
-		if (nfds < 0)	/* Broken pipe; our GUI exited. */
-		{
-			wmcdda_close(cd_fd);
-			wmaudio_close();
+    if (nfds < 0) { /* Broken pipe; our GUI exited. */
+      wmcdda_close(&dev);
+      oops->wmaudio_close();
 			exit(0);
 		}
 
-		if (FD_ISSET(0, &readfd))
-		{
-			/* If this doesn't work, just hope for the best */
-			if(cd_fd == -1)
-			    cd_fd = wmcdda_open(devname);
-			cd_fd = command(cd_fd, &blockinfo);
+    if (FD_ISSET(0, &readfd)) {
+      recieve_command(&dev, &blockinfo);
 			/*
 			 * Process all commands in rapid succession, rather
 			 * than possibly waiting for a CDDA read.
@@ -510,56 +550,32 @@ main(argc, argv)
 			continue;
 		}
 		
-		if (playing)
-		{
-			result = wmcdda_read(cd_fd, cddabuf, cddabuflen,
-				&blockinfo);
-			if (result <= 0)
-			{
-				/* Let the output queue drain. */
-				if (blockinfo.status == WMCDDA_DONE)
-				{
-					wmaudio_mark_last();
-					if (wmaudio_send_status())
-					{
-						/* queue drained, stop polling*/
-						playing = 0;
-					}
-				}
-				else
-				{
-					playing = 0;
+    if ((blockinfo.status & ~WMCDDA_ACK) == WMCDDA_PLAYING) {
+      result = wmcdda_read(&dev, &blockinfo);
+      if (result <= 0 && blockinfo.status != WMCDDA_DONE) {
+        ERRORLOG("cddaslave: wmcdda_read failed\n");
+        blockinfo.status = WMCDDA_STOPPED;
 					send_status(&blockinfo);
-				}
-			}
-			else
-			{
-				result = wmcdda_normalize(cddabuf, result,
-							&blockinfo);
-				result = wmcdda_transform(cddabuf, result,
-							&blockinfo);
-				if (output)
-					fwrite(cddabuf, result, 1, output);
-				result = wmaudio_convert(cddabuf, result,
-							&blockinfo);
-				if (wmaudio_play(cddabuf, result, &blockinfo))
-				{
-					playing = 0;
-					wmaudio_stop();
-					send_status(&blockinfo);
-				}
-			}
-		}
-		else
-			send_status(&blockinfo);
-	}
-}
+      } else {
+        result = wmcdda_normalize(&dev, &blockinfo);
+        if (output)
+          fwrite(dev.buf, result, 1, output);
 
-#else /* BUILD_CDDA */
+        if (oops->wmaudio_play(dev.buf, dev.buflen, &blockinfo)) {
+          oops->wmaudio_stop();
+          ERRORLOG("cddaslave: wmaudio_play failed\n");
+          blockinfo.status = WMCDDA_STOPPED;
+          send_status(&blockinfo);
+        }
+      }
+/*    } else {
+      SEND_STATUS(&blockinfo);*/
+    }
+      else
+        send_status(&blockinfo);
+  }
 
-main()
-{
-	exit(0);
+  return 0;
 }
 
 #endif /* BUILD_CDDA */
