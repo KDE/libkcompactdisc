@@ -38,7 +38,6 @@ static char plat_bsd386_id[] = "$Id$";
 #include <sys/stat.h>
 
 #include "include/wm_config.h"
-#define WM_MSG_CLASS WM_MSG_CLASS_PLATFORM
 
 /*
  * The following is included from the Linux module. However, I didn't
@@ -65,6 +64,9 @@ static char plat_bsd386_id[] = "$Id$";
 #endif
 
 #include "include/wm_struct.h"
+
+#define WM_MSG_CLASS WM_MSG_CLASS_PLATFORM
+
 
 /*
  * Since we can't sense the drive type with libcdrom anyway, and since the
@@ -107,7 +109,10 @@ wmcd_open(struct wm_drvie *d)
   int fd = -1;
   
   if (d->aux)	/* Device already open? */
-    return (0);
+    {
+      wm_lib_message(WM_MSG_LEVEL_DEBUG|WM_MSG_CLASS, "wmcd_open(): [device is open (aux=%d)]\n", d->aux);
+      return (0);
+    }
   
   if ((aux = cdopen(cd_device)) == NULL)
     {
@@ -141,16 +146,16 @@ wmcd_reopen( struct wm_drive *d )
   int tries = 0;
   
   do {
-    wm_lib_message(WM_MSG_LEVEL_DEBUG|WM_MSG_CLASS, "wmcd_reopen ");
+    wm_lib_message(WM_MSG_LEVEL_DEBUG|WM_MSG_CLASS, "wmcd_reopen\n");
     if (d->fd >= 0)		/* Device really open? */
       {
-	wm_lib_message(WM_MSG_LEVEL_DEBUG|WM_MSG_CLASS, "closes the device and ");
+	wm_lib_message(WM_MSG_LEVEL_DEBUG|WM_MSG_CLASS, "closing the device\n");
 	status = close( d->fd );   /* close it! */
 	/* we know, that the file is closed, do we? */
 	d->fd = -1;
       }
     wm_susleep( 1000 );
-    wm_lib_message(WM_MSG_LEVEL_DEBUG|WM_MSG_CLASS, "calls wmcd_open()\n");
+    wm_lib_message(WM_MSG_LEVEL_DEBUG|WM_MSG_CLASS, "calling wmcd_open()\n");
     status = wmcd_open( d ); /* open it as usual */
     wm_susleep( 1000 );
     tries++;

@@ -26,6 +26,7 @@
  */
 
 #ifdef linux
+
 /* Id for ident command */
 static char plat_linux_id[] = "$Id$";
 
@@ -72,9 +73,9 @@ static char plat_linux_id[] = "$Id$";
 #define CD_CHANNEL SOUND_MIXER_CD
 #endif
 
-#define max(a,b) ((a) > (b) ? (a) : (b))
-
 #define WM_MSG_CLASS WM_MSG_CLASS_PLATFORM
+
+#define max(a,b) ((a) > (b) ? (a) : (b))
  
 #ifdef LINUX_SCSI_PASSTHROUGH
 /* this is from <scsi/scsi_ioctl.h> */
@@ -495,8 +496,13 @@ gen_eject(struct wm_drive *d)
   FILE *fp;
 #endif
   
+  wm_lib_message(WM_MSG_LEVEL_DEBUG|WM_MSG_CLASS, "ejecting?\n");
+
   if (fstat(d->fd, &stbuf) != 0)
-    return (-2);
+    {
+      wm_lib_message(WM_MSG_LEVEL_DEBUG|WM_MSG_CLASS, "that weird fstat() thingy\n");
+      return (-2);
+    }
   
   /* Is this a mounted filesystem? */
 #if !defined(BSD_MOUNTTEST)
@@ -516,14 +522,14 @@ gen_eject(struct wm_drive *d)
   /* audio CD                                              -dirk    */
   if ((fp = setmntent (MOUNTED, "r")) == NULL)
     {
-      fprintf (stderr, "Could not open %s: %s\n", MOUNTED, strerror (errno));
+      wm_lib_message(WM_MSG_LEVEL_ERROR|WM_MSG_CLASS, "Could not open %s: %s\n", MOUNTED, strerror (errno));
       return(-3);
     }
   while ((mnt = getmntent (fp)) != NULL)
     {
       if (strcmp (mnt->mnt_fsname, cd_device) == 0)
 	{
-	  fputs ("CDROM already mounted (according to mtab). Operation aborted.\n", stderr);
+	  wm_lib_message(WM_MSG_LEVEL_ERROR|WM_MSG_CLASS, "CDROM already mounted (according to mtab). Operation aborted.\n");
 	  endmntent (fp);
 	  return(-3);
 	}
@@ -532,7 +538,11 @@ gen_eject(struct wm_drive *d)
 #endif /* BSD_MOUNTTEST */
   
   if (ioctl(d->fd, CDROMEJECT))
-    return (-1);
+    {
+      wm_lib_message(WM_MSG_LEVEL_DEBUG|WM_MSG_CLASS, "eject failed (%s).\n", strerror(errno));
+      return (-1);
+    }
+    
   /*------------------
    * Things in "foobar_one" are left over from 1.4b3
    * I put them here for further observation. In 1.4b3, however,

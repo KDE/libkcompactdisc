@@ -28,10 +28,11 @@
 
 
 
-#include "include/wm_config.h"
-
 #if defined(M_UNIX) 
 
+static char plat_linux_id[] = "$Id$";
+
+#include "include/wm_config.h"
 
 #include <sys/types.h>
 #include <stdio.h>
@@ -49,6 +50,8 @@
 
 #include "include/wm_struct.h"
 #include "include/wm_scsi.h"
+
+#define WM_MSG_CLASS WM_MSG_CLASS_PLATFORM
 
 #define SENSE_SZ EXTD_SENSE_LEN
 
@@ -150,7 +153,10 @@ wmcd_open( struct wm_drive *d)
   char		vendor[9], model[17], rev[5];
   
   if (d->fd >= 0)		/* Device already open? */
-    return (0);
+    {
+      wm_lib_message(WM_MSG_LEVEL_DEBUG|WM_MSG_CLASS, "wmcd_open(): [device is open (fd=%d)]\n", d->fd);
+      return (0);
+    }
   
   if (cd_device == NULL)
     {

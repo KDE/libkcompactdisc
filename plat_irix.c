@@ -191,6 +191,8 @@ wmcd_open( struct wm_drive *d )
 #ifdef CDDA
       icd = d->daux;
 #endif
+    } else {
+      wm_lib_message(WM_MSG_LEVEL_DEBUG|WM_MSG_CLASS, "wmcd_open(): [device is open (fd=%d)]\n", d->fd);
     }
   
   CDgetstatus(d->daux, &s);
@@ -209,16 +211,16 @@ wmcd_reopen( struct wm_drive *d )
   int status;
   
   do {
-    wm_lib_message(WM_MSG_LEVEL_DEBUG|WM_MSG_CLASS, "wmcd_reopen ");
+    wm_lib_message(WM_MSG_LEVEL_DEBUG|WM_MSG_CLASS, "wmcd_reopen\n");
     if (d->fd >= 0)		/* Device really open? */
       {
-	wm_lib_message(WM_MSG_LEVEL_DEBUG|WM_MSG_CLASS, "closes the device and ");
+	wm_lib_message(WM_MSG_LEVEL_DEBUG|WM_MSG_CLASS, "closing the device\n");
 	status = close( d->fd );   /* close it! */
 	/* we know, that the file is closed, do we? */
 	d->fd = -1;
       }
     wm_susleep( 1000 );
-    wm_lib_message(WM_MSG_LEVEL_DEBUG|WM_MSG_CLASS, "calls wmcd_open()\n");
+    wm_lib_message(WM_MSG_LEVEL_DEBUG|WM_MSG_CLASS, "calling wmcd_open()\n");
     status = wmcd_open( d ); /* open it as usual */
     wm_susleep( 1000 );
   } while ( status != 0 );
