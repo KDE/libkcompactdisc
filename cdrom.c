@@ -287,6 +287,8 @@ read_toc( void )
     thiscd.trk[i].volume = 0;
     thiscd.trk[i].track = i + 1;
     thiscd.trk[i].section = 0;
+    wm_lib_message(WM_MSG_LEVEL_DEBUG|WM_MSG_CLASS, "track %i, start frame %i\n",
+      thiscd.trk[i].track, thiscd.trk[i].start);
   }
 
   if(drive.proto->gen_get_cdlen &&
@@ -375,6 +377,10 @@ wm_cd_status( void )
     &(thiscd.curtrack), &cur_index) < 0) {
     perror("WM gen_get_drive_status");
     return -1;
+  } else {
+    wm_lib_message(WM_MSG_LEVEL_DEBUG|WM_MSG_CLASS,
+      "gen_det_drive_status returns status %s, track %i, frame %i\n",
+      gen_status(mode), thiscd.curtrack, cur_frame);
   }
 
   oldmode = mode;
@@ -448,7 +454,7 @@ wm_cd_status( void )
     break;	
   }
   wm_lib_message(WM_MSG_LEVEL_DEBUG|WM_MSG_CLASS,
-    "wm_cd_status returning %s\n", gen_status(wm_cur_cdmode));
+    "wm_cd_status returns %s\n", gen_status(wm_cur_cdmode));
   return wm_cur_cdmode;
 }
 

@@ -38,9 +38,7 @@ cdda_get_drive_status( struct wm_drive *d, int oldmode,
   int *mode, int *frame, int *track, int *ind )
 {
   if (d->cdda_slave > -1) {
-    unsigned char cmd[1] = { 'I' };
-
-    write(d->cdda_slave, cmd, 1);
+    write(d->cdda_slave, "I", 1);
     cdda_get_ack(d->cdda_slave);
 
     *mode = blk.status & ~WM_CDM_CDDAACK;
@@ -113,10 +111,9 @@ int
 cdda_pause( struct wm_drive *d )
 {
   if (d->cdda_slave > -1) {
-    int dummy, mode = WM_CDM_PLAYING;
-    unsigned char cmd[1] = { 'A' };
+/*    int dummy, mode = WM_CDM_PLAYING;*/
 
-    write(d->cdda_slave, cmd, 1);
+    write(d->cdda_slave, "A", 1);
     cdda_get_ack(d->cdda_slave);
     /*
     while (mode != WM_CDM_PAUSED)
@@ -131,9 +128,8 @@ cdda_pause( struct wm_drive *d )
 int
 cdda_stop( struct wm_drive *d )
 {
-  unsigned char cmd[1] = { 'S' };
   if (d->cdda_slave > -1) {
-    write(d->cdda_slave, cmd, 1);
+    write(d->cdda_slave, "S", 1);
     cdda_get_ack(d->cdda_slave);
 
     /*
@@ -149,9 +145,8 @@ cdda_stop( struct wm_drive *d )
 int
 cdda_eject( struct wm_drive *d )
 {
-  unsigned char cmd[1] = { 'E' };
   if (d->cdda_slave > -1) {
-    write(d->cdda_slave, cmd, 1);
+    write(d->cdda_slave, "E", 1);
     cdda_get_ack(d->cdda_slave);
 
     /*
