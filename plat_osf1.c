@@ -24,8 +24,6 @@
  */
 
 
-static char plat_osf_id[] = "$Id$";
-
 #if defined(__osf__) || defined(__osf)
 
 

@@ -29,8 +29,6 @@
  *
  */
 
-static char plat_openbsd[] = "$Id$";
-
 #if defined(__OpenBSD__) || defined(__OpenBSD)
 
 

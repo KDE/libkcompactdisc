@@ -32,8 +32,6 @@
  */
 
 
-static char plat_aix_id[] = "$Id$";
-
 #if defined(AIXV3) || defined(__AIXV3)
 
 #include <stdio.h>

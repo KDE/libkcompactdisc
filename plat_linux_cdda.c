@@ -27,8 +27,6 @@
 
 #include "include/wm_cdda.h"
  
-static char plat_linux_cdda_id[] = "$Id$";
-
 #if defined(__linux__) && defined(BUILD_CDDA)
 
 #include "include/wm_struct.h"
@@ -69,21 +67,19 @@ static char plat_linux_cdda_id[] = "$Id$";
 #define CDDABLKSIZE 2352
 
 /* Address of next block to read. */
-int current_position = 0;
+static int current_position;
 
 /* Address of first and last blocks to read. */
-int starting_position = 0;
-int ending_position = 0;
+static int starting_position;
+static int ending_position;
 
 /* Playback direction. */
-int direction = 1;
+static int direction = 1;
 
 /* Number of blocks to read at once */
 /* we need 75 blocks / second */
-int numblocks = /* seconds */ 1 * 75;
+static int numblocks = /* seconds */ 1 * 75;
   
-struct cdrom_subchnl subchnl;
-
 /*
  * Initialize the CDDA data buffer and open the appropriate device.
  *

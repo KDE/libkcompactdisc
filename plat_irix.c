@@ -31,8 +31,6 @@
  * paul@kcbbs.gen.nz
  */
 
-static char plat_irix_id[] = "$Id$";
-
 #if defined(sgi) || defined(__sgi)
  
 #include "include/wm_config.h"
