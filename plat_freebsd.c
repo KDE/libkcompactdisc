@@ -50,13 +50,16 @@ static char freebsd_id[] = "$Id$";
 #include <sys/ioctl.h>
 #include <sys/cdio.h>
 
-#if defined(__NetBSD__) || defined(__OpenBSD__) 
+#if defined(__OpenBSD__) 
 # define MSF_MINUTES 1
 # define MSF_SECONDS 2
 # define MSF_FRAMES 3
-#include <sys/scsiio.h>
+# include <sys/scsiio.h>
 # include "/sys/scsi/scsi_all.h"
 # include "/sys/scsi/scsi_cd.h"
+#elif defined(__NetBSD__)
+#include <sys/scsiio.h>
+#include <dev/scsipi/scsipi_cd.h>
 #else
 # define LEFT_PORT 0
 # define RIGHT_PORT 1
@@ -233,17 +236,11 @@ gen_get_drive_status(struct wm_drive *d, enum wm_cd_modes oldmode,
     case CD_AS_PLAY_IN_PROGRESS:
       *mode = WM_CDM_PLAYING;
     dopos:
-#ifdef __NetBSD__
-      *pos = scd.what.position.absaddr[MSF_MINUTES] * 60 * 75 +
-	scd.what.position.absaddr[MSF_SECONDS] * 75 +
-	scd.what.position.absaddr[MSF_FRAMES];
-#else
-      *pos = scd.what.position.absaddr.msf.minute * 60 * 75 +
+	*pos = scd.what.position.absaddr.msf.minute * 60 * 75 +
 	scd.what.position.absaddr.msf.second * 75 +
 	scd.what.position.absaddr.msf.frame;
-#endif
-      *track = scd.what.position.track_number;
-      *index = scd.what.position.index_number;
+	*track = scd.what.position.track_number;
+	*index = scd.what.position.index_number;
       break;
       
     case CD_AS_PLAY_PAUSED:
@@ -308,15 +305,9 @@ gen_get_trackinfo(struct wm_drive *d, int track, int *data, int *startframe)
   
   *data = ((toc_buffer.control & 0x4) != 0);
   
-#ifdef __NetBSD__
-  *startframe = toc_buffer.addr[MSF_MINUTES]*60*75 +
-    toc_buffer.addr[MSF_SECONDS] * 75 +
-    toc_buffer.addr[MSF_FRAMES];
-#else
   *startframe = toc_buffer.addr.msf.minute*60*75 +
     toc_buffer.addr.msf.second * 75 +
     toc_buffer.addr.msf.frame;
-#endif
   
   return (0);
 } /* gen_get_trackinfo() */
