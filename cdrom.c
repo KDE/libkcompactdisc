@@ -282,14 +282,20 @@ wm_cd_status( void )
 	int			status, trackno = cur_track;
 	int			ret = WM_CDS_DISC_READY;
 
-	/* Open the drive.  This returns 1 if the device isn't ready. */
 
-	status = wmcd_open(&drive);
-
-	if (status < 0)
-		return (status);
-	if (status > 0)
-		return (WM_CDS_NO_DISC);
+	if( cur_cdmode == WM_CDM_DEVICECHANGED )
+	  {
+	    /* Don't open the device now, just change the mode to ejected */
+	    cur_cdmode = WM_CDM_EJECTED;
+	    status = 0;
+	  } else {
+	    /* Open the drive.  This returns 1 if the device isn't ready. */
+	    status = wmcd_open( &drive );
+	    if (status < 0)
+	      return (status);
+	    if (status > 0)
+	      return (WM_CDS_NO_DISC);
+	  }
 
 	/* If the user hit the stop button, don't pass PLAYING as oldmode.
          * Likewise, if we've just started playing, don't remember that
@@ -320,11 +326,12 @@ wm_cd_status( void )
 		return (WM_CDS_NO_DISC);
 	}
 
-	/* If there wasn't a CD before and there is now, learn about it. */
+	/* If there wasn't a CD before and there is now, learn about it. 
+	 * If the device has changed, this will close the old fd and     
+         * re-open the device before gathering information */
 	if (cur_cdmode == WM_CDM_EJECTED)
 	{
 		cur_pos_rel = cur_pos_abs = 0;
-
 
 		status = wmcd_reopen( &drive );
 
@@ -342,10 +349,6 @@ wm_cd_status( void )
 		cur_nsections = 0;
 		cur_ntracks = cd->ntracks;
 		cur_cdlen = cd->length;
-		/* load() is WorkMan database specific. Need to 
-		 * move this away.
-		 *
-		 * load(); */
 		cur_artist = cd->artist;
 		cur_cdname = cd->cdname;
 		cur_cdmode = WM_CDM_STOPPED;

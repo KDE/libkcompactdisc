@@ -538,7 +538,10 @@ wm_scsi2_set_volume(d, left, right)
  *
  *
  *------------------------------------------------------------------------*/
-
+#ifndef CGC_DATA_READ
+  #define CGC_DATA_READ 2
+#endif
+  
 int
 wm_scsi_get_cdtext(struct wm_drive *d, unsigned char **pp_buffer, int *p_buffer_length)
 {
@@ -560,7 +563,7 @@ wm_scsi_get_cdtext(struct wm_drive *d, unsigned char **pp_buffer, int *p_buffer_
   wm_lib_message(WM_MSG_LEVEL_DEBUG|WM_MSG_CLASS, "wm_scsi_get_cdtext entered\n");
 
   printf("CDTEXT INFO: use GET_FEATURY_LIST(0x46)...\n");
-  ret = sendscsi(d, temp, 8, 1,
+  ret = sendscsi(d, temp, 8, CGC_DATA_READ,
     0x46, 0x02, 0x00, 0x1E, 0,
     0, 0, 0, 8, 0, 0, 0);
 
@@ -584,7 +587,7 @@ wm_scsi_get_cdtext(struct wm_drive *d, unsigned char **pp_buffer, int *p_buffer_
       return -1;
 
     memset(dynamic_temp, 0, feature_list_length);
-    ret = sendscsi(d, dynamic_temp, feature_list_length, 1,
+    ret = sendscsi(d, dynamic_temp, feature_list_length, CGC_DATA_READ,
       0x46, 0x02, 0x00, 0x1E, 0, 0,
       0, (feature_list_length>>8) & 0xFF, feature_list_length & 0xFF, 0, 0, 0);
 
@@ -621,7 +624,7 @@ wm_scsi_get_cdtext(struct wm_drive *d, unsigned char **pp_buffer, int *p_buffer_
   }
 
   printf("CDTEXT INFO: try to read, how long CDTEXT is?\n");
-  ret = sendscsi(d, temp, 4, 1,
+  ret = sendscsi(d, temp, 4, CGC_DATA_READ,
     SCMD_READ_TOC, 0x00, 0x05, 0, 0, 0,
     0, 0, 4, 0, 0, 0);
 
@@ -641,7 +644,7 @@ wm_scsi_get_cdtext(struct wm_drive *d, unsigned char **pp_buffer, int *p_buffer_
 
     memset(dynamic_temp, 0, cdtext_data_length);
     printf("CDTEXT INFO: try to read CDTEXT\n");
-    ret = sendscsi(d, dynamic_temp, cdtext_data_length, 1,
+    ret = sendscsi(d, dynamic_temp, cdtext_data_length, CGC_DATA_READ,
       SCMD_READ_TOC, 0x00, 0x05, 0, 0, 0,
       0, (cdtext_data_length>>8) & 0xFF, cdtext_data_length & 0xFF, 0, 0, 0);
    

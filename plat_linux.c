@@ -124,6 +124,7 @@ wmcd_open( struct wm_drive *d )
   
   if (cd_device == NULL)
     cd_device = DEFAULT_CD_DEVICE;
+    
   
   if (d->fd >= 0)		/* Device already open? */
     {
@@ -131,9 +132,9 @@ wmcd_open( struct wm_drive *d )
       return (0);
     }
   
-  d->fd = open(cd_device, O_RDONLY | O_NONBLOCK);
+  fd = open(cd_device, O_RDONLY | O_NONBLOCK);
 
-  if (d->fd < 0)
+  if (fd < 0)
     {
       if (errno == EACCES)
 	{
@@ -152,8 +153,6 @@ wmcd_open( struct wm_drive *d )
       retval = 1;
     }
   
-  /* Now fill in the relevant parts of the wm_drive structure. */
-  fd = d->fd;
   
 #ifdef LINUX_SCSI_PASSTHROUGH
   /* Can we figure out the drive type? */
@@ -161,6 +160,7 @@ wmcd_open( struct wm_drive *d )
   if (retval == WM_ERR_SCSI_INQUIRY_FAILED)
     wm_lib_message(WM_MSG_LEVEL_DEBUG|WM_MSG_CLASS, "wmcd_open(): After failed inquiry\n");
 #endif
+
   *d = *(find_drive_struct(vendor, model, rev));
   wm_drive_settype(vendor, model, rev);
   
