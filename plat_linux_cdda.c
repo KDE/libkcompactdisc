@@ -36,8 +36,16 @@ static char plat_linux_cdda_id[] = "$Id$";
 #ifndef __GNUC__
 #define __GNUC__ 1
 #endif
+
+/* don't undef ansi for the other includes */
+#ifdef __STICT_ANSI__
 #undef __STRICT_ANSI__
 #include <asm/types.h>
+#define __STRICT_ANSI__
+#else
+#include <asm/types.h>
+#endif
+
 /* ugly workaround for broken glibc shipped in SuSE 9.0 */
 #define inline __inline__
 #define asm __asm__
