@@ -26,8 +26,6 @@
  *
  */
 
-static char wm_helpers_id[] = "$Id$";
-
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
@@ -110,7 +108,7 @@ wm_strmcpy( char **t, const char *s )
 	wm_lib_message(WM_MSG_CLASS_MISC | WM_MSG_LEVEL_DEBUG, "wm_strmcpy(%s, '%s')\n", *t, s);
 	if (*t != NULL)
 	  {
-	    wm_lib_message(WM_MSG_CLASS_MISC | WM_MSG_LEVEL_DEBUG, "wm_strmcpy freeing pointer 0x%08X\n", *t);
+	    wm_lib_message(WM_MSG_CLASS_MISC | WM_MSG_LEVEL_DEBUG, "wm_strmcpy freeing pointer %p\n", *t);
 	    free(*t);
 	  }
 
@@ -121,7 +119,7 @@ wm_strmcpy( char **t, const char *s )
 		exit(1);
 	}
 
-	wm_lib_message(WM_MSG_CLASS_MISC | WM_MSG_LEVEL_DEBUG, "wm_strmcpy finally copying (0x%08X, '%s')\n", *t, s);
+	wm_lib_message(WM_MSG_CLASS_MISC | WM_MSG_LEVEL_DEBUG, "wm_strmcpy finally copying (%p, '%s')\n", *t, s);
 	strncpy(*t, s, strlen(s));
 } /* wm_strmcpy() */
 
@@ -169,7 +167,7 @@ wm_strdup( char *s )
  */
 void wm_lib_set_verbosity( int level )
 {
-	if( WM_MSG_LEVEL_NONE <= level <= WM_MSG_LEVEL_DEBUG )
+	if( WM_MSG_LEVEL_NONE <= level && level <= WM_MSG_LEVEL_DEBUG )
 	{
 	 	wm_lib_verbosity = level;
 		wm_lib_message(WM_MSG_CLASS_MISC | WM_MSG_LEVEL_DEBUG, "Verbosity set to %d|%d\n", WM_MSG_LEVEL_DEBUG, level & WM_MSG_CLASS_ALL);
