@@ -7,8 +7,6 @@
 #define NULL 0
 #endif
 
-#define USE_ARTS
-
 struct audio_oops {
   int (*wmaudio_open)(void);
   int (*wmaudio_close)(void);

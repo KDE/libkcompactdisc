@@ -12,11 +12,13 @@
  */
 
 
-/*#include "audio.h"*/	
+
+#include "config.h"
 
 #if defined(HAVE_ARTS_LIBASOUND2)
-#include <alsa/asoundlib.h>
 
+#include <alsa/asoundlib.h>
+#include "audio.h"
 
 char* device = NULL;
 snd_pcm_t *handle;

@@ -21,11 +21,10 @@
  * most modern soundcards accept 16LE with 44.1kHz
  * Alexander Kern alex.kern@gmx.de
  */
-#include "audio.h"
-
-#ifdef include_ARTS_TRUE
 
 #include <artsc.h>
+
+#include "audio.h"
 
 arts_stream_t arts_stream = NULL;
 
@@ -128,5 +127,3 @@ setup_arts(const char *dev, const char *ctl)
   
   return &arts_oops;
 }
-
-#endif /* USE_ARTS */
