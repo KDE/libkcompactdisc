@@ -97,6 +97,7 @@ int
 wmcdda_init(struct cdda_device* pdev, struct cdda_block *block)
 {
   struct cdrom_cdda	cdda;
+  int i;
 
   if (pdev->fd > -1)
     return -1;
@@ -109,7 +110,7 @@ wmcdda_init(struct cdda_device* pdev, struct cdda_block *block)
       return -ENOMEM;
   }
 
-  pdev->fd = open(devname, 0);
+  pdev->fd = open(pdev->devname, 0);
   if (pdev->fd == -1)
     pdev->fd = open("/dev/rdsk/c0t6d0s2", 0);
 
@@ -120,16 +121,16 @@ wmcdda_init(struct cdda_device* pdev, struct cdda_block *block)
 		cdda.cdda_data = pdev->blocks[0].buf;
 		cdda.cdda_subcode = CDROM_DA_SUBQ;
 
-		if (ioctl(init_fd, CDROMCDDA, &cdda) < 0)
+		if (ioctl(pdev->fd, CDROMCDDA, &cdda) < 0)
 		{
-			block->status = WMCDDA_STOPPED;
+			block->status = WM_CDM_STOPPED;
 			return -1;
 		} else {
-		  block->status = WMCDDA_STOPPED;
+		  block->status = WM_CDM_STOPPED;
 		  return 0;
 		}
 	} else {
-            block->status = WMCDDA_EJECTED;
+            block->status = WM_CDM_EJECTED;
             return -1;
 	}
 }
@@ -138,8 +139,10 @@ wmcdda_init(struct cdda_device* pdev, struct cdda_block *block)
  * Close the CD-ROM device in preparation for exiting.
  */
 int
-wmcdda_close(int fd)
+wmcdda_close(struct cdda_device* pdev)
 {
+    int i;
+ 
     if(-1 == pdev->fd)
         return -1;
 
@@ -198,7 +201,7 @@ wmcdda_read(struct cdda_device* pdev, struct cdda_block *block)
     if ((direction > 0 && current_position >= ending_position) ||
         (direction < 0 && current_position < starting_position))
     {
-        block->status = WMCDDA_DONE;
+        block->status = WM_CDM_TRACK_DONE;
         return (0);
     }
 
@@ -207,14 +210,14 @@ wmcdda_read(struct cdda_device* pdev, struct cdda_block *block)
         cdda.cdda_length = ending_position - current_position;
     else
         cdda.cdda_length = pdev->frames_at_once;
-    cdda.cdda_data = pdev->buf;
+    cdda.cdda_data = (unsigned char*)block->buf;
     cdda.cdda_subcode = CDROM_DA_SUBQ;
 
     if (ioctl(pdev->fd, CDROMCDDA, &cdda) < 0)
     {
         if (errno == ENXIO)	/* CD ejected! */
         {
-            block->status = WMCDDA_EJECTED;
+            block->status = WM_CDM_EJECTED;
             return (-1);
         }
 
@@ -226,7 +229,7 @@ wmcdda_read(struct cdda_device* pdev, struct cdda_block *block)
                 if (ioctl(pdev->fd, CDROMCDDA, &cdda) < 0)
                 {
                     perror("CDROMCDDA");
-                    block->status = WMCDDA_ERROR;
+                    block->status = WM_CDM_CDDAERROR;
                     return (-1);
                 }
             }
@@ -254,12 +257,13 @@ wmcdda_read(struct cdda_device* pdev, struct cdda_block *block)
         q = &rawbuf[blk * CDDABLKSIZE + SAMPLES_PER_BLK * 4];
         if (*q == 1)
         {
-            block->status = WMCDDA_OK;
             block->track =  unbcd[q[1]];
             block->index =  unbcd[q[2]];
-            block->minute = unbcd[q[7]];
-            block->second = unbcd[q[8]];
+            /*block->minute = unbcd[q[7]];
+            block->second = unbcd[q[8]];*/
             block->frame =  unbcd[q[9]];
+            block->status = WM_CDM_PLAYING;
+            block->buflen = cdda.nframes * CDDABLKSIZE;
         }
     }
 
@@ -279,7 +283,7 @@ long
 wmcdda_normalize(struct cdda_block *block)
 {
 	int		i, nextq;
-	long buflen = block->buflen
+	long buflen = block->buflen;
 	int		blocks = buflen / CDDABLKSIZE;
 	unsigned char *rawbuf = block->buf;
 	unsigned char	*dest = rawbuf;
