@@ -626,10 +626,18 @@ wm_cd_play( int start, int pos, int end )
 	end--;
 	cur_lasttrack = end;
 
-	wm_cd_play_chunk(cd->trk[start].start + pos * 75, end >= cur_ntracks ?
-		cur_cdlen * 75 : cd->trk[end].start - 1,
-		cd->trk[start].start);
+        /* Don't play if it's just one data track or still a data track */
+        if( start < 0 ) start = 0;
+        if( cd->trk[start].data == 1 )
+          {
+            wm_cd_status();
+            cur_cdmode = WM_CDM_STOPPED;
+            return;
+          }
 
+        wm_cd_play_chunk(cd->trk[start].start + pos * 75, end >= cur_ntracks ?
+                         cur_cdlen * 75 : cd->trk[end].start - 1,
+                         cd->trk[start].start);
 	/* So we don't update the display with the old frame number */
 	wm_cd_status();
 	cur_frame = cd->trk[start].start + pos * 75;
