@@ -30,7 +30,7 @@ static char wm_helpers_id[] = "$Id$";
 
 #include <stdio.h>
 #include <string.h>
-#include <malloc.h>
+#include <stdlib.h>
 #include <errno.h>
 #include <stdarg.h>
 #include <sys/time.h>
