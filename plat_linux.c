@@ -127,41 +127,35 @@ gen_init( struct wm_drive *d )
 int
 wmcd_open( struct wm_drive *d )
 {
-  int		fd;
-  static int	warned = 0;
+  int fd;
   char vendor[32], model[32], rev[32];
-  
+
   if (d->cd_device == NULL)
     d->cd_device = DEFAULT_CD_DEVICE;
-    
-  
-  if (d->fd >= 0)		/* Device already open? */
-    {
+
+
+  if (d->fd >= 0) { /* Device already open? */
 /*      wm_lib_message(WM_MSG_LEVEL_DEBUG|WM_MSG_CLASS, "wmcd_open(): [device is open (fd=%d)]\n", d->fd);*/
       return (0);
-    }
-  
+  }
+
   fd = open(d->cd_device, O_RDONLY | O_NONBLOCK);
 
-  if (fd < 0)
-    {
-      if (errno == EACCES)
-	{
-          return -EACCES;
-	}
-      /* Hack proposed by Carey Evans, introduced by Debian maintainer :
-       * treat EIO like ENXIO since some Linux drives do never return ENXIO
-       * ENOMEDIUM is returned by Kernel 2.2.x unified drivers.
-       */
-      else if ((errno != ENXIO) && (errno != EIO) && (errno != ENOMEDIUM))
-	{
-          return (-6);
-	}
-      
-      /* No CD in drive. */
-      return 1;
+  if (fd < 0) {
+    if (errno == EACCES) {
+      return -EACCES;
     }
-  
+    /* Hack proposed by Carey Evans, introduced by Debian maintainer :
+     * treat EIO like ENXIO since some Linux drives do never return ENXIO
+     * ENOMEDIUM is returned by Kernel 2.2.x unified drivers.
+     */
+    else if ((errno != ENXIO) && (errno != EIO) && (errno != ENOMEDIUM)) {
+      return (-6);
+    }
+    /* No CD in drive. */
+    return 1;
+  }
+
   /* Now fill in the relevant parts of the wm_drive structure. */
   d->fd = fd;
 
@@ -170,13 +164,12 @@ wmcd_open( struct wm_drive *d )
    */
 #if defined(BUILD_CDDA)
   if(d->cdda && gen_cdda_init(d)) {
-    wm_lib_message(WM_MSG_LEVEL_DEBUG|WM_MSG_CLASS,
-      "wmcd_open(): failed in gen_cdda_init\n");
+    wm_lib_message(WM_MSG_LEVEL_DEBUG|WM_MSG_CLASS, "wmcd_open(): failed in gen_cdda_init\n");
     gen_close(d);
     return -1;
   }
 #endif
-  
+
   /* Can we figure out the drive type? */
   if (wm_scsi_get_drive_type(d, vendor, model, rev)) {
     wm_lib_message(WM_MSG_LEVEL_DEBUG|WM_MSG_CLASS, "wmcd_open(): inquiry failed\n");
@@ -192,7 +185,7 @@ wmcd_open( struct wm_drive *d )
 
   if(d->proto->gen_init)
     return (d->proto->gen_init)(d);
-  
+
   return 0;
 } /* wmcd_open() */
 
@@ -507,7 +500,7 @@ gen_get_cdlen(struct wm_drive *d, int *frames)
 int
 gen_play(struct wm_drive *d, int start, int end, int realstart)
 {
-  struct cdrom_msf		msf;
+  struct cdrom_msf msf;
 
   CDDARETURN(d) cdda_play(d, start, end, realstart);
 
@@ -518,13 +511,12 @@ gen_play(struct wm_drive *d, int start, int end, int realstart)
   msf.cdmsf_sec1 = (end % (60*75)) / 75;
   msf.cdmsf_frame1 = end % 75;
   
-  if (ioctl(d->fd, CDROMPLAYMSF, &msf))
-    {
-      if (ioctl(d->fd, CDROMSTART))
-        return (-1);
-      if (ioctl(d->fd, CDROMPLAYMSF, &msf))
-        return (-2);
-    }
+  if (ioctl(d->fd, CDROMPLAYMSF, &msf)) {
+    if (ioctl(d->fd, CDROMSTART))
+      return (-1);
+    if (ioctl(d->fd, CDROMPLAYMSF, &msf))
+      return (-2);
+  }
   
   /*
    * I hope no drive gets really confused after CDROMSTART
@@ -588,11 +580,10 @@ gen_eject(struct wm_drive *d)
   
   wm_lib_message(WM_MSG_LEVEL_DEBUG|WM_MSG_CLASS, "ejecting?\n");
 
-  if (fstat(d->fd, &stbuf) != 0)
-    {
+  if (fstat(d->fd, &stbuf) != 0) {
       wm_lib_message(WM_MSG_LEVEL_DEBUG|WM_MSG_CLASS, "that weird fstat() thingy\n");
       return (-2);
-    }
+  }
   
   /* Is this a mounted filesystem? */
 #if !defined(BSD_MOUNTTEST)
