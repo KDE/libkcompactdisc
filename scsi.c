@@ -562,19 +562,19 @@ wm_scsi_get_cdtext(struct wm_drive *d, unsigned char **pp_buffer, int *p_buffer_
   cdtext_possible = 0;
   wm_lib_message(WM_MSG_LEVEL_DEBUG|WM_MSG_CLASS, "wm_scsi_get_cdtext entered\n");
 
-  printf("CDTEXT INFO: use GET_FEATURY_LIST(0x46)...\n");
+  printf("CDTEXT INFO: use GET_FEATURE_LIST(0x46)...\n");
   ret = sendscsi(d, temp, 8, CGC_DATA_READ,
     0x46, 0x02, 0x00, 0x1E, 0,
     0, 0, 0, 8, 0, 0, 0);
 
   if(ret)
   {
-    printf("CDTEXT ERROR: GET_FEATURY_LIST(0x46) not implemented or broken. ret = %i!\n", ret);
+    printf("CDTEXT ERROR: GET_FEATURE_LIST(0x46) not implemented or broken. ret = %i!\n", ret);
 #ifndef IGNORE_FEATURE_LIST
     printf("CDTEXT ERROR: Try #define IGNORE_FEATURE_LIST in libwm/scsi.c\n");
 #else
     cdtext_possible = 1;
-    printf("CDTEXT INFO: GET_FEATURY_LIST(0x46) ignored. It's OK, becose many CDROMS don't implement this featury\n");
+    printf("CDTEXT INFO: GET_FEATURE_LIST(0x46) ignored. It's OK, becose many CDROMS don't implement this featury\n");
 #endif /* IGNORE_FEATURE_LIST */
   }
   else
@@ -619,7 +619,7 @@ wm_scsi_get_cdtext(struct wm_drive *d, unsigned char **pp_buffer, int *p_buffer_
 
   if(!cdtext_possible)
   {
-    printf("CDTEXT INFO: GET_FEATURY_LIST(0x46) says, CDTEXT is not present!\n");
+    printf("CDTEXT INFO: GET_FEATURE_LIST(0x46) says, CDTEXT is not present!\n");
     return EXIT_SUCCESS;
   }
 

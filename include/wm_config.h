@@ -130,7 +130,7 @@
  ******************************************************************/
 #if defined(__FreeBSD__) || defined(__FreeBSD)
 
-#define DEFAULT_CD_DEVICE	"/dev/acd0c"
+#define DEFAULT_CD_DEVICE	"/dev/rcd0c"
 
 #endif /* freebsd */
 
