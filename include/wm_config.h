@@ -304,7 +304,7 @@
 
 #define SYSV 1
 #define CODEC 1
-#define DEFAULT_CD_DEVICE /vol/dev/aliases/cdrom0
+#define DEFAULT_CD_DEVICE "/vol/dev/aliases/cdrom0"
 
 /*
  * set the following to "SUNW,CS4231" for Sun and to "SUNW,sb16"
