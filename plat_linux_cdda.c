@@ -110,12 +110,10 @@ wmcdda_init(struct cdda_device* pdev)
         if((ioctl(pdev->fd, CDROMREADAUDIO, &cdda) < 0)) {
             if (errno == ENXIO) {
                 /* CD ejected! */
-                ERRORLOG("errno == ENXIO\n");
                 pdev->status = WM_CDM_EJECTED;
                 return 0;
             } else {
                 /* Sometimes it fails once, dunno why */
-                ERRORLOG("CDROMREADAUDIO errno %i\n", errno);
                 pdev->status = WM_CDM_CDDAERROR;
                 return 0;
             }
@@ -201,7 +199,6 @@ wmcdda_read(struct cdda_device* pdev, struct cdda_block *block)
             return 0;
         } else {
             /* Sometimes it fails once, dunno why */
-            ERRORLOG("CDROMREADAUDIO errno %i\n", errno);
             block->status = WM_CDM_CDDAERROR;
             return 0;
         }

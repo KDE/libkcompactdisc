@@ -390,7 +390,7 @@ void *cdda_fct_read(void* arg)
             result = wmcdda_read(cddadev, &blks[i]);
             
             if (result <= 0 && blks[i].status != WM_CDM_TRACK_DONE) {
-                ERRORLOG("cdda: wmcdda_read failed\n");
+                ERRORLOG("cdda: wmcdda_read failed, stop playing\n");
                 cddadev->command = WM_CDM_STOPPED;
                 break;
             } else {
