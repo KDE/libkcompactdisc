@@ -1,7 +1,7 @@
 dnl +-------------------------------+
 dnl |   Checks for LIBWORKMAN       |
 dnl +-------------------------------+
-AC_MSG_CHECKING("for CDDA")
+AC_MSG_CHECKING(for CDDA)
 
 AC_ARG_WITH(kscd-cdda, [  --with-kscd-cdda             build CDDA support in kscd [default=yes]],
 [
@@ -51,6 +51,8 @@ if test "$libwm_with_cdda" = "yes"; then
     AC_DEFINE(BUILD_CDDA, 1, [Define if you will CDDA support in kscd])
 fi
 AM_CONDITIONAL(libwm_with_cdda, test "$libwm_with_cdda" = "yes")
+
+AC_MSG_RESULT($libwm_with_cdda)
 
 
 dnl +-------------------------------+
