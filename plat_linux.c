@@ -43,6 +43,10 @@ static char plat_linux_id[] = "$Id$";
 #include <sys/wait.h>
 /* Try to get around bug #29274 */
 #include <linux/version.h>
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,5,50)
+#undef __GNUC__
+typedef unsigned long long __u64; 
+#endif
 
 #include "include/wm_config.h"
 #include "include/wm_struct.h"
@@ -59,6 +63,7 @@ static char plat_linux_id[] = "$Id$";
     #include <sys/ustat.h>
   #endif
 #endif
+
 
 #include <sys/time.h>
 #include <sys/ioctl.h>

@@ -25,8 +25,6 @@
  * Get information about a CD.
  */
 
-static char cdinfo_id[] = "$Id$";
-
 #include <errno.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -76,8 +74,7 @@ int info_modified;
  * etc.  The new entry will be zeroed out.
  */
 void
-insert_trackinfo(num)
-	int	num;
+insert_trackinfo(int num)
 {
 	struct wm_trackinfo *newtrk;
 
@@ -275,7 +272,8 @@ char *
 listentry( int num )
 {
 	static char	buf[600];
-	char		*name, tracknum[20];
+	const char *name;
+    char* tracknum[20];
 	int		digits;
 	int		sdigits;
 
@@ -297,7 +295,7 @@ listentry( int num )
 
 		digits = 2;
 		sdigits = cur_nsections < 9 ? -1 : -2;
-		
+
 		name = cd->trk[num].songname ? cd->trk[num].songname : "";
 
 		if (cur_nsections)
@@ -640,18 +638,16 @@ stash_trkinfo( int track, char *songname, int contd, int avoid )
  * Add a playlist to a CD.
  */
 struct wm_playlist *
-new_list(cd, listname)
-	struct wm_cdinfo	*cd;
-	char		*listname;
+new_list(struct wm_cdinfo* cdinfo, char* listname)
 {
 	int	nlists = 0;
 	struct wm_playlist *l;
 
-	if (cd->lists != NULL)
+	if (cdinfo->lists != NULL)
 	{
-		for (nlists = 0; cd->lists[nlists].name != NULL; nlists++)
+		for (nlists = 0; cdinfo->lists[nlists].name != NULL; nlists++)
 			;
-		l = (struct wm_playlist *)realloc(cd->lists, (nlists + 2) *
+		l = (struct wm_playlist *)realloc(cdinfo->lists, (nlists + 2) *
 			sizeof (struct wm_playlist));
 	}
 	else
@@ -664,7 +660,7 @@ new_list(cd, listname)
 	l[nlists].name = NULL;		/* so wm_strmcpy doesn't free() it */
 	wm_strmcpy(&l[nlists].name, listname);
 	l[nlists].list = NULL;
-	cd->lists = l;
+	cdinfo->lists = l;
 
 	return (&l[nlists]);
 }
