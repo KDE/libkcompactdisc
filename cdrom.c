@@ -537,7 +537,6 @@ wm_cd_pause( void )
 		break;
 
 	case WM_CDM_PAUSED:		/* paused */
-                fprintf(stderr, "wm_cd_pause\n");
 		cur_cdmode = WM_CDM_PLAYING;
 /*		(drive.resume)(&drive); */
 		if ((drive.resume)(&drive) > 0 )
@@ -599,6 +598,28 @@ wm_cd_play( int start, int pos, int end )
 {
 	if (cur_cdmode == WM_CDM_EJECTED || cd == NULL)
 		return;
+
+        /*
+         * Try to avoid mixed mode and CD-EXTRA data tracks
+         */
+        if( (start == 1) && (cd->trk[start-1].data == 1))
+          {
+            start++;
+          }
+
+        /* -2: -1 (array-index) + -1 (leadout->last track)*/
+        if( (cd->trk[end-2].data == 1 ) )
+          {
+            end--;
+          }
+
+        /* CD-EXTRA: The data track was requested to play.
+         * Play the last audio track instead.
+         */
+        if( start >= end )
+          {
+            start = end-1;
+          }
 
 	cur_firsttrack = start;
 	start--;

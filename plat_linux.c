@@ -410,8 +410,8 @@ int
 gen_get_cdlen(struct wm_drive *d, int *frames)
 {
   int		tmp;
-  
-  return (gen_get_trackinfo(d, CDROM_LEADOUT, &tmp, frames));
+
+  return gen_get_trackinfo( d, CDROM_LEADOUT, &tmp, frames);
 } /* gen_get_cdlen() */
 
 
@@ -422,7 +422,7 @@ int
 gen_play(struct wm_drive *d, int start, int end)
 {
   struct cdrom_msf		msf;
-  
+
   msf.cdmsf_min0 = start / (60*75);
   msf.cdmsf_sec0 = (start % (60*75)) / 75;
   msf.cdmsf_frame0 = start % 75;
@@ -430,13 +430,26 @@ gen_play(struct wm_drive *d, int start, int end)
   msf.cdmsf_sec1 = (end % (60*75)) / 75;
   msf.cdmsf_frame1 = end % 75;
   
-#ifndef FAST_IDE
-  if (ioctl(d->fd, CDROMSTART))
-    return (-1);
-#endif		
   if (ioctl(d->fd, CDROMPLAYMSF, &msf))
-    return (-2);
+    {
+      if (ioctl(d->fd, CDROMSTART))
+        return (-1);
+      if (ioctl(d->fd, CDROMPLAYMSF, &msf))
+        return (-2);
+    }
   
+  /*
+   * I hope no drive gets really confused after CDROMSTART
+   * If so, I need to make this run-time configurable.
+   * 
+#ifndef FAST_IDE
+  if (ioctl( d->fd, CDROMSTART))
+      return (-1);
+#endif
+  if (ioctl( d->fd, CDROMPLAYMSF, &msf ))
+      return (-2);
+    */  
+
   return (0);
 } /* gen_play() */
 
