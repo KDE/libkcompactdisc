@@ -421,7 +421,6 @@ gen_get_drive_status( struct wm_drive *d, int oldmode,
       break;
     
     case CDROM_AUDIO_PAUSED:
-    case CDROM_AUDIO_NO_STATUS:
       if (oldmode == WM_CDM_PLAYING || oldmode == WM_CDM_PAUSED) {
         *mode = WM_CDM_PAUSED;
         *track = sc.cdsc_trk;
@@ -433,6 +432,10 @@ gen_get_drive_status( struct wm_drive *d, int oldmode,
         *mode = WM_CDM_STOPPED;
       break;
     
+    case CDROM_AUDIO_NO_STATUS:
+        *mode = WM_CDM_STOPPED;
+      break;
+
     case CDROM_AUDIO_COMPLETED:
       *mode = WM_CDM_TRACK_DONE; /* waiting for next track. */
       break;
