@@ -27,8 +27,6 @@
  * obviously it won't contain track titles just after a CD is inserted.)
  */
 
-static char database_id[] = "$Id$";
-
 #define RCFILE "/.workmanrc"
 #define DBFILE "/.workmandb"
 #define FUZZFRAMES 75
@@ -44,6 +42,7 @@ static char database_id[] = "$Id$";
 #include <sys/param.h>
 #include <sys/time.h>
 #include <sys/stat.h>
+#include <time.h>
 #include "include/wm_config.h"
 #include "include/wm_helpers.h"
 #include "include/wm_struct.h"
@@ -67,24 +66,24 @@ void save_globals(FILE *fp);
 int save_entry(char *filename, int pref);
 /* local prototypes END */
 
-int	suppress_locking = 0;	/* Turn off locking of datafile (dangerous) */
+static int	suppress_locking = 0;	/* Turn off locking of datafile (dangerous) */
 
-char	*rcfile = NULL;		/* Personal rcfile */
-char	*dbfiles = NULL;	/* Colon-separated list of databases */
-char	**databases = NULL;	/* NULL-terminated list of databases */
+static char	*rcfile = NULL;		/* Personal rcfile */
+static char	*dbfiles = NULL;	/* Colon-separated list of databases */
+static char	**databases = NULL;	/* NULL-terminated list of databases */
 
-char	*otherrc = NULL;	/* Unrecognized cruft from start of rcfile */
+static char	*otherrc = NULL;	/* Unrecognized cruft from start of rcfile */
 
-long	rcpos, rclen;		/* XXX */
+static long	rcpos, rclen;		/* XXX */
 
-int	found_in_db, found_in_rc;
-long	holepos, firstpos;
+static int	found_in_db, found_in_rc;
+static long	holepos, firstpos;
 
-int fuzz_frames = FUZZFRAMES;
+static int fuzz_frames = FUZZFRAMES;
 
-int wm_db_save_disabled = FALSE;
+static int wm_db_save_disabled = FALSE;
 
-int cur_playnew = -1;
+static int cur_playnew = -1;
 
 extern int cur_ntracks, cur_nsections;
 
