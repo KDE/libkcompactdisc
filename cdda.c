@@ -33,31 +33,31 @@
 #include <pthread.h>
 
 #if defined(BUILD_CDDA)
-struct cdda_block blk;
-struct cdda_device dev;
-pthread_t thread;
+static struct cdda_block blk;
+static struct cdda_device dev;
+static pthread_t thread;
 
 void* cdda_fct(void* arg);
 
-int playing = 0; /* Should the CD be playing now? */
-int pausing = 0;
+static int playing = 0; /* Should the CD be playing now? */
+static int pausing = 0;
 
 /*
  * Loudness setting, plus the floating volume multiplier and decaying-average
  * volume level.
  */
-unsigned int loudness = 0, volume = 32768, level;
+static unsigned int loudness = 0, volume = 32768, level;
 
 /*
  * This is non-null if we're saving audio to a file.
  */
-FILE *output = NULL;
+static FILE *output = NULL;
 
 /*
  * These are driverdependent oops
  *
  */
-struct audio_oops *oops = NULL;
+static struct audio_oops *oops = NULL;
 
 /*
  * Audio file header format.
