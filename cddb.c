@@ -141,9 +141,13 @@ cddb_discid(void)
 	 * developed that it doesn't even use the full 32bit range.
 	 * But it seems to be always this way: The bad standards will be
 	 * accepted, the good ones turned down.
-	 */
+         * Boy, you pulled out the /75. This is not correct here, because
+         * this calculation needs the integer division for both .start
+         * fields.
+         */
 
-	t = (thiscd.trk[thiscd.ntracks].start-thiscd.trk[0].start)/75;
+        t = (thiscd.trk[thiscd.ntracks].start / 75)
+          - (thiscd.trk[0].start / 75);
 	return ((n % 0xff) << 24 | t << 8 | thiscd.ntracks);
 } /* cddb_discid() */
 
