@@ -304,7 +304,11 @@ keep_cd_open( void )
 	if (fork())
 		exit(0);
 
+#if defined(O_NOFOLLOW)
+	if ((fd = open("/tmp/cd.lock", O_RDWR | O_CREAT | O_NOFOLLOW, 0666)) < 0)
+#else
 	if ((fd = open("/tmp/cd.lock", O_RDWR | O_CREAT, 0666)) < 0)
+#endif
 		exit(0);
 	fl.l_type = F_WRLCK;
 	fl.l_whence = 0;
