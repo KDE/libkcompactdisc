@@ -82,6 +82,8 @@ unsigned char unbcd[256] = {
  0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
 };
 
+static long wmcdda_normalize(struct cdda_block *block);
+
 /*
  * Initialize the CDDA data buffer and open the appropriate device.
  *
@@ -100,11 +102,13 @@ wmcdda_init(struct cdda_device* pdev, struct cdda_block *block)
   if (pdev->fd > -1)
     return -1;
     
-  pdev->buf = malloc(numblocks * CDDABLKSIZE * 2);
-  if (pdev->bufr == NULL)
-    return (-1);
-
-  pdev->buflen = numblocks * CDDABLKSIZE;
+  for (i = 0; i < pdev->numblocks; i++) {
+    /* in Linux const */
+    pdev->blocks[i].buflen = pdev->frames_at_once * CDDABLKSIZE;
+    pdev->blocks[i].buf = malloc(pdev->blocks[i].buflen);
+    if (!pdev->blocks[i].buf)
+      return -ENOMEM;
+  }
 
   pdev->fd = open(devname, 0);
   if (pdev->fd == -1)
@@ -114,12 +118,11 @@ wmcdda_init(struct cdda_device* pdev, struct cdda_block *block)
 	{
 		cdda.cdda_addr = 200;
 		cdda.cdda_length = 1;
-		cdda.cdda_data = pdev->buf;
+		cdda.cdda_data = pdev->blocks[0].buf;
 		cdda.cdda_subcode = CDROM_DA_SUBQ;
 
 		if (ioctl(init_fd, CDROMCDDA, &cdda) < 0)
 		{
-			wmcdda_close(pdev);
 			block->status = WMCDDA_STOPPED;
 			return -1;
 		} else {
@@ -127,9 +130,8 @@ wmcdda_init(struct cdda_device* pdev, struct cdda_block *block)
 		  return 0;
 		}
 	} else {
-      free(pdev->buf);
-      block->status = WMCDDA_EJECTED;
-      return -1;
+            block->status = WMCDDA_EJECTED;
+            return -1;
 	}
 }
 
@@ -139,14 +141,19 @@ wmcdda_init(struct cdda_device* pdev, struct cdda_block *block)
 int
 wmcdda_close(int fd)
 {
-  if(-1 == pdev->fd)
-    return -1;
+    if(-1 == pdev->fd)
+        return -1;
 
-  close(pdev->fd);
-  pdev->fd = -1;
-  free(pdev->buf);
+    close(pdev->fd);
+    pdev->fd = -1;
+    
+    for (i = 0; i < pdev->numblocks; i++) {
+        free(pdev->blocks[i].buf);
+        pdev->blocks[i].buf = 0;
+        pdev->blocks[i].buflen = 0;
+    }
 
-  return 0;
+    return 0;
 }
 
 /*
@@ -177,94 +184,87 @@ wmcdda_setup(int start, int end, int realstart)
 long
 wmcdda_read(struct cdda_device* pdev, struct cdda_block *block)
 {
-	struct cdrom_cdda	cdda;
-	int			blk;
-	unsigned char		*q;
-	extern int		speed;
+    struct cdrom_cdda	cdda;
+    int			blk;
+    unsigned char		*q;
+    extern int		speed;
 
-  if(pdev->fd < 0 && (wmcdda_init(pdev, block) < 0)) {
-    return -1;
-  }
+    if(pdev->fd < 0 && (wmcdda_init(pdev, block) < 0)) {
+        return -1;
+    }
 
-	if ((direction > 0 && current_position >= ending_position) ||
-	    (direction < 0 && current_position < starting_position))
-	{
-		block->status = WMCDDA_DONE;
-		return (0);
-	}
+    /*
+     * Hit the end of the CD, probably.
+     */
+    if ((direction > 0 && current_position >= ending_position) ||
+        (direction < 0 && current_position < starting_position))
+    {
+        block->status = WMCDDA_DONE;
+        return (0);
+    }
 
-	cdda.cdda_addr = current_position;
-	if (ending_position && current_position + numblocks > ending_position)
-		cdda.cdda_length = ending_position - current_position;
-	else
-		cdda.cdda_length = numblocks;
-	cdda.cdda_data = pdev->buf;
-	cdda.cdda_subcode = CDROM_DA_SUBQ;
+    cdda.cdda_addr = current_position;
+    if (ending_position && current_position + pdev->frames_at_once > ending_position)
+        cdda.cdda_length = ending_position - current_position;
+    else
+        cdda.cdda_length = pdev->frames_at_once;
+    cdda.cdda_data = pdev->buf;
+    cdda.cdda_subcode = CDROM_DA_SUBQ;
 
-	if (ioctl(pdev->fd, CDROMCDDA, &cdda) < 0)
-	{
-		if (errno == ENXIO)	/* CD ejected! */
-		{
-			block->status = WMCDDA_EJECTED;
-			return (-1);
-		}
+    if (ioctl(pdev->fd, CDROMCDDA, &cdda) < 0)
+    {
+        if (errno == ENXIO)	/* CD ejected! */
+        {
+            block->status = WMCDDA_EJECTED;
+            return (-1);
+        }
 
-		if (current_position + numblocks > ending_position)
-		{
-			/*
-			 * Hit the end of the CD, probably.
-			 */
-			block->status = WMCDDA_DONE;
-			return (0);
-		}
+        /* Sometimes it fails once, dunno why */
+        if (ioctl(pdev->fd, CDROMCDDA, &cdda) < 0)
+        {
+            if (ioctl(pdev->fd, CDROMCDDA, &cdda) < 0)
+            {
+                if (ioctl(pdev->fd, CDROMCDDA, &cdda) < 0)
+                {
+                    perror("CDROMCDDA");
+                    block->status = WMCDDA_ERROR;
+                    return (-1);
+                }
+            }
+        }
+    }
 
-		/* Sometimes it fails once, dunno why */
-		if (ioctl(pdev->fd, CDROMCDDA, &cdda) < 0)
-		{
-			if (ioctl(pdev->fd, CDROMCDDA, &cdda) < 0)
-			{
-				if (ioctl(pdev->fd, CDROMCDDA, &cdda) < 0)
-				{
-					perror("CDROMCDDA");
-					block->status = WMCDDA_ERROR;
-					return (-1);
-				}
-			}
-		}
-	}
+    if (speed > 148)
+    {
+        /*
+         * We want speed=148 to advance by cdda_length, but
+         * speed=256 to advance cdda_length * 4.
+         */
+        current_position = current_position +
+            (cdda.cdda_length * direction * (speed - 112)) / 36;
+    }
+    else
+        current_position = current_position + cdda.cdda_length * direction;
 
-	if (speed > 148)
-	{
-		/*
-		 * We want speed=148 to advance by cdda_length, but
-		 * speed=256 to advance cdda_length * 4.
-		 */
-		current_position = current_position +
-			(cdda.cdda_length * direction * (speed - 112)) / 36;
-	}
-	else
-		current_position = current_position +
-			cdda.cdda_length * direction;
+    for (blk = 0; blk < numblocks; blk++)
+    {
+        /*
+         * New valid Q-subchannel information?  Update the block
+         * status.
+         */
+        q = &rawbuf[blk * CDDABLKSIZE + SAMPLES_PER_BLK * 4];
+        if (*q == 1)
+        {
+            block->status = WMCDDA_OK;
+            block->track =  unbcd[q[1]];
+            block->index =  unbcd[q[2]];
+            block->minute = unbcd[q[7]];
+            block->second = unbcd[q[8]];
+            block->frame =  unbcd[q[9]];
+        }
+    }
 
-	for (blk = 0; blk < numblocks; blk++)
-	{
-		/*
-		 * New valid Q-subchannel information?  Update the block
-		 * status.
-		 */
-		q = &rawbuf[blk * CDDABLKSIZE + SAMPLES_PER_BLK * 4];
-		if (*q == 1)
-		{
-			block->status = WMCDDA_OK;
-			block->track =  unbcd[q[1]];
-			block->index =  unbcd[q[2]];
-			block->minute = unbcd[q[7]];
-			block->second = unbcd[q[8]];
-			block->frame =  unbcd[q[9]];
-		}
-	}
-
-	return (cdda.cdda_length * CDDABLKSIZE);
+    return wmcdda_normalize(block);
 }
 
 /*
@@ -277,12 +277,12 @@ wmcdda_read(struct cdda_device* pdev, struct cdda_block *block)
  * XXX - do byte swapping on Intel boxes?
  */
 long
-wmcdda_normalize(struct cdda_device* pdev, struct cdda_block *block)
+wmcdda_normalize(struct cdda_block *block)
 {
 	int		i, nextq;
-	long buflen = pdev->buflen
+	long buflen = block->buflen
 	int		blocks = buflen / CDDABLKSIZE;
-	unsigned char *rawbuf = pdev->buf;
+	unsigned char *rawbuf = block->buf;
 	unsigned char	*dest = rawbuf;
 	unsigned char	tmp;
 	long		*buf32 = (long *)rawbuf, tmp32;

@@ -29,31 +29,40 @@
  * Information about a particular block of CDDA data.
  */
 struct cdda_block {
-	unsigned char status;
-	unsigned char command;
-	unsigned char track;
-	unsigned char index;
-	unsigned char reserved;
+    unsigned char status;
+    unsigned char track;
+    unsigned char index;
+    unsigned char reserved;
 
-	int frame;
-
-	/* Average volume levels, for level meters */
-	unsigned char lev_chan0;
-	unsigned char lev_chan1;
-
-	/* Current volume setting (0-255) */
-	unsigned char volume;
-
-	/* Current balance setting (0-255, 128 = balanced) */
-	unsigned char balance;
+    int   frame;
+    char *buf;
+    long  buflen;
 };
 
 struct cdda_device {
-  int        fd;
-  const char *devname;
-  char       *buf;
-  long       buflen;
-  struct cdda_block *block;
+    int        fd;
+    const char *devname;
+  
+    unsigned char status;
+    unsigned char track;
+    unsigned char index;
+    unsigned char command;
+  
+    int frame;
+    int frames_at_once;
+
+    /* Average volume levels, for level meters */
+    unsigned char lev_chan0;
+    unsigned char lev_chan1;
+
+    /* Current volume setting (0-255) */
+    unsigned char volume;
+
+    /* Current balance setting (0-255, 128 = balanced) */
+    unsigned char balance;
+    
+    struct cdda_block *blocks;
+    int numblocks;
 };
 
 #include "wm_cdrom.h"
@@ -158,14 +167,13 @@ void cdda_set_speed(struct wm_drive *d, int speed);
 void cdda_set_loudness(struct wm_drive *d, int loud);
 
 
-int wmcdda_init(struct cdda_device*, struct cdda_block *block);
+int wmcdda_init(struct cdda_device*);
 int wmcdda_open(const char*);
 int wmcdda_close(struct cdda_device*);
 int wmcdda_setup(int start, int end, int realstart);
 long wmcdda_read(struct cdda_device*, struct cdda_block *block);
 void wmcdda_speed(int speed);
 void wmcdda_direction(int newdir);
-long wmcdda_normalize(struct cdda_device*, struct cdda_block *block);
 
 #else
  #define CDDARETURN(x)

@@ -38,7 +38,7 @@ snd_pcm_sframes_t period_size;
 int alsa_open(void);
 int alsa_close(void);
 int alsa_stop(void);
-int alsa_play(char *rawbuf, long buflen, struct cdda_block *blk);
+int alsa_play(struct cdda_block *blk);
 int alsa_state(struct cdda_block *blk);
 struct audio_oops* setup_alsa(const char *dev, const char *ctl);
 
@@ -227,14 +227,14 @@ int alsa_close( void )
  * Returns 0 on success.
  */
 int
-alsa_play(char *rawbuf, long buflen, struct cdda_block *blk)
+alsa_play(struct cdda_block *blk)
 {
   signed short *ptr;
   int err = 0, frames;
 
-  ptr = (signed short *)rawbuf;
-  frames = buflen / (channels * 2);
-  DEBUGLOG("play %i frames, %i bytes\n", frames, buflen);
+  ptr = (signed short *)blk->buf;
+  frames = blk->buflen / (channels * 2);
+  DEBUGLOG("play %i frames, %i bytes\n", frames, blk->buflen);
   while (frames > 0) {
     err = snd_pcm_writei(handle, ptr, frames);
 

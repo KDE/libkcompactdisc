@@ -339,29 +339,30 @@ wm_cd_status( void )
       wm_cur_cdmode = WM_CDM_UNKNOWN;
   }
 
-  if(wm_cur_cdmode == WM_CDM_UNKNOWN || wm_cur_cdmode == WM_CDM_EJECTED) {
+  if(WM_CDS_NO_DISC(wm_cur_cdmode)) {
     /*
      * Open the drive.
      * This returns >0 if the device isn't ready and <0 if error.
      */
     cur_pos_abs = cur_pos_rel = cur_frame = 0;
     cur_pos_rel = cur_pos_abs = 0;
+    thiscd.ntracks = 0;
 
     err = wmcd_open( &drive );
+    if (err < 0) {
+      wm_cur_cdmode = WM_CDM_UNKNOWN;
+    } else if (err > 0) {
+      wm_cur_cdmode = WM_CDM_NO_DISC;
+    } else if(read_toc() || 0 == thiscd.ntracks) {
+      wm_cur_cdmode = WM_CDM_NO_DISC;
+    } else {
+        /* refresh cdtext info */
+        get_glob_cdtext(&drive, 1);
 
-    if (err < 0)
-      return WM_CDM_UNKNOWN;
-    if (err > 0)
-      return WM_CDM_NO_DISC;
-
-    if(read_toc())
-      return WM_CDM_NO_DISC;
-
-    /* fresh cdtext info */
-    get_glob_cdtext(&drive, 1);
-
-    wm_cur_cdmode = WM_CDM_STOPPED;
-    thiscd.curtrack = 0;
+        thiscd.curtrack = 0;
+        wm_cur_cdmode = WM_CDM_STOPPED;
+    }
+    return wm_cur_cdmode;
   }
 
   /* If the user hit the stop button, don't pass PLAYING as oldmode.
@@ -383,12 +384,19 @@ wm_cd_status( void )
       gen_status(mode), thiscd.curtrack, cur_frame);
   }
 
-  oldmode = mode;
-
+  /* workaround for CDDA get_status,
+     I can not found a way for a cdda to get its right current mode. */
+ if(drive.cdda && WM_CDS_NO_DISC(mode) && !read_toc()) {
+    mode = WM_CDM_STOPPED;
+  }
+  
+  oldmode = mode;            
+   
   if((mode == WM_CDM_EJECTED || mode == WM_CDM_UNKNOWN) &&
     (wm_cur_cdmode != WM_CDM_DEVICECHANGED)) {
     wm_cur_cdmode = WM_CDM_EJECTED;
     thiscd.curtrack = -1;
+    thiscd.ntracks = 0;
     thiscd.length = thiscd.curtracklen = 1;
     cur_pos_abs = cur_pos_rel = cur_frame = 0;
   

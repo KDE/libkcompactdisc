@@ -33,14 +33,22 @@
 #include <pthread.h>
 
 #if defined(BUILD_CDDA)
-static struct cdda_block blk;
+
+static pthread_t thread_read;
+static pthread_t thread_play;
+
+int get_next_block(int x);
+void *cdda_fct_read(void* arg);
+void *cdda_fct_play(void* arg);
+
+#define NUMBLOCKS 2
+#define NUMFRAMES 10
+
+static struct cdda_block blks[NUMBLOCKS];
+static pthread_mutex_t blks_mutex[NUMBLOCKS];
+
 static struct cdda_device dev;
-static pthread_t thread;
-
-void* cdda_fct(void* arg);
-
-static int playing = 0; /* Should the CD be playing now? */
-static int pausing = 0;
+static pthread_cond_t wakeup_audio;
 
 /*
  * Loudness setting, plus the floating volume multiplier and decaying-average
@@ -92,144 +100,156 @@ extern unsigned long htonl(unsigned long);
 int
 gen_cdda_init( struct wm_drive *d )
 {
-	if (d->cdda_slave > -1)
-		return 0;
+    int ret = 0;
 
-	memset(&blk, 0, sizeof(struct cdda_block));
+    if (d->cdda_slave > -1)
+        return 0;
 
-	dev.fd = -1;
-	dev.block = &blk;
-	wmcdda_init(&dev, dev.block);
+    memset(&blks, 0, sizeof(blks));
 
-	oops = setup_soundsystem(d->soundsystem, d->sounddevice, d->ctldevice);
-	if (!oops) {
-		ERRORLOG("cdda: setup_soundsystem failed\n");
-		wmcdda_close(&dev);
-		return -1;
-	}
+    dev.fd = -1;
+    dev.frames_at_once = NUMFRAMES;
+    dev.blocks = blks;
+    dev.numblocks = NUMBLOCKS;
 
-	if(pthread_create(&thread, NULL, cdda_fct, &dev)) {
-		ERRORLOG("error by create pthread");
-		oops->wmaudio_close();
-		wmcdda_close(&dev);
-		return -1;
-	}
+    if ((ret = wmcdda_init(&dev)))
+        return ret;
 
-	d->cdda_slave = 0;
-	return 0;
+    oops = setup_soundsystem(d->soundsystem, d->sounddevice, d->ctldevice);
+    if (!oops) {
+        ERRORLOG("cdda: setup_soundsystem failed\n");
+        wmcdda_close(&dev);
+        return -1;
+    }
+
+    if(pthread_create(&thread_read, NULL, cdda_fct_read, &dev)) {
+        ERRORLOG("error by create pthread");
+        oops->wmaudio_close();
+        wmcdda_close(&dev);
+        return -1;
+    }
+
+    if(pthread_create(&thread_play, NULL, cdda_fct_play, &dev)) {
+        ERRORLOG("error by create pthread");
+        oops->wmaudio_close();
+        wmcdda_close(&dev);
+        return -1;
+    }
+    d->cdda_slave = 0;
+    return 0;
 }
 
 int
 cdda_get_drive_status( struct wm_drive *d, int oldmode,
   int *mode, int *frame, int *track, int *ind )
 {
-	if (d->cdda_slave > -1) {
-		*mode = blk.status;
-		if (*mode == WM_CDM_PLAYING) {
-			*track = blk.track;
-			*ind = blk.index;
-			*frame = blk.frame;
-		} else if (*mode == WM_CDM_CDDAERROR) {
-			/*
-			 * An error near the end of the CD probably
-			 * just means we hit the end.
-			 */
-			*mode = WM_CDM_TRACK_DONE;
-		}
-		return 0;
-	}
+    if (d->cdda_slave > -1) {
+        *mode = dev.status;
+        if (*mode == WM_CDM_PLAYING) {
+            *track = dev.track;
+            *ind = dev.index;
+            *frame = dev.frame;
+        } else if (*mode == WM_CDM_CDDAERROR) {
+            /*
+             * An error near the end of the CD probably
+             * just means we hit the end.
+             */
+            *mode = WM_CDM_TRACK_DONE;
+        }
+        return 0;
+    }
 
-	return -1;
+    return -1;
 }
 
 int
 cdda_play( struct wm_drive *d, int start, int end, int realstart )
 {
-	if (d->cdda_slave > -1) {
-		blk.command = WM_CDM_STOPPED;
+    if (d->cdda_slave > -1) {
+        dev.command = WM_CDM_STOPPED;
 
-		wmcdda_setup(start, end, realstart);
+        wmcdda_setup(start, end, realstart);
 
-		level = 2500;
-		volume = 1 << 15;
+        level = 2500;
+        volume = 1 << 15;
 
-		blk.track =  -1;
-		blk.index =  0;
-		blk.frame = start;
-		blk.command = WM_CDM_PLAYING;
+        dev.track =  -1;
+        dev.index =  0;
+        dev.frame = start;
+        dev.command = WM_CDM_PLAYING;
 
-		return 0;
-	}
+        return 0;
+    }
 
-	return -1;
+    return -1;
 }
 
 int
 cdda_pause( struct wm_drive *d )
 {
-	if (d->cdda_slave > -1) {
-		if(WM_CDM_PLAYING == blk.status) {
-			blk.command = WM_CDM_PAUSED;
-		} else {
-			blk.command = WM_CDM_PLAYING;
-		}
+    if (d->cdda_slave > -1) {
+        if(WM_CDM_PLAYING == dev.command) {
+            dev.command = WM_CDM_PAUSED;
+        } else {
+            dev.command = WM_CDM_PLAYING;
+        }
 
-		return 0;
-	}
-	
-	return -1;
+        return 0;
+    }
+
+    return -1;
 }
 
 int
 cdda_stop( struct wm_drive *d )
 {
-	if (d->cdda_slave > -1) {
-		blk.command = WM_CDM_STOPPED;
-		oops->wmaudio_stop();
-		return 0;
-	}
+    if (d->cdda_slave > -1) {
+        dev.command = WM_CDM_STOPPED;
+        oops->wmaudio_stop();
+        return 0;
+    }
 
-	return -1;
+    return -1;
 }
 
 int
 cdda_eject( struct wm_drive *d )
 {
-	if (d->cdda_slave > -1) {
-		blk.command = WM_CDM_STOPPED;
-		oops->wmaudio_stop();
-		wmcdda_close(&dev);
-		return 0;
-	}
+    if (d->cdda_slave > -1) {
+        dev.command = WM_CDM_EJECTED;
+        oops->wmaudio_stop();
+        /*wmcdda_close(&dev);*/
+        return 0;
+    }
 
-	return -1;
+    return -1;
 }
 
 int
 cdda_set_volume( struct wm_drive *d, int left, int right )
 {
-	if (d->cdda_slave > -1) {
-		int bal, vol;
+    if (d->cdda_slave > -1) {
+        int bal, vol;
 
-		bal = (right - left) + 100;
-		bal *= 255;
-		bal /= 200;
-		if (right > left)
-			vol = right;
-		else
-			vol = left;
-		vol *= 255;
-		vol /= 100;
+        bal = (right - left) + 100;
+        bal *= 255;
+        bal /= 200;
+        if (right > left)
+            vol = right;
+        else
+            vol = left;
+        vol *= 255;
+        vol /= 100;
 
-		if(oops->wmaudio_balance)
-			oops->wmaudio_balance(bal);
-		if(oops->wmaudio_volume)
-			oops->wmaudio_volume(vol);
+        if(oops->wmaudio_balance)
+            oops->wmaudio_balance(bal);
+        if(oops->wmaudio_volume)
+            oops->wmaudio_volume(vol);
 
-		return 0;
-	}
+        return 0;
+    }
 
-	return -1;
+    return -1;
 }
 
 /*
@@ -239,23 +259,23 @@ cdda_set_volume( struct wm_drive *d, int left, int right )
 int
 cdda_get_volume( struct wm_drive *d, int *left, int *right )
 {
-	if (d->cdda_slave > -1) {
-		if(!oops->wmaudio_state || oops->wmaudio_state(&blk) == -1) {
-			blk.volume = -1;
-			blk.balance = 128;
-		}
+    if (d->cdda_slave > -1) {
+        if(!oops->wmaudio_state) {
+            dev.volume = -1;
+            dev.balance = 128;
+        }
 
-		*left = *right = (blk.volume * 100 + 254) / 255;
+        *left = *right = (dev.volume * 100 + 254) / 255;
 
-		if (blk.balance < 110)
-			*right = (((blk.volume * blk.balance + 127) / 128) * 100 + 254) / 255;
-		else if (blk.balance > 146)
-			*left = (((blk.volume * (255 - blk.balance) + 127) / 128) * 100 + 254) / 255;
+        if (dev.balance < 110)
+            *right = (((dev.volume * dev.balance + 127) / 128) * 100 + 254) / 255;
+        else if (dev.balance > 146)
+            *left = (((dev.volume * (255 - dev.balance) + 127) / 128) * 100 + 254) / 255;
 
-		return 0;
-	}
+        return 0;
+    }
  
-	return -1;
+    return -1;
 }
 
 /*
@@ -264,40 +284,17 @@ cdda_get_volume( struct wm_drive *d, int *left, int *right )
 void
 cdda_kill( struct wm_drive *d )
 {
-	if (d->cdda_slave > -1) {
-		blk.command = WM_CDM_STOPPED;
-		oops->wmaudio_stop();
-		sleep(1);
-		wmcdda_close(&dev);
-		oops->wmaudio_close();
-		
-		dev.block = NULL;
-		
-		wait(NULL);
-		d->cdda_slave = -1;
-	}
-}
-
-/*
- * Tell the CDDA slave to set the play direction.
- */
-void
-cdda_set_direction( struct wm_drive *d, int newdir )
-{
-	if (d->cdda_slave > -1) {
-		wmcdda_direction(newdir);
-	}
-}
-
-/*
- * Tell the CDDA slave to set the play speed.
- */
-void
-cdda_set_speed( struct wm_drive *d, int speed )
-{
-	if (d->cdda_slave > -1) {
-		wmcdda_speed(speed);
-	}
+    if (d->cdda_slave > -1) {
+        dev.command = WM_CDM_STOPPED;
+        oops->wmaudio_stop();
+        sleep(1);
+        wmcdda_close(&dev);
+        oops->wmaudio_close();
+    
+        dev.blocks = NULL;
+        wait(NULL);
+        d->cdda_slave = -1;
+    }
 }
 
 /*
@@ -306,9 +303,9 @@ cdda_set_speed( struct wm_drive *d, int speed )
 void
 cdda_set_loudness( struct wm_drive *d, int loud )
 {
-	if (d->cdda_slave > -1) {
-		loudness = loud;
-	}
+    if (d->cdda_slave > -1) {
+        loudness = loud;
+    }
 }
 
 /*
@@ -366,37 +363,90 @@ cdda_save( struct wm_drive *d, char *filename )
 #endif
 }
 
-void* cdda_fct(void* arg)
+int get_next_block(int x)
 {
-	struct cdda_device *cddadev = (struct cdda_device*)arg;
-	struct cdda_block *blockinfo = cddadev->block;
-	int result;
+    int y = ++x;
+    return (y < NUMBLOCKS)?y:0;
+}
 
-	while (cddadev->block) {
-		if(blockinfo->command == WM_CDM_PLAYING) {
-			result = wmcdda_read(cddadev, blockinfo);
-			if (result <= 0 && blockinfo->status != WM_CDM_TRACK_DONE) {
-				ERRORLOG("cdda: wmcdda_read failed\n");
-				blockinfo->status = WM_CDM_STOPPED;
-			} else {
-				result = wmcdda_normalize(cddadev, blockinfo);
-				if (output)
-				fwrite(cddadev->buf, result, 1, output);
+void *cdda_fct_read(void* arg)
+{
+    struct cdda_device *cddadev = (struct cdda_device*)arg;
+    int i, j, wakeup;
+    long result;
 
-				if (oops->wmaudio_play(cddadev->buf, cddadev->buflen, blockinfo)) {
-					oops->wmaudio_stop();
-					ERRORLOG("cdda: wmaudio_play failed\n");
-					blockinfo->status = WM_CDM_STOPPED;
-				}
-			}
-		} else {
-			blockinfo->status = blockinfo->command;
-			sleep(1);
+    while (cddadev->blocks) {
+        while(cddadev->command != WM_CDM_PLAYING) {
+            cddadev->status = cddadev->command;
+            sleep(1);
+        }
+        
+        i = 0;
+        pthread_mutex_lock(&blks_mutex[i]);
+        wakeup = 1;
+        
+        while(cddadev->command == WM_CDM_PLAYING) {
 
-		}
-	}
+            result = wmcdda_read(cddadev, &blks[i]);
+            
+            if (result <= 0 && blks[i].status != WM_CDM_TRACK_DONE) {
+                ERRORLOG("cdda: wmcdda_read failed\n");
+                cddadev->command = WM_CDM_STOPPED;
+                break;
+            } else {
+                if (output)
+                    fwrite(blks[i].buf, blks[i].buflen, 1, output);
+            }
+            
+            j = get_next_block(i);
+            pthread_mutex_lock(&blks_mutex[j]);
+            
+            if(wakeup) {
+                wakeup = 0;
+                pthread_cond_signal(&wakeup_audio);
+            }
+            
+            pthread_mutex_unlock(&blks_mutex[i]);
+            /* audio can start here */
+            
+            i = j;
+        }
 
-	return 0;
+        pthread_mutex_unlock(&blks_mutex[i]);
+    }
+    
+    return 0;
+}
+
+void *cdda_fct_play(void* arg)
+{
+    struct cdda_device *cddadev = (struct cdda_device*)arg;
+    int i = 0;
+
+    while (cddadev->blocks) {
+        if(cddadev->command != WM_CDM_PLAYING) {
+            i = 0;
+            pthread_mutex_lock(&blks_mutex[i]);
+            pthread_cond_wait(&wakeup_audio, &blks_mutex[i]);
+        } else {
+            i = get_next_block(i);
+            pthread_mutex_lock(&blks_mutex[i]);    
+        }
+        
+        if (oops->wmaudio_play(&blks[i])) {
+            oops->wmaudio_stop();
+            ERRORLOG("cdda: wmaudio_play failed\n");
+            cddadev->command = WM_CDM_STOPPED;
+        }
+        cddadev->frame = blks[i].frame;
+        cddadev->track = blks[i].track;
+        cddadev->index = blks[i].index;
+        cddadev->status = blks[i].status;
+        
+        pthread_mutex_unlock(&blks_mutex[i]);    
+    }
+    
+    return 0;
 }
 
 #endif

@@ -35,7 +35,7 @@ arts_stream_t arts_stream = NULL;
 int arts_open(void);
 int arts_close(void);
 int arts_stop(void);
-int arts_play(char *rawbuf, long buflen, struct cdda_block *blk);
+int arts_play(struct cdda_block *blk);
 int arts_state(struct cdda_block *blk);
 struct audio_oops* setup_arts(const char *dev, const char *ctl);
 
@@ -82,11 +82,11 @@ arts_close(void)
  * Returns 0 on success.
  */
 int
-arts_play(char *rawbuf, long buflen, struct cdda_block *blk)
+arts_play(struct cdda_block *blk)
 {
   int err;
 
-  if((err = arts_write(arts_stream, rawbuf, buflen)) < 0) {
+  if((err = arts_write(arts_stream, blk->buf, blk->buflen)) < 0) {
     ERRORLOG("arts_write failed (%s)\n", arts_error_text(err));
     blk->status = WM_CDM_CDDAERROR;
     return -1;
