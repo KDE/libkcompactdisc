@@ -36,7 +36,6 @@ static char plat_linux_audio_id[] = "$Id$";
 /* types.h included by wm_cdda.h */
 
 #include <stdio.h>
-#include <malloc.h>
 #include <sys/ioctl.h>
 #include <sys/audioio.h>
 #include <sys/stropts.h>
