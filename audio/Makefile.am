@@ -9,4 +9,4 @@ INCLUDES = $(all_includes) @ARTSC_INCLUDE@
 
 lib_LIBRARIES = libworkmanaudio.a
 
-libworkmanaudio_a_SOURCES = audio.c audio_alsa.c audio_arts. audio_sun.c
+libworkmanaudio_a_SOURCES = audio.c audio_alsa.c audio_arts.c audio_sun.c
