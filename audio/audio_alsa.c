@@ -8,6 +8,9 @@
  *
  *  adopted for libworkman cdda audio backend from Alexander Kern alex.kern@gmx.de  
  *
+ *  Adapted to support both ALSA V0.x and V1.x APIs for PCM calls 
+ *  (Philip Nelson <teamdba@scotdb.com> 2004-03-15)
+ *
  * This file comes under GPL license.
  */
 
@@ -69,7 +72,11 @@ static int set_hwparams(snd_pcm_hw_params_t *params,
                 return err;
         }
         /* set the stream rate */
+#if (SND_LIB_MAJOR < 1) 
         err = snd_pcm_hw_params_set_rate_near(handle, params, rate, 0);
+#else
+        err = snd_pcm_hw_params_set_rate_near(handle, params, &rate, 0);
+#endif
         if (err < 0) {
                 ERRORLOG("Rate %iHz not available for playback: %s\n", rate, snd_strerror(err));
                 return err;
@@ -79,22 +86,45 @@ static int set_hwparams(snd_pcm_hw_params_t *params,
                 return -EINVAL;
         }
         /* set the buffer time */
-        err = snd_pcm_hw_params_set_buffer_time_near(handle, params, buffer_time, &dir);
+#if (SND_LIB_MAJOR < 1)
+         err = snd_pcm_hw_params_set_buffer_time_near(handle, params, buffer_time, &dir);
+#else
+        err = snd_pcm_hw_params_set_buffer_time_near(handle, params, &buffer_time, &dir);
+#endif
         if (err < 0) {
                 ERRORLOG("Unable to set buffer time %i for playback: %s\n", buffer_time, snd_strerror(err));
                 return err;
         }
-        buffer_size = snd_pcm_hw_params_get_buffer_size(params);
-
+#if (SND_LIB_MAJOR < 1)
+         buffer_size = snd_pcm_hw_params_get_buffer_size(params);
+#else
+        err = snd_pcm_hw_params_get_buffer_size(params,&buffer_size); 
+        if (err < 0) {
+                ERRORLOG("Unable to get buffer size : %s\n", snd_strerror(err));
+                return err;
+        }
+#endif
         DEBUGLOG("buffersize %i\n", buffer_size);
 
         /* set the period time */
-        err = snd_pcm_hw_params_set_period_time_near(handle, params, period_time, &dir);
+#if (SND_LIB_MAJOR < 1)
+         err = snd_pcm_hw_params_set_period_time_near(handle, params, period_time, &dir);
+#else 
+        err = snd_pcm_hw_params_set_period_time_near(handle, params, &period_time, &dir);
+#endif
         if (err < 0) {
                 ERRORLOG("Unable to set period time %i for playback: %s\n", period_time, snd_strerror(err));
                 return err;
         }
+
+#if (SND_LIB_MAJOR < 1) 
         period_size = snd_pcm_hw_params_get_period_size(params, &dir);
+#else
+        err = snd_pcm_hw_params_get_period_size(params, &period_size, &dir);
+        if (err < 0) {
+                ERRORLOG("Unable to get hw period size: %s\n", snd_strerror(err));
+        }
+#endif
 
         DEBUGLOG("period_size %i\n", period_size);
 
@@ -181,7 +211,11 @@ int alsa_close( void )
   
   err = alsa_stop();
 
-  err = snd_pcm_close(handle);
+#if (SND_LIB_MAJOR < 1)
+   err = snd_pcm_close(handle);
+#else
+   err = snd_pcm_close(&handle);
+#endif
 
   free(device);
 
