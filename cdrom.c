@@ -375,6 +375,10 @@ wm_cd_status( void )
     return -1;
   }
 
+
+  if (drive.fd == -1)
+    wmcd_open(&drive);
+
   oldmode = mode;
 
   if((mode == WM_CDM_EJECTED || mode == WM_CDM_UNKNOWN) &&
@@ -383,7 +387,9 @@ wm_cd_status( void )
     thiscd.curtrack = -1;
     thiscd.length = thiscd.curtracklen = 1;
     cur_pos_abs = cur_pos_rel = cur_frame = 0;
-  
+    close(drive.fd);
+    drive.fd = -1;
+
     return wm_cur_cdmode;
   }
   
@@ -445,6 +451,10 @@ wm_cd_status( void )
   case WM_CDM_EJECTED:
     break;	
   }
+
+  close(drive.fd);
+  drive.fd = -1;
+
   wm_lib_message(WM_MSG_LEVEL_DEBUG|WM_MSG_CLASS,
     "wm_cd_status returning %s\n", gen_status(wm_cur_cdmode));
   return wm_cur_cdmode;
@@ -618,7 +628,10 @@ wm_cd_stop( void )
 
     status = wm_cd_status();
   }
-  
+
+  close(drive.fd);
+  drive.fd = -1;
+
   return (status != WM_CDM_STOPPED);
 } /* wm_cd_stop() */
 
