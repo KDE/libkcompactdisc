@@ -76,6 +76,8 @@ int    wm_cd_getcurtrack( void );
 int    wm_cd_getcurtracklen( void );
 int    wm_cd_getcountoftracks( void );
 
+int    wm_cd_gettracklen( int track );
+
 int    wm_cd_play( int start, int pos, int end );
 int    wm_cd_play_chunk( int start, int end, int realstart );
 int    wm_cd_play_from_pos( int pos );

@@ -487,6 +487,15 @@ wm_cd_getcountoftracks( void )
   return thiscd.ntracks;
 }
 
+int wm_cd_gettracklen( int track )
+{
+  if (track < 1 ||
+      track > thiscd.ntracks ||
+      thiscd.trk == NULL)
+    return 0;
+
+  return thiscd.trk[CARRAY(track)].length;
+}
 
 /*
  * wm_cd_play(starttrack, pos, endtrack)
