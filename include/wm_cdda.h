@@ -91,7 +91,7 @@ struct cdda_block {
  * if there is no support.
  */
 #ifdef linux
-# include <bytesex.h>
+//# include <bytesex.h>
 # include <endian.h>
 /*
  * XXX could this be a problem? The results are only 0 and 1 because
