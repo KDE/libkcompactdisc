@@ -43,9 +43,15 @@ static char plat_linux_id[] = "$Id$";
 #include <sys/wait.h>
 /* Try to get around bug #29274 */
 #include <linux/version.h>
+#if 0
+/* this breaks the build on ia64 and s390 for example. 
+   sys/types.h is already included and should provide __u64.
+   please tell where we really need this and let's try to find
+   a working #if case for everyone ... adrian@suse.de */
 #if (LINUX_VERSION_CODE >= KERNEL_VERSION(2,5,50)) || (LINUX_VERSION_CODE >= KERNEL_VERSION(2,4,21) && LINUX_VERSION_CODE < KERNEL_VERSION(2,5,0))
 #undef __GNUC__
 typedef unsigned long long __u64; 
+#endif
 #endif
 
 #include "include/wm_config.h"
