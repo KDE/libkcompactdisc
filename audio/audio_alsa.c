@@ -93,7 +93,7 @@ static int set_hwparams(snd_pcm_hw_params_t *params,
                 return err;
         }
         period_size = snd_pcm_hw_params_get_period_size(params, &dir);
-        
+
         DEBUGLOG("period_size %i\n", period_size);
 
         /* write the parameters to device */
@@ -201,9 +201,14 @@ alsa_play(char *rawbuf, long buflen, struct cdda_block *blk)
   DEBUGLOG("play %i frames, %i bytes\n", frames, buflen);
   while (frames > 0) {
     err = snd_pcm_writei(handle, ptr, frames);
+
     if (err == -EAGAIN)
       continue;
-    if (err < 0) break;
+    if(err == -EPIPE) {
+      err = snd_pcm_prepare(handle);
+      continue;
+    } else if (err < 0)
+      break;
 
     ptr += err * channels;
     frames -= err;
@@ -213,6 +218,7 @@ alsa_play(char *rawbuf, long buflen, struct cdda_block *blk)
   if (err < 0) {
     ERRORLOG("alsa_write failed: %s\n", snd_strerror(err));
     err = snd_pcm_prepare(handle);
+
     if (err < 0) {
       ERRORLOG("Unable to snd_pcm_prepare pcm stream: %s\n", snd_strerror(err));
     }
