@@ -36,9 +36,11 @@ int alsa_open(void);
 int alsa_close(void);
 int alsa_stop(void);
 int alsa_play(char *rawbuf, long buflen, struct cdda_block *blk);
+int alsa_state(struct cdda_block *blk);
+struct audio_oops* setup_alsa(const char *dev, const char *ctl);
 
 static int set_hwparams(snd_pcm_hw_params_t *params,
-                        snd_pcm_access_t access)
+                        snd_pcm_access_t accesspar)
 {
        int err, dir;
 
@@ -49,7 +51,7 @@ static int set_hwparams(snd_pcm_hw_params_t *params,
                 return err;
         }
         /* set the interleaved read/write format */
-        err = snd_pcm_hw_params_set_access(handle, params, access);
+        err = snd_pcm_hw_params_set_access(handle, params, accesspar);
         if (err < 0) {
                 ERRORLOG("Access type not available for playback: %s\n", snd_strerror(err));
                 return err;
@@ -144,7 +146,7 @@ static int set_swparams(snd_pcm_sw_params_t *swparams)
 
 int alsa_open( void )
 {
-  int err, chn;
+  int err;
 
   snd_pcm_hw_params_t *hwparams;
   snd_pcm_sw_params_t *swparams;
@@ -179,7 +181,7 @@ int alsa_close( void )
   
   err = alsa_stop();
 
-  err = snd_pcm_close(&handle);
+  err = snd_pcm_close(handle);
 
   free(device);
 
@@ -194,9 +196,9 @@ int
 alsa_play(char *rawbuf, long buflen, struct cdda_block *blk)
 {
   signed short *ptr;
-  int err, frames;
+  int err = 0, frames;
 
-  ptr = rawbuf;
+  ptr = (signed short *)rawbuf;
   frames = buflen / (channels * 2);
   DEBUGLOG("play %i frames, %i bytes\n", frames, buflen);
   while (frames > 0) {
@@ -222,7 +224,7 @@ alsa_play(char *rawbuf, long buflen, struct cdda_block *blk)
     if (err < 0) {
       ERRORLOG("Unable to snd_pcm_prepare pcm stream: %s\n", snd_strerror(err));
     }
-    blk->status = WMCDDA_ERROR;
+    blk->status = WM_CDM_CDDAERROR;
     return err;
   }
 

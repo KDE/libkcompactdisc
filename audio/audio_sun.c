@@ -65,7 +65,7 @@ int			qtail;
 int			qstart;
 
 /*
- * We only send WMCDDA_PLAYED status messages upstream when the CD is supposed
+ * We only send WM_CDM_PLAYING status messages upstream when the CD is supposed
  * to be playing; this is used to keep track.
  */
 extern int playing;
@@ -202,7 +202,7 @@ sun_audio_ready( void )
 	qtail = info.play.eof % QSIZE;
 	qstart = qtail;
 
-	queue[qtail].status = WMCDDA_OK;
+	queue[qtail].status = WM_CDM_PLAYING;
 }
 
 /*
@@ -271,7 +271,7 @@ sun_audio_balance(int level)
 void
 sun_audio_mark_last( void )
 {
-	queue[qtail].status = WMCDDA_DONE;
+	queue[qtail].status = WM_CDM_TRACK_DONE;
 }
 
 /*
@@ -294,8 +294,8 @@ sun_audio_send_status( void )
 	{
 		int	balance;
 
-		if (queue[qhead].status != WMCDDA_DONE)
-			queue[qhead].status = WMCDDA_PLAYED;
+		if (queue[qhead].status != WM_CDM_TRACK_DONE)
+			queue[qhead].status = WM_CDM_PLAYING;
 		queue[qhead].volume = info.play.gain;
 		queue[qhead].balance = (info.play.balance * 255) /
 					AUDIO_RIGHT_BALANCE;
@@ -304,7 +304,7 @@ sun_audio_send_status( void )
 		qstart = -1;
 	}
 
-	return (queue[qhead].status == WMCDDA_DONE);
+	return (queue[qhead].status == WM_CDM_TRACK_DONE);
 }
 
 /*
@@ -349,7 +349,7 @@ sun_audio_play(unsigned char *rawbuf, long buflen, struct cdda_block *blk)
 		}
 		else
 		{
-			blk->status = WMCDDA_ERROR;
+			blk->status = WM_CDM_CDDAERROR;
 			return (-1);
 		}
 	alarm(0);
