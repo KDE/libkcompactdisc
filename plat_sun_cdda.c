@@ -188,8 +188,9 @@ wmcdda_read(struct cdda_device* pdev, struct cdda_block *block)
 {
     struct cdrom_cdda	cdda;
     int			blk;
-    unsigned char		*q;
+    unsigned char	*q;
     extern int		speed;
+    unsigned char*      rawbuf = block->buf;
 
     if(pdev->fd < 0 && (wmcdda_init(pdev, block) < 0)) {
         return -1;
@@ -263,7 +264,7 @@ wmcdda_read(struct cdda_device* pdev, struct cdda_block *block)
             block->second = unbcd[q[8]];*/
             block->frame =  unbcd[q[9]];
             block->status = WM_CDM_PLAYING;
-            block->buflen = cdda.nframes * CDDABLKSIZE;
+            block->buflen = cdda.cdda_length;
         }
     }
 
