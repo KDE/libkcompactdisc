@@ -537,11 +537,14 @@ wm_cd_pause( void )
 		break;
 
 	case WM_CDM_PAUSED:		/* paused */
+                fprintf(stderr, "wm_cd_pause\n");
 		cur_cdmode = WM_CDM_PLAYING;
 /*		(drive.resume)(&drive); */
-		if ((drive.resume)(&drive))
+		if ((drive.resume)(&drive) > 0 )
+                  {
 			wm_cd_play(cur_track, paused_pos,
 				playlist[cur_listno-1].end);
+                  }
 	default: /* */
 		break;	
 	}

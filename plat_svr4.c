@@ -75,7 +75,7 @@ create_cdrom_node(char *dev_name)
   if (setreuid(-1,0) < 0)
     {
       perror("setregid/setreuid/access");
-      exit(1);
+      return -1;
     }
   
   ccode = access(pass_through, F_OK);
@@ -122,7 +122,7 @@ create_cdrom_node(char *dev_name)
   if ( (setreuid(-1,getuid()) < 0) || (setregid(-1,getgid()) < 0) )
     {
       perror("setreuid/setregid");
-      exit(1);
+      return -1;
     }
   errno = err;
   return file_des;
@@ -201,8 +201,7 @@ wmcd_open(struct wm_drive *d)
 	}
       else if (errno != EINTR)
 	{
-	  perror(cd_device);
-	  exit(1);
+          return ( -6 );
 	}
       
       /* No CD in drive. (Is this true also for svr4 ? XXX ) */

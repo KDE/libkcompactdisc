@@ -117,7 +117,7 @@ wmcd_open(struct wm_drvie *d)
   if ((aux = cdopen(cd_device)) == NULL)
     {
       fprintf(stderr, "No cdrom found by libcdrom\n");
-      exit(1);
+      return (-6);
     }
   
   if ((daux = malloc(sizeof(struct pause_info))) == NULL)

@@ -241,8 +241,7 @@ wmcd_open( struct wm_drive *d )
 	}
       else if (errno != EINTR)
 	{
-	  perror(cd_device);
-	  exit(1);
+          return (-6);
 	}
       
       /* No CD in drive. */

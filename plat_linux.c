@@ -149,8 +149,7 @@ wmcd_open( struct wm_drive *d )
        */
       else if ((errno != ENXIO) && (errno != EIO) && (errno != ENOMEDIUM))
 	{
-	  perror(cd_device);
-	  exit(1);
+          return (-6);
 	}
       
       /* No CD in drive. */

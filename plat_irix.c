@@ -185,8 +185,7 @@ wmcd_open( struct wm_drive *d )
       d->daux = CDopen(cd_device,"r");
       if (d->daux == 0)
 	{
-	  perror(cd_device);
-	  exit(1);
+          return (-6);
 	}
 #ifdef CDDA
       icd = d->daux;

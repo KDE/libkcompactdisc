@@ -82,7 +82,7 @@ create_cdrom_node(char *dev_name)
   if (setreuid(-1,0) < 0)
     {
       perror("setregid/setreuid/access");
-      exit(1);
+      return -1;
     }
   
   ccode = access(pass_through, F_OK);
@@ -180,6 +180,7 @@ wmcd_open( struct wm_drive *d)
       else if (errno != EINTR)
 	{
 	  perror(cd_device);
+          return( -6 );
 	}
       
       /* can not acces CDROM device */

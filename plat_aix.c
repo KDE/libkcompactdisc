@@ -106,7 +106,8 @@ wmcd_open(struct wm_drive *d)
   if( (fd = openx(cd_device,O_RDONLY,NULL,SC_SINGLE)) < 0 )
     {
       perror("openx");
-      return 1;
+      return -6;
+      /* return 1 */
     }
   
   *d = *(find_drive_struct(vendor, model, rev));
