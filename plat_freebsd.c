@@ -130,9 +130,9 @@ wmcd_open( struct wm_drive *d )
   fd = d->fd;
   
   find_drive_struct(vendor, model, rev);
-  
-  (d->init)(d);
-  
+   
+  /*(d->init)(d); */
+   
   d->fd = fd;
   
   return (0);
@@ -333,7 +333,7 @@ gen_get_cdlen(struct wm_drive *d, int *frames)
  * Play the CD from one position to another (both in frames.)
  *------------------------------------------------------------*/
 int
-gen_play(struct wm_drive *d, int start, int end )
+gen_play(struct wm_drive *d, int start, int end, int realstart)
 {
   struct ioc_play_msf	msf;
   
