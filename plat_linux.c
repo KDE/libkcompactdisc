@@ -125,7 +125,7 @@ wmcd_open( struct wm_drive *d )
   
   if (d->fd >= 0)		/* Device already open? */
     {
-      wm_lib_message(WM_MSG_LEVEL_DEBUG|WM_MSG_CLASS, "wmcd_open(): [device is open (fd=%d)]\n", d->fd);
+/*      wm_lib_message(WM_MSG_LEVEL_DEBUG|WM_MSG_CLASS, "wmcd_open(): [device is open (fd=%d)]\n", d->fd);*/
       return (0);
     }
   
