@@ -201,7 +201,7 @@ int wm_get_cdtext(struct wm_drive *d)
   /* alloc cdtext_info */
  
   unsigned char *buffer;
-  int buffer_lenght;
+  int buffer_length;
   int ret;
   int i;
   struct cdtext_pack_data_header *pack, *pack_previous;
@@ -219,9 +219,9 @@ int wm_get_cdtext(struct wm_drive *d)
   lp_block = 0;
   p_componente = 0;
   buffer = 0;
-  buffer_lenght = 0;
+  buffer_length = 0;
 
-  ret = (d->get_cdtext)(d, &buffer, &buffer_lenght);
+  ret = (d->get_cdtext)(d, &buffer, &buffer_length);
 
   free_cdtext_info(&wm_cdtext_info);
   memset(&wm_cdtext_info, 0, sizeof(struct cdtext_info));
@@ -236,7 +236,7 @@ int wm_get_cdtext(struct wm_drive *d)
     i = 0;
 
     pack = 0; /* NULL pointer*/
-    while(i < buffer_lenght)
+    while(i < buffer_length)
     {
       pack_previous = pack;
       pack = (struct cdtext_pack_data_header*)(buffer+i);
@@ -272,7 +272,7 @@ int wm_get_cdtext(struct wm_drive *d)
         if(0 == lp_block || lp_block->block_code != code) /* find or create one new block */
         {
           lp_block = 0;
-          for(j = 0; j < MAX_LANGUAGE_BLOCKS && wm_cdtext_info.blocks[j] != 0 && 0 == lp_block; i++)
+          for(j = 0; j < MAX_LANGUAGE_BLOCKS && wm_cdtext_info.blocks[j] != 0 && 0 == lp_block; j++)
           {
             if(wm_cdtext_info.blocks[j]->block_code == code)
             {
