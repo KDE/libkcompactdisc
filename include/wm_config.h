@@ -131,7 +131,11 @@
  ******************************************************************/
 #if defined(__FreeBSD__) || defined(__FreeBSD)
 
+#if __FreeBSD_version >= 500100
+#define DEFAULT_CD_DEVICE	"/dev/acd0"
+#else
 #define DEFAULT_CD_DEVICE	"/dev/acd0c"
+#endif
 
 #endif /* freebsd */
 
