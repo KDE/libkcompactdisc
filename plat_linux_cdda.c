@@ -33,6 +33,11 @@ static char plat_linux_cdda_id[] = "$Id$";
 
 #include "include/wm_struct.h"
 #include "include/wm_cdda.h"
+#ifndef __GNUC__
+#define __GNUC__ 1
+#endif
+#undef __STRICT_ANSI__
+#include <asm/types.h>
 #include <linux/cdrom.h>
 /* types.h and cdio.h are included by wm_cdda.h */
 

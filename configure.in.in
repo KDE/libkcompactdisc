@@ -17,6 +17,7 @@ case $host in
   *-*-linux-gnu)
   AC_TRY_COMPILE(
   [
+#include <asm/types.h>
 #include <linux/cdrom.h>
   ],[
 #if defined(__linux__)

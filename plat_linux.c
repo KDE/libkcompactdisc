@@ -73,7 +73,18 @@ typedef unsigned long long __u64;
 
 #include <sys/time.h>
 #include <sys/ioctl.h>
+
+#ifndef __GNUC__
+#define __GNUC__ 1
+#endif
+/* needed for vanilla kernel headers, which do provide __u64 only
+   for ansi */
+#undef __STRICT_ANSI__
+/* needed for non-ansi kernel headers */
+#define asm __asm__
+#include <asm/types.h>
 #include <linux/cdrom.h>
+#undef asm
 
 #include "include/wm_cdda.h"
 #include "include/wm_struct.h"
