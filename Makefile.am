@@ -9,7 +9,7 @@ INCLUDES = $(all_includes)
 
 noinst_LTLIBRARIES  = libworkman.la
 
-libworkman_la_LDFLAGS = -version-info 6:0:1 $(all_libraries)
+libworkman_la_LDFLAGS = $(all_libraries)
 libworkman_la_LIBADD = audio/libworkmanaudio.la $(ARTSC_LIBS) $(ARTS_LIBASOUND)
 
 libworkman_la_SOURCES = cddb.c cdinfo.c cdrom.c wm_helpers.c cdtext.c\
