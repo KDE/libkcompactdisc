@@ -24,10 +24,11 @@
  *
  * Sun (really Solaris) digital audio functions.
  */
-#include "audio.h"
+
+#include "config.h"
 
 #ifdef USE_SUN_AUDIO
- 
+
 #include <stdio.h>
 #include <malloc.h>
 #include <sys/ioctl.h>
@@ -37,6 +38,8 @@
 #include <errno.h>
 #include <fcntl.h>
 #include <signal.h>
+
+#include "audio.h"
 
 #define WM_MSG_CLASS WM_MSG_CLASS_PLATFORM
 
