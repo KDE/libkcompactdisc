@@ -1,0 +1,24 @@
+/*
+ * Audio 'LIB' defines
+ */
+#include "../include/wm_cdda.h"
+
+#ifndef NULL
+#define NULL 0
+#endif
+
+#define USE_ARTS
+#define USE_ALSA
+
+struct audio_oops {
+  int (*wmaudio_open)(void);
+  int (*wmaudio_close)(void);
+  int (*wmaudio_play)(char*, long, struct cdda_block*);
+  int (*wmaudio_stop)(void);
+  int (*wmaudio_state)(struct cdda_block*);
+  int (*wmaudio_balance)(int);
+  int (*wmaudio_volume)(int);
+};
+
+extern struct audio_oops* setup_soundsystem(const char*, const char*, const char*);
+
