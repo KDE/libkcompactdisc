@@ -78,6 +78,7 @@ int free_cdtext_info(struct cdtext_info* cdtextinfo)
   int i;
   wm_lib_message(WM_MSG_LEVEL_DEBUG | WM_MSG_CLASS,
     "CDTEXT INFO: free_cdtext_info() called\n");
+
   if(cdtextinfo)
   {
     for(i = 0; i < 8; i++)
@@ -219,12 +220,14 @@ get_glob_cdtext(struct wm_drive *d, int redo)
   struct cdtext_pack_data_header *pack, *pack_previous;
   cdtext_string *p_componente;
   struct cdtext_info_block *lp_block;
-  if(!d->proto || d->proto->gen_get_cdtext == NULL || d->proto->gen_get_trackcount == NULL)
+  if(!d->proto || d->proto->gen_get_cdtext == NULL || d->proto->gen_get_trackcount == NULL) {
     return NULL;
+  }
 
-  if(!redo)
+  if(!redo && wm_cdtext_info.valid) {
+    wm_lib_message(WM_MSG_LEVEL_DEBUG | WM_MSG_CLASS, "CDTEXT DEBUG: recycle cdtext\n");
     return &wm_cdtext_info;
-  else
+  } else
     free_cdtext_info(&wm_cdtext_info);
 
   lp_block = 0;
