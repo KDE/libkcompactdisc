@@ -199,7 +199,7 @@ void get_data_from_cdtext_pack(
 int wm_get_cdtext(struct wm_drive *d)
 {
   /* alloc cdtext_info */
-
+ 
   unsigned char *buffer;
   int buffer_lenght;
   int ret;
@@ -207,7 +207,9 @@ int wm_get_cdtext(struct wm_drive *d)
   struct cdtext_pack_data_header *pack, *pack_previous;
   cdtext_string *p_componente;
   struct cdtext_info_block *lp_block;
-
+  if(d->get_drive_status == NULL)
+    return;
+ 
   if(1 == first_initialise)
   {
     memset(&wm_cdtext_info, 0, sizeof(struct cdtext_info));
