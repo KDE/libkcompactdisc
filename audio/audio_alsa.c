@@ -45,7 +45,7 @@ struct audio_oops* setup_alsa(const char *dev, const char *ctl);
 static int set_hwparams(snd_pcm_hw_params_t *params,
                         snd_pcm_access_t accesspar)
 {
-       int err, dir;
+       int err, dir, new_rate;
 
         /* choose all parameters */
         err = snd_pcm_hw_params_any(handle, params);
@@ -73,16 +73,17 @@ static int set_hwparams(snd_pcm_hw_params_t *params,
         }
         /* set the stream rate */
 #if (SND_LIB_MAJOR < 1) 
-        err = snd_pcm_hw_params_set_rate_near(handle, params, rate, 0);
+        err = new_rate = snd_pcm_hw_params_set_rate_near(handle, params, rate, 0);
 #else
-        err = snd_pcm_hw_params_set_rate_near(handle, params, &rate, 0);
+        new_rate = rate;
+        err = snd_pcm_hw_params_set_rate_near(handle, params, &new_rate, 0);
 #endif
         if (err < 0) {
                 ERRORLOG("Rate %iHz not available for playback: %s\n", rate, snd_strerror(err));
                 return err;
         }
-        if (err != rate) {
-                ERRORLOG("Rate doesn't match (requested %iHz, get %iHz)\n", rate, err);
+        if (new_rate != rate) {
+                ERRORLOG("Rate doesn't match (requested %iHz, get %iHz)\n", rate, new_rate);
                 return -EINVAL;
         }
         /* set the buffer time */
@@ -98,7 +99,7 @@ static int set_hwparams(snd_pcm_hw_params_t *params,
 #if (SND_LIB_MAJOR < 1)
          buffer_size = snd_pcm_hw_params_get_buffer_size(params);
 #else
-        err = snd_pcm_hw_params_get_buffer_size(params,&buffer_size); 
+        err = snd_pcm_hw_params_get_buffer_size(params, &buffer_size); 
         if (err < 0) {
                 ERRORLOG("Unable to get buffer size : %s\n", snd_strerror(err));
                 return err;
@@ -312,7 +313,7 @@ setup_alsa(const char *dev, const char *ctl)
 {
   static int init_complete = 0;
 
-  if(dev) {
+  if(dev && strlen(dev) > 0) {
     device = strdup(dev);
   } else {
     device = strdup("plughw:0,0"); /* playback device */
