@@ -325,7 +325,7 @@ int
 wm_cd_status( void )
 {
   static int oldmode = WM_CDM_UNKNOWN;
-  int mode, err;
+  int mode, err, tmp;
 
   if(!drive.proto) {
     oldmode = WM_CDM_UNKNOWN;
@@ -373,11 +373,11 @@ wm_cd_status( void )
   case WM_CDM_PAUSED:
     cur_pos_abs = cur_frame / 75;
     /* search for right track */
-    for(thiscd.curtrack = thiscd.ntracks;
-        thiscd.curtrack > 1 && cur_frame < thiscd.trk[CARRAY(thiscd.curtrack)].start;
-        thiscd.curtrack--)
+    for(tmp = thiscd.ntracks;
+        tmp > 1 && cur_frame < thiscd.trk[CARRAY(tmp)].start;
+        tmp--)
       ;
-
+    thiscd.curtrack = tmp;
     /* Fall through */
 
 
@@ -430,7 +430,6 @@ wm_cd_getcurtrack( void )
 {
   if(WM_CDS_NO_DISC(wm_cur_cdmode))
     return 0;
-    
   return thiscd.curtrack;
 }
   
@@ -504,7 +503,7 @@ wm_cd_play( int start, int pos, int end )
   
   cur_firsttrack = start;
   cur_lasttrack = end;
-
+    
   wm_cd_play_chunk(thiscd.trk[CARRAY(start)].start + pos * 75, end = thiscd.ntracks ?
     thiscd.length * 75 : thiscd.trk[CARRAY(end)].start - 1, thiscd.trk[CARRAY(start)].start);
   /* So we don't update the display with the old frame number */
