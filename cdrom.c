@@ -639,7 +639,10 @@ wm_cd_play_chunk( int start, int end, int realstart )
 void
 wm_cd_play( int start, int pos, int end )
 {
-	if (cur_cdmode == WM_CDM_EJECTED || cd == NULL)
+        if(drive.get_drive_status == NULL)
+	  return;
+
+        if (cur_cdmode == WM_CDM_EJECTED || cd == NULL)
 		return;
 
         /*
