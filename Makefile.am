@@ -1,20 +1,17 @@
-# Example Makefile.am for a shared library.  It makes a library
-#  called "example" as libexample.so.2.1.2
-# This Makefile.am was taken from the kdelibs distribution and modified 
-#  to serve as an example.
 #
-# David Sweet
+# Makefile.am for libWorkMan. Based on the example Makefile.am for a
+# shared library.
 #
 
 INCLUDES=  $(all_includes) 
 
 lib_LTLIBRARIES  = libWorkMan.la
 
-# Note:  If you specify a:b:c as the version in the next line,
-#  the library that is made has version (a-c).c.b.  In this
-#  example, the version is 2.1.2.
 libWorkMan_la_LDFLAGS = -version-info 5:2:4 $(all_libraries)
 
+#
+# Headers come later...
+#
 include_HEADERS = 
 
 # Which headers shouldn't be installed when a   make install  is done?
