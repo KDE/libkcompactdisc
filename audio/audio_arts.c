@@ -22,6 +22,10 @@
  * Alexander Kern alex.kern@gmx.de
  */
 
+#include <config.h>
+
+#ifdef USE_ARTS
+
 #include <artsc.h>
 
 #include "audio.h"
@@ -127,3 +131,4 @@ setup_arts(const char *dev, const char *ctl)
   
   return &arts_oops;
 }
+#endif
