@@ -18,9 +18,9 @@ plat_linux.c plat_svr4.c plat_ultrix.c plat_news.c plat_openbsd.c \
 plat_osf1.c plat_sun.c plat_scor5.c \
 drv_sony.c drv_toshiba.c
 
-bin_PROGRAMS = @CDDASLAVE@
+bin_PROGRAMS = $(CDDASLAVE)
 
 EXTRA_PROGRAMS = cddaslave
 cddaslave_SOURCES = cddaslave.c plat_linux_cdda.c plat_sun_cdda.c
 
-cddaslave_LDADD = audio/libworkmanaudio.a libworkman.la @ARTSC_LIBS@ @ALSA_LIBS@
+cddaslave_LDADD = audio/libworkmanaudio.a libworkman.la $(ARTSC_LIBS) $(ALSA_LIBS)
