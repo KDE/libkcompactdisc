@@ -44,6 +44,8 @@ static char plat_openbsd[] = "$Id$";
 #include <sys/stat.h>
 
 #include "include/wm_config.h"
+#include "include/wm_cdrom.h"
+#include "include/wm_helpers.h"
 
 /* this is for glibc 2.x which defines the ust structure in ustat.h not stat.h */
 #ifdef __GLIBC__
@@ -56,6 +58,7 @@ static char plat_openbsd[] = "$Id$";
 #include <sys/cdio.h>
 #include <sys/scsiio.h>
 #include <scsi/scsi_all.h>
+#include <scsi/cd.h>
 #include <scsi/scsi_cd.h>
 
 #include "include/wm_struct.h"
@@ -81,6 +84,9 @@ gen_init(struct wm_drive *d)
 } /* gen_init() */
 
 
+char *cds[] = {"/dev/rcd0c", "/dev/rcd1c", "/dev/acd0c", NULL};
+
+
 /*
  * Open the CD device and figure out what kind of drive is attached.
  */
@@ -92,6 +98,7 @@ wmcd_open(struct wm_drive *d)
   char vendor[32] = WM_STR_GENVENDOR;
   char  model[32] = WM_STR_GENMODEL;
   char    rev[32] = WM_STR_GENREV;
+  int i;
   
   if (d->fd >= 0)		/* Device already open? */
     {
@@ -100,18 +107,24 @@ wmcd_open(struct wm_drive *d)
     }
   
   if (cd_device == NULL)
-    cd_device = DEFAULT_CD_DEVICE;
-  
-  d->fd = open(cd_device, 0);
+    {
+      for (i = 0; cds[i] != NULL; i++)
+      {
+      	  cd_device = cds[i];
+	  d->fd = open(cd_device, O_RDONLY);
+	  if (d->fd >= 0)
+	    break;
+      }
+    }
+  else
+  	d->fd = open(cd_device, O_RDONLY);
   if (d->fd < 0)
     {
-      if (errno == EACCES)
-	{
-          return -EACCES;
-	}
-      
+      if (errno == EIO)
       /* No CD in drive. */
-      return (1);
+      	return 1;
+      else
+      	return -errno;
     }
   
   /* Now fill in the relevant parts of the wm_drive structure. */
@@ -244,7 +257,7 @@ gen_get_drive_status(struct wm_drive *d, enum wm_cd_modes oldmode,
  * Get the number of tracks on the CD.
  */
 int
-gen_get_trackcount(struct wm_drive *d, int tracks)
+gen_get_trackcount(struct wm_drive *d, int *tracks)
 {
   struct ioc_toc_header	hdr;
   
