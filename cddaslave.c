@@ -132,7 +132,7 @@ send_status(struct cdda_block *blk)
 {
   DEBUGLOG("send_status, send %i(%s | %s)\n", blk->status,
     gen_status(blk->status & WMCDDA_ACK), gen_status(blk->status & ~WMCDDA_ACK));
-	write(1, blk, sizeof(*blk));
+  write(1, blk, sizeof(*blk));
 }
 
 /*
@@ -161,21 +161,21 @@ send_status(struct cdda_block *blk)
 int
 receive_command(struct cdda_device *dev, struct cdda_block* blk)
 {
-	unsigned char		inbuf[10];
-	char			*filename;
-	int			namelen;
-	struct auheader		hdr;
+  unsigned char	inbuf[10];
+  char          *filename;
+  int             namelen;
+  struct auheader     hdr;
 
   if (read(0, inbuf, 1) <= 0) {
     wmcdda_close(dev);
     oops->wmaudio_close();
 /*    ERRORLOG("cddaslave: parent died, exit\n");*/
-		exit(0);
-	}
+    exit(0);
+  }
 
   DEBUGLOG("cddaslave: CMD %c\n", inbuf[0]);
 
-	switch (inbuf[0]) {
+  switch (inbuf[0]) {
   case 'I':
     if(dev->fd < 0) wmcdda_init(dev, blk);
     SEND_ACK(blk);
@@ -190,20 +190,20 @@ receive_command(struct cdda_device *dev, struct cdda_block* blk)
       SEND_ACK(blk);
     }
     break;
-	case 'E':
+  case 'E':
     oops->wmaudio_stop();
     wmcdda_close(dev);
     SEND_ACK(blk);
-		break;
-	case 'P':
-		read(0, inbuf, 9);
+    break;
+  case 'P':
+    read(0, inbuf, 9);
 
-		wmcdda_setup(inbuf[0] * 60 * 75 + inbuf[1] * 75 + inbuf[2],
-			inbuf[3] * 60 * 75 + inbuf[4] * 75 + inbuf[5],
-			inbuf[6] * 60 * 75 + inbuf[7] * 75 + inbuf[8]);
+    wmcdda_setup(inbuf[0] * 60 * 75 + inbuf[1] * 75 + inbuf[2],
+      inbuf[3] * 60 * 75 + inbuf[4] * 75 + inbuf[5],
+      inbuf[6] * 60 * 75 + inbuf[7] * 75 + inbuf[8]);
 
-		level = 2500;
-		volume = 1 << 15;
+    level = 2500;
+    volume = 1 << 15;
 
     blk->track =  -1;
     blk->index =  0;
@@ -211,39 +211,34 @@ receive_command(struct cdda_device *dev, struct cdda_block* blk)
     blk->second = inbuf[7];
     blk->frame  = inbuf[8];
     SEND_STATUS_ACK(blk, WMCDDA_PLAYING);
-		break;
-
-	case 'S':
+    break;
+  case 'S':
     oops->wmaudio_stop();
     SEND_STATUS_ACK(blk, WMCDDA_STOPPED);
-		break;
-
-	case 'B':
-		read(0, inbuf, 1);
+    break;
+  case 'B':
+    read(0, inbuf, 1);
     if(oops->wmaudio_balance)
       oops->wmaudio_balance(inbuf[0]);
-		break;
-
-	case 'V':
-		read(0, inbuf, 1);
+    break;
+  case 'V':
+    read(0, inbuf, 1);
     if(oops->wmaudio_balance)
       oops->wmaudio_volume(inbuf[0]);
-		break;
+    break;
   case 'G':
-    {
-      SEND_ACK(blk);
-      if(!oops->wmaudio_state || oops->wmaudio_state(blk) == -1) {
-        blk->volume = -1;
-        blk->balance = 128;
-      }
-      send_status(blk);
+    SEND_ACK(blk);
+    if(!oops->wmaudio_state || oops->wmaudio_state(blk) == -1) {
+      blk->volume = -1;
+      blk->balance = 128;
     }
+    send_status(blk);
     break;
   case 'Q':
     SEND_ACK(blk);
     wmcdda_close(dev);
     oops->wmaudio_close();
-		exit(0);
+    exit(0);
 /*
 	case 's':
 		read(0, inbuf, 1);
@@ -258,54 +253,47 @@ receive_command(struct cdda_device *dev, struct cdda_block* blk)
     SEND_STATUS(blk, WMCDDA_ACK);
 		break;
 */
-	case 'L':
-		read(0, inbuf, 1);
-		loudness = inbuf[0];
+  case 'L':
+    read(0, inbuf, 1);
+    loudness = inbuf[0];
     SEND_ACK(blk);
-		break;
-
-	case 'F':
-		read(0, &namelen, sizeof(namelen));
-		if (output != NULL)
-		{
-			fclose(output);
-			output = NULL;
-		}
-		if (namelen)
-		{
-			filename = malloc(namelen + 1);
-			if (filename == NULL)
-			{
-				perror("cddaslave");
+    break;
+  case 'F':
+    read(0, &namelen, sizeof(namelen));
+    if (output != NULL) {
+      fclose(output);
+      output = NULL;
+    }
+    if (namelen) {
+      filename = malloc(namelen + 1);
+      if (filename == NULL) {
+        perror("cddaslave");
         wmcdda_close(dev);
         oops->wmaudio_close();
-				exit(1);
-			}
+	exit(1);
+      }
 
-			read(0, filename, namelen);
-			filename[namelen] = '\0';
-			output = fopen(filename, "w");
-			if (output == NULL)
-				perror(filename);
-			else
-			{
-				/* Write an .au file header. */
-				hdr.magic = htonl(0x2e736e64);
-				hdr.hdr_size = htonl(sizeof(hdr) + 28);
-				hdr.data_size = htonl(~0);
-				hdr.encoding = htonl(3);	/* linear-16 */
-				hdr.sample_rate = htonl(44100);
-				hdr.channels = htonl(2);
+      read(0, filename, namelen);
+      filename[namelen] = '\0';
+      output = fopen(filename, "w");
+      if (output == NULL)
+        perror(filename);
+      else {
+	/* Write an .au file header. */
+	hdr.magic = htonl(0x2e736e64);
+	hdr.hdr_size = htonl(sizeof(hdr) + 28);
+	hdr.data_size = htonl(~0);
+	hdr.encoding = htonl(3); /* linear-16 */
+	hdr.sample_rate = htonl(44100);
+	hdr.channels = htonl(2);
 
-				fwrite(&hdr, sizeof(hdr), 1, output);
-				fwrite("Recorded from CD by WorkMan", 28, 1,
-					output);
-			}
-
-			free(filename);
-		}
+	fwrite(&hdr, sizeof(hdr), 1, output);
+	fwrite("Recorded from CD by WorkMan", 28, 1, output);
+      }
+      free(filename);
+    }
     SEND_ACK(blk);
-	}
+  }
 
   return(dev->fd);
 }
@@ -455,15 +443,15 @@ wmcdda_transform(unsigned char *rawbuf, long buflen, struct cdda_block *block)
 
 int main(int argc, char **argv)
 {
-  fd_set			readfd, dummyfd;
-  struct timeval		timeout;
-  struct cdda_block	blockinfo;
-  long			result;
-  int			nfds;
-  struct cdda_device      dev;
-  const char      *sondsystem;
-  const char     *sounddevice;
-  const char  *sounddevicectl;
+  fd_set       readfd, dummyfd;
+  struct timeval       timeout;
+  struct cdda_block  blockinfo;
+  long		 	result;
+  int                     nfds;
+  struct cdda_device       dev;
+  const char       *sondsystem;
+  const char      *sounddevice;
+  const char   *sounddevicectl;
 
   memset(&blockinfo, 0, sizeof(struct cdda_block));
   
@@ -496,17 +484,17 @@ int main(int argc, char **argv)
     sounddevice?sounddevice:"",
     sounddevicectl?sounddevicectl:"");
 
-	/*
-	 * If we're running setuid root, bump up our priority then lose
-	 * superuser access.
-	 */
-	nice(-14);
-	setuid(getuid());
+  /*
+   * If we're running setuid root, bump up our priority then lose
+   * superuser access.
+   */
+  nice(-14);
+  setuid(getuid());
 
-	FD_ZERO(&dummyfd);
-	FD_ZERO(&readfd);
+  FD_ZERO(&dummyfd);
+  FD_ZERO(&readfd);
 
-	timerclear(&timeout);
+  timerclear(&timeout);
 
   dev.fd = -1;
   wmcdda_init(&dev, &blockinfo);
@@ -525,40 +513,40 @@ int main(int argc, char **argv)
 	 * supposed to be doing that.
 	 */
   while (1) {
-		FD_SET(0, &readfd);
+    FD_SET(0, &readfd);
 
-		/*
-		 * If we're playing, we don't want select to block.  Otherwise,
-		 * wait a little while for the next command.
-		 */
-		if (playing)
-			timeout.tv_usec = 0;
-		else
-			timeout.tv_usec = 500000;
+    /*
+     * If we're playing, we don't want select to block.  Otherwise,
+     * wait a little while for the next command.
+     */
+    if (playing)
+      timeout.tv_usec = 0;
+    else
+      timeout.tv_usec = 500000;
 
-		nfds = select(1, &readfd, &dummyfd, &dummyfd, &timeout);
+    nfds = select(1, &readfd, &dummyfd, &dummyfd, &timeout);
 
     if (nfds < 0) { /* Broken pipe; our GUI exited. */
       wmcdda_close(&dev);
       oops->wmaudio_close();
-			exit(0);
-		}
+      exit(0);
+    }
 
     if (FD_ISSET(0, &readfd)) {
       receive_command(&dev, &blockinfo);
-			/*
-			 * Process all commands in rapid succession, rather
-			 * than possibly waiting for a CDDA read.
-			 */
-			continue;
-		}
+      /*
+       * Process all commands in rapid succession, rather
+       * than possibly waiting for a CDDA read.
+       */
+      continue;
+    }
 		
     if ((blockinfo.status & ~WMCDDA_ACK) == WMCDDA_PLAYING) {
       result = wmcdda_read(&dev, &blockinfo);
       if (result <= 0 && blockinfo.status != WMCDDA_DONE) {
         ERRORLOG("cddaslave: wmcdda_read failed\n");
         blockinfo.status = WMCDDA_STOPPED;
-					send_status(&blockinfo);
+	send_status(&blockinfo);
       } else {
         result = wmcdda_normalize(&dev, &blockinfo);
         if (output)
@@ -571,10 +559,7 @@ int main(int argc, char **argv)
           send_status(&blockinfo);
         }
       }
-/*    } else {
-      SEND_STATUS(&blockinfo);*/
-    }
-      else
+    } else
         send_status(&blockinfo);
   }
 
