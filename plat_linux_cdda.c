@@ -36,7 +36,7 @@
 #endif
 
 /* don't undef ansi for the other includes */
-#ifdef __STICT_ANSI__
+#ifdef __STRICT_ANSI__
 #undef __STRICT_ANSI__
 #include <asm/types.h>
 #define __STRICT_ANSI__
