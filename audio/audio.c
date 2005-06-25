@@ -7,6 +7,11 @@ struct audio_oops* setup_alsa(const char *dev, const char *ctl);
 
 struct audio_oops* setup_soundsystem(const char* ss, const char* dev, const char* ctl)
 {
+  if(!ss) {
+    ERRORLOG("audio: Internal error, trying to setup a NULL soundsystem.\n");
+    return NULL;
+  }
+
 #ifdef USE_ARTS
   if(!strcmp(ss, "arts"))
     return setup_arts(dev, ctl);
