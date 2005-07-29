@@ -635,12 +635,12 @@ stash_trkinfo( int track, char *songname, int contd, int avoid )
 }
 
 /*
- * new_list()
+ * new_playlist()
  *
  * Add a playlist to a CD.
  */
 struct wm_playlist *
-new_list(struct wm_cdinfo* cdinfo, char* listname)
+new_palylist(struct wm_cdinfo* cdinfo, char* listname)
 {
 	int	nlists = 0;
 	struct wm_playlist *l;
