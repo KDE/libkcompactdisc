@@ -944,7 +944,7 @@ chomp:
 				if (listname[i] == '_')
 					listname[i] = ' ';
 
-			l = new_list(cd, listname);
+			l = new_playlist(cd, listname);
 			if (l == NULL)
 			{
 plnomem:
