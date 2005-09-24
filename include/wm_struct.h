@@ -104,7 +104,7 @@ struct wm_cdinfo
 /* The global variable "cd" points to the struct for the CD that's playing. */
 extern struct wm_cdinfo *cd;
 
-struct wm_playlist *new_playlist();
+extern struct wm_playlist *new_playlist();
 
 #define WM_STR_GENVENDOR "Generic"
 #define WM_STR_GENMODEL  "drive"
