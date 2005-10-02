@@ -589,7 +589,8 @@ wipe_cdinfo( void )
 				free(l->name);
 				free(l->list);
 			}
-			freeup( (char **)&thiscd.lists );
+			free(thiscd.lists);
+			thiscd.lists = NULL;
 		}
 
 		for (i = 0; i < cur_ntracks; i++)
