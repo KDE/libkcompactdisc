@@ -344,7 +344,7 @@ wm_cd_status( void )
     return -1;
   } else {
     wm_lib_message(WM_MSG_LEVEL_DEBUG|WM_MSG_CLASS,
-      "gen_det_drive_status returns status %s, track %i, frame %i\n",
+      "gen_get_drive_status returns status %s, track %i, frame %i\n",
       gen_status(mode), thiscd.curtrack, cur_frame);
   }
 
@@ -509,7 +509,7 @@ wm_cd_play( int start, int pos, int end )
   cur_firsttrack = start;
   cur_lasttrack = end;
     
-  wm_cd_play_chunk(thiscd.trk[CARRAY(start)].start + pos * 75, end = thiscd.ntracks ?
+  wm_cd_play_chunk(thiscd.trk[CARRAY(start)].start + pos * 75, end == thiscd.ntracks ?
     thiscd.length * 75 : thiscd.trk[CARRAY(end)].start - 1, thiscd.trk[CARRAY(start)].start);
   /* So we don't update the display with the old frame number */
   wm_cd_status();
