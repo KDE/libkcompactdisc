@@ -68,8 +68,7 @@
 /* Address of next block to read. */
 static int current_position;
 
-/* Address of first and last blocks to read. */
-static int starting_position;
+/* Address of last block to read. */
 static int ending_position;
 
 static struct cdrom_read_audio cdda;
@@ -163,7 +162,6 @@ wmcdda_setup(int start, int end, int realstart)
 {
     current_position = start;
     ending_position = end;
-    starting_position = realstart;
 
     return 0;
 }
@@ -187,7 +185,7 @@ wmcdda_read(struct cdda_device* pdev, struct cdda_block *block)
     }
 
     cdda.addr_format = CDROM_LBA;
-    cdda.addr.lba = current_position;
+    cdda.addr.lba = current_position - CD_MSF_OFFSET;
     if (ending_position && current_position + pdev->frames_at_once > ending_position)
         cdda.nframes = ending_position - current_position;
     else
