@@ -17,10 +17,13 @@
 
 
 #include <config.h>
+#include <config-alsa.h>
 
-#if defined(HAVE_ARTS_LIBASOUND2)
+#if defined(HAVE_LIBASOUND2)
 
+#ifdef HAVE_ALSA_ASOUNDLIB_H
 #include <alsa/asoundlib.h>
+#endif
 #include "audio.h"
 
 char* device = NULL;
