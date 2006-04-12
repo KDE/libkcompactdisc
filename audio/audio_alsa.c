@@ -22,7 +22,9 @@
 #if defined(HAVE_LIBASOUND2)
 
 #ifdef HAVE_ALSA_ASOUNDLIB_H
-#include <alsa/asoundlib.h>
+#	include <alsa/asoundlib.h>
+#elif defined(HAVE_SYS_ASOUNDLIB_H)
+#	include <sys/asoundlib.h>
 #endif
 #include "audio.h"
 
