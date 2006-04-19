@@ -41,7 +41,6 @@
 #include "include/wm_struct.h"
 #include "include/wm_cddb.h"
 #include "include/wm_cdrom.h"
-#include "include/wm_database.h"
 #include "include/wm_platform.h"
 #include "include/wm_helpers.h"
 #include "include/wm_cdinfo.h"

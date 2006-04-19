@@ -13,7 +13,7 @@ libworkman_la_LDFLAGS = $(ARTSC_LIBS) -no-undefined $(all_libraries)
 libworkman_la_LIBADD = audio/libworkmanaudio.la $(ARTS_LIBASOUND)
 
 libworkman_la_SOURCES = cddb.c cdinfo.c cdrom.c wm_helpers.c cdtext.c\
-database.c index.c scsi.c cdda.c plat_linux_cdda.c plat_sun_cdda.c\
+scsi.c cdda.c plat_linux_cdda.c plat_sun_cdda.c\
 plat_aix.c plat_bsd386.c plat_freebsd.c plat_hpux.c plat_irix.c \
 plat_linux.c plat_svr4.c plat_ultrix.c plat_news.c plat_openbsd.c \
 plat_osf1.c plat_sun.c plat_scor5.c \

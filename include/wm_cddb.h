@@ -26,11 +26,5 @@
  */
 
 unsigned long cddb_discid(void);
-void cddb_struct2cur(void);
-void cddb_cur2struct(void);
-void cddb_select(void);
-void connect_cddb(void);
-void update_cddbserver(void);
-void cddb_request(void);
 
 #endif /* WM_CDDB_H */
