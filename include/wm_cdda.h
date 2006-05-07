@@ -25,7 +25,7 @@
  *
  */
 
-#include <config-kscd.h>
+#include <kscd/config-kscd.h>
 
 /*
  * Information about a particular block of CDDA data.
