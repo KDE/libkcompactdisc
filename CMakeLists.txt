@@ -1,4 +1,3 @@
-kde4_header()
 
 add_subdirectory( audio ) 
 
@@ -11,7 +10,6 @@ add_subdirectory( audio )
 ########### install files ###############
 
 
-kde4_footer()
 
 
 
