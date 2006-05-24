@@ -325,7 +325,7 @@ int
 wm_cd_status( void )
 {
   static int oldmode = WM_CDM_UNKNOWN;
-  int mode, err, tmp;
+  int mode = -1, err, tmp;
 
   if(!drive.proto) {
     oldmode = WM_CDM_UNKNOWN;
@@ -341,11 +341,11 @@ wm_cd_status( void )
     &(thiscd.curtrack), &cur_index) < 0) {
     perror("WM gen_get_drive_status");
     return -1;
-  } else {
-    wm_lib_message(WM_MSG_LEVEL_DEBUG|WM_MSG_CLASS,
-      "gen_get_drive_status returns status %s, track %i, frame %i\n",
-      gen_status(mode), thiscd.curtrack, cur_frame);
   }
+
+  wm_lib_message(WM_MSG_LEVEL_DEBUG|WM_MSG_CLASS,
+    "gen_get_drive_status returns status %s, track %i, frame %i\n",
+    gen_status(mode), thiscd.curtrack, cur_frame);
 
   if(WM_CDS_NO_DISC(oldmode) && WM_CDS_DISC_READY(mode)) {
     /* device changed */
