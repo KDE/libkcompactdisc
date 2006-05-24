@@ -109,40 +109,45 @@ struct cdtext_info_block* malloc_cdtext_info_block(int count_of_tracks)
 
   lp_block->name = malloc(memamount);
   if(!lp_block->name)
-    return (struct cdtext_info_block*)free_cdtext_info_block(lp_block);
+    goto bail_out;
   memset(lp_block->name, 0, memamount);
 
   lp_block->performer = malloc(memamount);
   if(!lp_block->performer)
-    return (struct cdtext_info_block*)free_cdtext_info_block(lp_block);
+    goto bail_out;
   memset(lp_block->performer, 0, memamount);
 
   lp_block->songwriter = malloc(memamount);
   if(!lp_block->songwriter)
-    return (struct cdtext_info_block*)free_cdtext_info_block(lp_block);
+    goto bail_out;
   memset(lp_block->songwriter, 0, memamount);
 
   lp_block->composer = malloc(memamount);
   if(!lp_block->composer)
-    return (struct cdtext_info_block*)free_cdtext_info_block(lp_block);
+    goto bail_out;
   memset(lp_block->composer, 0, memamount);
 
   lp_block->arranger = malloc(memamount);
   if(!lp_block->arranger)
-    return (struct cdtext_info_block*)free_cdtext_info_block(lp_block);
+    goto bail_out;
   memset(lp_block->arranger, 0, memamount);
 
   lp_block->message = malloc(memamount);
   if(!lp_block->message)
-    return (struct cdtext_info_block*)free_cdtext_info_block(lp_block);
+    goto bail_out;
   memset(lp_block->message, 0, memamount);
 		
   lp_block->UPC_EAN_ISRC_code = malloc(memamount);
   if(!lp_block->UPC_EAN_ISRC_code)
-    return (struct cdtext_info_block*)free_cdtext_info_block(lp_block);
+    goto bail_out;
   memset(lp_block->UPC_EAN_ISRC_code, 0, memamount);
 
   return lp_block;
+
+bail_out:
+  free_cdtext_info_block(lp_block);
+  free(lp_block);
+  return 0;
 }
 
 void get_data_from_cdtext_pack(
