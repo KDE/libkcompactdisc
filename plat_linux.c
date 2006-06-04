@@ -54,7 +54,7 @@ typedef unsigned long long __u64;
 #include "include/wm_config.h"
 #include "include/wm_struct.h"
 #include "include/wm_cdtext.h"
-
+#include <config-kscd.h>
 #if defined(BSD_MOUNTTEST)
   #include <mntent.h>
 #else

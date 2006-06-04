@@ -32,7 +32,7 @@
  * wm_config should always be included first
  */
 #include "wm_config.h" 
-
+#include <config-kscd.h>
 #include "workman_defs.h"
 #ifdef BUILD_CDDA
 #include "wm_cdda.h"

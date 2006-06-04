@@ -41,7 +41,7 @@
  * processing code.  Look in plat_*_cdda.c for system-specific stuff.
  *
  */
-
+#include <config-kscd.h>
 #include "include/wm_cdda.h"
 
 #ifdef BUILD_CDDA

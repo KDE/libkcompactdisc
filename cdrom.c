@@ -34,7 +34,7 @@
 #include <string.h>
 #include <sys/types.h>
 /* #include <sys/time.h> */
-
+#include <config-kscd.h>
 #include "config.h"
 
 #include "include/wm_config.h"

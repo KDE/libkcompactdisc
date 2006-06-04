@@ -38,7 +38,7 @@ static char plat_sun_id[] = "$Id$";
 #include <sys/stat.h>
 #include <sys/time.h>
 #include <sys/ioctl.h>
-
+#include <config-kscd.h>
 #include "include/wm_config.h"
 #include "include/wm_helpers.h"
 #include "include/wm_cdrom.h"
