@@ -489,7 +489,10 @@ int main(int argc, char **argv)
    * superuser access.
    */
   nice(-14);
+  setgid(getgid());
   setuid(getuid());
+  if (geteuid() != getuid())
+    return 255;
 
   FD_ZERO(&dummyfd);
   FD_ZERO(&readfd);
