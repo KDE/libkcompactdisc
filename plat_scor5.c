@@ -182,7 +182,7 @@ wmcd_open( struct wm_drive *d)
           return( -6 );
 	}
       
-      /* can not acces CDROM device */
+      /* cannot access CDROM device */
       return (-1);
     }
   
@@ -407,7 +407,7 @@ gen_get_volume(struct wm_drive *d, int *left, int *right)
 } /* gen_get_volume() */
 
 /*------------------------------------------------------------------------*
- * gen_get_cdtext(drive, buffer, lenght)
+ * gen_get_cdtext(drive, buffer, length)
  *------------------------------------------------------------------------*/
 
 int

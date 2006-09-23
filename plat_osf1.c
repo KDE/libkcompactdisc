@@ -1,7 +1,7 @@
 /*
  * This file is part of WorkMan, the civilized CD player library
  * (c) 1991-1997 by Steven Grimm (original author)
- * (c) by Dirk Försterling (current 'author' = maintainer)
+ * (c) by Dirk Fï¿½sterling (current 'author' = maintainer)
  * The maintainer can be contacted by his e-mail address:
  * milliByte@DeathsDoor.com 
  *
@@ -661,7 +661,7 @@ gen_get_volume( struct wm_drive *d, int *left, int *right )
 } /* gen_get_volume() */
 
 /*------------------------------------------------------------------------*
- * gen_get_cdtext(drive, buffer, lenght)
+ * gen_get_cdtext(drive, buffer, length)
  *------------------------------------------------------------------------*/
 
 int

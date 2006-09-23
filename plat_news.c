@@ -430,7 +430,7 @@ gen_get_volume( struct wm_drive *d, omt *left, int *right)
 } /* gen_get_volume() */
 
 /*------------------------------------------------------------------------*
- * gen_get_cdtext(drive, buffer, lenght)
+ * gen_get_cdtext(drive, buffer, length)
  *------------------------------------------------------------------------*/
 
 int

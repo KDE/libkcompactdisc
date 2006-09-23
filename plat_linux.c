@@ -396,7 +396,7 @@ gen_get_drive_status( struct wm_drive *d, int oldmode,
   IFCDDA(d) {
     if(!cdda_get_drive_status(d, oldmode, mode, pos, track, ind)) {
       if(*mode == WM_CDM_STOPPED)
-        *mode = WM_CDM_UNKNOWN; /* dont believe */
+        *mode = WM_CDM_UNKNOWN; /* don't believe */
     }
   } else
 #endif
@@ -785,7 +785,7 @@ gen_get_volume( struct wm_drive *d, int *left, int *right )
 } /* gen_get_volume() */
 
 /*------------------------------------------------------------------------*
- * gen_get_cdtext(drive, buffer, lenght)
+ * gen_get_cdtext(drive, buffer, length)
  *
  * Return a buffer with cdtext-stream. buffer will be allocated and filled
  *

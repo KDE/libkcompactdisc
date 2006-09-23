@@ -527,7 +527,7 @@ wm_scsi2_set_volume(struct wm_drive *d, int left, int right)
 }
 
 /*------------------------------------------------------------------------*
- * wm_scsi_get_cdtext(drive, buffer, lenght)
+ * wm_scsi_get_cdtext(drive, buffer, length)
  *
  * Return a buffer with cdtext-stream. buffer mus be allocated and filled
  *

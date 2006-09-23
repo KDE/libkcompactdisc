@@ -959,7 +959,7 @@ codec_stop( void ) { return 0; }
 #endif /* CODEC } */
 
 /*------------------------------------------------------------------------*
- * gen_get_cdtext(drive, buffer, lenght)
+ * gen_get_cdtext(drive, buffer, length)
  *------------------------------------------------------------------------*/
 
 int

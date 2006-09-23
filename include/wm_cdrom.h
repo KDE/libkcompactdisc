@@ -89,7 +89,7 @@ int    wm_cd_closetray( void );
 int    wm_find_trkind( int, int, int );
 
 /*
- * for vaild values see wm_helpers.h
+ * for valid values see wm_helpers.h
  */
 int    wm_cd_set_verbosity( int );
 
