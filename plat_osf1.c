@@ -1,7 +1,7 @@
 /*
  * This file is part of WorkMan, the civilized CD player library
  * (c) 1991-1997 by Steven Grimm (original author)
- * (c) by Dirk F�sterling (current 'author' = maintainer)
+ * (c) by Dirk Fösterling (current 'author' = maintainer)
  * The maintainer can be contacted by his e-mail address:
  * milliByte@DeathsDoor.com 
  *
