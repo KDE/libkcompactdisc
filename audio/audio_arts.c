@@ -71,9 +71,9 @@ arts_close(void)
 
   DEBUGLOG("arts_close\n");
   arts_close_stream(arts_stream);
-  
+
   arts_free();
-  
+
   return 0;
 }
 
@@ -135,7 +135,7 @@ setup_arts(const char *dev, const char *ctl)
   }
 
   arts_open();
-  
+
   return &arts_oops;
 }
 #endif

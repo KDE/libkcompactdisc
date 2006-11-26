@@ -6,9 +6,9 @@
  *  Cleanups by Jaroslav Kysela <perex@jcu.cz>
  *              Ville Syrjala <syrjala@sci.fi>
  *
- *  adopted for libworkman cdda audio backend from Alexander Kern alex.kern@gmx.de  
+ *  adopted for libworkman cdda audio backend from Alexander Kern alex.kern@gmx.de
  *
- *  Adapted to support both ALSA V0.x and V1.x APIs for PCM calls 
+ *  Adapted to support both ALSA V0.x and V1.x APIs for PCM calls
  *  (Philip Nelson <teamdba@scotdb.com> 2004-03-15)
  *
  * This file comes under GPL license.
@@ -32,13 +32,29 @@ char* device = NULL;
 snd_pcm_t *handle;
 
 snd_pcm_format_t format = SND_PCM_FORMAT_S16;    /* sample format */
+
+#if (SND_LIB_MAJOR < 1)
 int rate = 44100;                                /* stream rate */
+int new_rate;
 int channels = 2;                                /* count of channels */
 int buffer_time = 2000000;                       /* ring buffer length in us */
 int period_time = 100000;                        /* period time in us */
+#else
+unsigned int rate = 44100;                                /* stream rate */
+unsigned int new_rate;
+int channels = 2;                                /* count of channels */
+unsigned int buffer_time = 2000000;                       /* ring buffer length in us */
+unsigned int period_time = 100000;                        /* period time in us */
+#endif
 
+#if (SND_LIB_MAJOR < 1)
 snd_pcm_sframes_t buffer_size;
 snd_pcm_sframes_t period_size;
+#else
+snd_pcm_uframes_t buffer_size;
+snd_pcm_uframes_t period_size;
+#endif
+
 
 int alsa_open(void);
 int alsa_close(void);
@@ -50,7 +66,7 @@ struct audio_oops* setup_alsa(const char *dev, const char *ctl);
 static int set_hwparams(snd_pcm_hw_params_t *params,
                         snd_pcm_access_t accesspar)
 {
-       int err, dir, new_rate;
+       int err, dir;
 
         /* choose all parameters */
         err = snd_pcm_hw_params_any(handle, params);
@@ -77,11 +93,11 @@ static int set_hwparams(snd_pcm_hw_params_t *params,
                 return err;
         }
         /* set the stream rate */
-#if (SND_LIB_MAJOR < 1) 
+#if (SND_LIB_MAJOR < 1)
         err = new_rate = snd_pcm_hw_params_set_rate_near(handle, params, rate, 0);
 #else
         new_rate = rate;
-        err = snd_pcm_hw_params_set_rate_near(handle, params, &new_rate, 0);
+        err = snd_pcm_hw_params_set_rate_near(handle, params, &rate, 0);
 #endif
         if (err < 0) {
                 ERRORLOG("Rate %iHz not available for playback: %s\n", rate, snd_strerror(err));
@@ -104,7 +120,7 @@ static int set_hwparams(snd_pcm_hw_params_t *params,
 #if (SND_LIB_MAJOR < 1)
          buffer_size = snd_pcm_hw_params_get_buffer_size(params);
 #else
-        err = snd_pcm_hw_params_get_buffer_size(params, &buffer_size); 
+        err = snd_pcm_hw_params_get_buffer_size(params, &buffer_size);
         if (err < 0) {
                 ERRORLOG("Unable to get buffer size : %s\n", snd_strerror(err));
                 return err;
@@ -115,7 +131,7 @@ static int set_hwparams(snd_pcm_hw_params_t *params,
         /* set the period time */
 #if (SND_LIB_MAJOR < 1)
          err = snd_pcm_hw_params_set_period_time_near(handle, params, period_time, &dir);
-#else 
+#else
         err = snd_pcm_hw_params_set_period_time_near(handle, params, &period_time, &dir);
 #endif
         if (err < 0) {
@@ -123,7 +139,7 @@ static int set_hwparams(snd_pcm_hw_params_t *params,
                 return err;
         }
 
-#if (SND_LIB_MAJOR < 1) 
+#if (SND_LIB_MAJOR < 1)
         period_size = snd_pcm_hw_params_get_period_size(params, &dir);
 #else
         err = snd_pcm_hw_params_get_period_size(params, &period_size, &dir);
@@ -214,7 +230,7 @@ int alsa_close( void )
   int err;
 
   DEBUGLOG("alsa_close\n");
-  
+
   err = alsa_stop();
 
 #if (SND_LIB_MAJOR < 1)
@@ -285,7 +301,7 @@ alsa_stop( void )
   if (err < 0) {
     ERRORLOG("Unable to drop pcm stream: %s\n", snd_strerror(err));
   }
-  
+
   err = snd_pcm_prepare(handle);
   if (err < 0) {
     ERRORLOG("Unable to snd_pcm_prepare pcm stream: %s\n", snd_strerror(err));
@@ -300,6 +316,8 @@ alsa_stop( void )
 int
 alsa_state(struct cdda_block *blk)
 {
+  DEBUGLOG("alsa_state\n");
+
   return -1; /* not implemented yet for ALSA */
 }
 
@@ -318,16 +336,19 @@ setup_alsa(const char *dev, const char *ctl)
 {
   static int init_complete = 0;
 
+  DEBUGLOG("setup_alsa\n");
+
+  if(init_complete) {
+    alsa_close();
+    init_complete = 0;
+  }
+
   if(dev && strlen(dev) > 0) {
     device = strdup(dev);
   } else {
     device = strdup("plughw:0,0"); /* playback device */
   }
 
-  if(init_complete) {
-    ERRORLOG("already initialized\n");
-    return NULL;
-  }
   if(!alsa_open())
     init_complete = 1;
   else
@@ -336,4 +357,4 @@ setup_alsa(const char *dev, const char *ctl)
   return &alsa_oops;
 }
 
-#endif /* ALSA */
+#endif /* HAVE_LIBASOUND2 */

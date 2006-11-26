@@ -17,5 +17,14 @@ struct audio_oops {
   int (*wmaudio_volume)(int);
 };
 
-extern struct audio_oops* setup_soundsystem(const char*, const char*, const char*);
+#ifdef __cplusplus
+    extern "C" {
+#endif
+
+struct audio_oops *setup_soundsystem(const char *, const char *, const char *);
+
+#ifdef __cplusplus
+    }
+#endif
+
 
