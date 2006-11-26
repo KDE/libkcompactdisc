@@ -7,7 +7,7 @@
  * (c) 1991-1997 by Steven Grimm (original author)
  * (c) by Dirk Försterling (current 'author' = maintainer)
  * The maintainer can be contacted by his e-mail address:
- * milliByte@DeathsDoor.com 
+ * milliByte@DeathsDoor.com
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Library General Public
@@ -25,7 +25,7 @@
  *
  */
 
-#include <kscd/config-kscd.h>
+#include <config.h>
 
 /*
  * Information about a particular block of CDDA data.
@@ -44,12 +44,12 @@ struct cdda_block {
 struct cdda_device {
     int        fd;
     const char *devname;
-  
+
     unsigned char status;
     unsigned char track;
     unsigned char index;
     unsigned char command;
-  
+
     int frame;
     int frames_at_once;
 
@@ -62,7 +62,7 @@ struct cdda_device {
 
     /* Current balance setting (0-255, 128 = balanced) */
     unsigned char balance;
-    
+
     struct cdda_block *blocks;
     int numblocks;
 };
@@ -97,7 +97,7 @@ struct cdda_device {
 #  include <sys/types.h>
 #  include <sys/cdio.h>
 #  ifndef CDROMCDDA
-#   undef BUILD_CDDA
+#    error what to do?
 #  endif
 #  ifdef i386
 #   define WM_LITTLE_ENDIAN 1
@@ -106,8 +106,6 @@ struct cdda_device {
 #   define WM_BIG_ENDIAN 1
 #   define WM_LITTLE_ENDIAN 0
 #  endif
-# else
-#  undef BUILD_CDDA
 # endif
 
 /* Linux only allows definition of endianness, because there's no
@@ -132,7 +130,7 @@ struct cdda_device {
 #endif
 
 /*
- * The following code shouldn't take effect now. 
+ * The following code shouldn't take effect now.
  * In 1998, the WorkMan platforms don't support __PDP_ENDIAN
  * architectures.
  *
@@ -141,11 +139,10 @@ struct cdda_device {
 #if !defined(WM_LITTLE_ENDIAN)
 #  if !defined(WM_BIG_ENDIAN)
 #    error yet unsupported architecture
-	foo bar this is to stop the compiler. 
+	foo bar this is to stop the compiler.
 #  endif
 #endif
 
-#if defined(BUILD_CDDA)
 /*
  * The following code support us by optimize cdda operations
  */
@@ -177,24 +174,9 @@ long wmcdda_read(struct cdda_device*, struct cdda_block *block);
 void wmcdda_speed(int speed);
 void wmcdda_direction(int newdir);
 
-#else
- #define CDDARETURN(x)
- #define IFCDDA(x)
- #define cdda_get_drive_status
- #define cdda_play
- #define cdda_pause
- #define cdda_resume
- #define cdda_stop
- #define cdda_eject
- #define cdda_set_volume
- #define cdda_get_volume
- #define cdda_kill
- #define cdda_save
- #define cdda_get_ack
-#endif /* defined(BUILD_CDDA) */
-
 #include <stdio.h>
 
+#define DEBUG
 #ifdef DEBUG
  #define DEBUGLOG(fmt, args...) fprintf(stderr, fmt, ##args)
 #else
