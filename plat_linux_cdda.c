@@ -5,7 +5,7 @@
  * (c) 1991-1997 by Steven Grimm (original author)
  * (c) by Dirk Försterling (current 'author' = maintainer)
  * The maintainer can be contacted by his e-mail address:
- * milliByte@DeathsDoor.com 
+ * milliByte@DeathsDoor.com
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Library General Public
@@ -26,34 +26,47 @@
  */
 
 #include "include/wm_cdda.h"
- 
-#if defined(__linux__) && defined(BUILD_CDDA)
+
+#if defined(__linux__)
 
 #include "include/wm_struct.h"
 #include "include/wm_cdda.h"
-#ifndef __GNUC__
-#define __GNUC__ 1
-#endif
 
-/* don't undef ansi for the other includes */
-#ifdef __STRICT_ANSI__
-#undef __STRICT_ANSI__
-#include <asm/types.h>
-#define __STRICT_ANSI__
-#else
-#include <asm/types.h>
-#endif
+/* Never ever include directly a kernel header!
+   #include <linux/cdrom.h>
+   Instead we redefine the necessary (copied from the header) */
 
-/* ugly workaround for broken glibc shipped in SuSE 9.0 */
-#define inline __inline__
-#define asm __asm__
-#include <linux/cdrom.h>
-#undef inline
-#undef asm
-/* types.h and cdio.h are included by wm_cdda.h */
+#define CDROM_LBA 0x01 /* "logical block": first frame is #0 */
+#define CDROMREADAUDIO    0x530e /* (struct cdrom_read_audio) */
+#define CD_MSF_OFFSET       150 /* MSF numbering offset of first frame */
+
+/* Address in MSF format */
+struct cdrom_msf0
+{
+	unsigned char minute;
+	unsigned char second;
+	unsigned char frame;
+};
+
+/* Address in either MSF or logical format */
+union cdrom_addr
+{
+	struct cdrom_msf0	msf;
+	signed int			lba;
+};
+
+/* This struct is used by the CDROMREADAUDIO ioctl */
+struct cdrom_read_audio
+{
+	union cdrom_addr addr; /* frame address */
+	unsigned char addr_format;      /* CDROM_LBA or CDROM_MSF */
+	signed int nframes;           /* number of 2352-byte-frames to read at once */
+	unsigned char *buf;      /* frame buffer (size: nframes*2352 bytes) */
+};
 
 #include <stdio.h>
 #include <math.h>
+#include <malloc.h>
 #include <sys/ioctl.h>
 #include <sys/types.h>
 #include <fcntl.h>
@@ -89,7 +102,7 @@ wmcdda_init(struct cdda_device* pdev)
 
     if(!pdev->devname)
       return -1;
-      
+
     for (i = 0; i < pdev->numblocks; i++) {
         /* in Linux const */
         pdev->blocks[i].buflen = pdev->frames_at_once * CDDABLKSIZE;
@@ -99,7 +112,7 @@ wmcdda_init(struct cdda_device* pdev)
             return -ENOMEM;
         }
     }
-      
+
     pdev->fd = open(pdev->devname, O_RDONLY | O_NONBLOCK);
 
     if (pdev->fd > -1) {
@@ -190,7 +203,7 @@ wmcdda_read(struct cdda_device* pdev, struct cdda_block *block)
         cdda.nframes = ending_position - current_position;
     else
         cdda.nframes = pdev->frames_at_once;
-   
+
     cdda.buf = (unsigned char*)block->buf;
 
     if (ioctl(pdev->fd, CDROMREADAUDIO, &cdda) < 0) {
@@ -212,7 +225,7 @@ wmcdda_read(struct cdda_device* pdev, struct cdda_block *block)
     block->buflen = cdda.nframes * CDDABLKSIZE;
 
     current_position = current_position + cdda.nframes;
-    
+
     return wmcdda_normalize(block);
 }
 

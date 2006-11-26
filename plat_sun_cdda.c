@@ -5,7 +5,7 @@
  * (c) 1991-1997 by Steven Grimm (original author)
  * (c) by Dirk Försterling (current 'author' = maintainer)
  * The maintainer can be contacted by his e-mail address:
- * milliByte@DeathsDoor.com 
+ * milliByte@DeathsDoor.com
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Library General Public
@@ -27,7 +27,7 @@
 
 #include "include/wm_cdda.h"
 
-#if defined(sun) || defined(__sun__) && defined(SYSV) && defined(BUILD_CDDA)
+#if defined(sun) || defined(__sun__) && defined(SYSV)
 
 
 #include "include/wm_struct.h"
@@ -101,7 +101,7 @@ wmcdda_init(struct cdda_device* pdev, struct cdda_block *block)
 
   if (pdev->fd > -1)
     return -1;
-    
+
   for (i = 0; i < pdev->numblocks; i++) {
     /* in Linux const */
     pdev->blocks[i].buflen = pdev->frames_at_once * CDDABLKSIZE;
@@ -142,13 +142,13 @@ int
 wmcdda_close(struct cdda_device* pdev)
 {
     int i;
- 
+
     if(-1 == pdev->fd)
         return -1;
 
     close(pdev->fd);
     pdev->fd = -1;
-    
+
     for (i = 0; i < pdev->numblocks; i++) {
         free(pdev->blocks[i].buf);
         pdev->blocks[i].buf = 0;

@@ -32,8 +32,6 @@
 #include "audio/audio.h"
 #include <pthread.h>
 
-#if defined(BUILD_CDDA)
-
 static pthread_t thread_read;
 static pthread_t thread_play;
 
@@ -102,8 +100,13 @@ gen_cdda_init( struct wm_drive *d )
 {
     int ret = 0;
 
-    if (d->cdda_slave > -1)
-        return 0;
+    if (d->cdda_slave > -1) {
+        cdda_stop(d);
+
+        sleep(1);
+        dev.blocks = 0;
+        sleep(1);
+    }
 
     memset(&blks, 0, sizeof(blks));
 
@@ -280,7 +283,7 @@ cdda_get_volume( struct wm_drive *d, int *left, int *right )
 
         return 0;
     }
- 
+
     return -1;
 }
 
@@ -296,7 +299,7 @@ cdda_kill( struct wm_drive *d )
         sleep(1);
         wmcdda_close(&dev);
         oops->wmaudio_close();
-    
+
         dev.blocks = NULL;
         wait(NULL);
         d->cdda_slave = -1;
@@ -386,15 +389,13 @@ void *cdda_fct_read(void* arg)
             cddadev->status = cddadev->command;
             sleep(1);
         }
-        
+
         i = 0;
         pthread_mutex_lock(&blks_mutex[i]);
         wakeup = 1;
-        
-        while(cddadev->command == WM_CDM_PLAYING) {
 
+        while(cddadev->command == WM_CDM_PLAYING) {
             result = wmcdda_read(cddadev, &blks[i]);
-            
             if (result <= 0 && blks[i].status != WM_CDM_TRACK_DONE) {
                 ERRORLOG("cdda: wmcdda_read failed, stop playing\n");
                 cddadev->command = WM_CDM_STOPPED;
@@ -403,24 +404,24 @@ void *cdda_fct_read(void* arg)
                 if (output)
                     fwrite(blks[i].buf, blks[i].buflen, 1, output);
             }
-            
+
             j = get_next_block(i);
             pthread_mutex_lock(&blks_mutex[j]);
-            
+
             if(wakeup) {
                 wakeup = 0;
                 pthread_cond_signal(&wakeup_audio);
             }
-            
+
             pthread_mutex_unlock(&blks_mutex[i]);
             /* audio can start here */
-            
+
             i = j;
         }
 
         pthread_mutex_unlock(&blks_mutex[i]);
     }
-    
+
     return 0;
 }
 
@@ -436,9 +437,9 @@ void *cdda_fct_play(void* arg)
             pthread_cond_wait(&wakeup_audio, &blks_mutex[i]);
         } else {
             i = get_next_block(i);
-            pthread_mutex_lock(&blks_mutex[i]);    
+            pthread_mutex_lock(&blks_mutex[i]);
         }
-        
+
         if (oops->wmaudio_play(&blks[i])) {
             oops->wmaudio_stop();
             ERRORLOG("cdda: wmaudio_play failed\n");
@@ -448,11 +449,9 @@ void *cdda_fct_play(void* arg)
         cddadev->track = blks[i].track;
         cddadev->index = blks[i].index;
         cddadev->status = blks[i].status;
-        
-        pthread_mutex_unlock(&blks_mutex[i]);    
+
+        pthread_mutex_unlock(&blks_mutex[i]);
     }
-    
+
     return 0;
 }
-
-#endif

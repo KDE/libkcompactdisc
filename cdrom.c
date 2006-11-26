@@ -5,7 +5,7 @@
  * (c) 1991-1997 by Steven Grimm (original author)
  * (c) by Dirk Försterling (current 'author' = maintainer)
  * The maintainer can be contacted by his e-mail address:
- * milliByte@DeathsDoor.com 
+ * milliByte@DeathsDoor.com
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Library General Public
@@ -34,8 +34,7 @@
 #include <string.h>
 #include <sys/types.h>
 /* #include <sys/time.h> */
-#include <config-kscd.h>
-#include "config.h"
+#include <config.h>
 
 #include "include/wm_config.h"
 #include "include/wm_struct.h"
@@ -128,12 +127,7 @@ int wm_cd_init( int cdin, const char *cd_device, const char *soundsystem,
   const char *sounddevice, const char *ctldevice )
 {
   drive.cdda = (WM_CDDA == cdin);
-#if !defined(BUILD_CDDA)
-  if(drive.cdda) {
-    wm_lib_message(WM_MSG_LEVEL_DEBUG|WM_MSG_CLASS, "Libworkman library was compiled without cdda support\n");
-    return -1;
-  }
-#endif
+
   wm_cd_destroy();
 
   STRDUP(wm_cd_device, cd_device);
@@ -239,7 +233,7 @@ read_toc( void )
 
   if(!drive.proto)
     return -1;
-    
+
   if(drive.proto && drive.proto->gen_get_trackcount &&
     (drive.proto->gen_get_trackcount)(&drive, &thiscd.ntracks) < 0) {
     return -1 ;
@@ -308,7 +302,7 @@ read_toc( void )
 
   thiscd.length = thiscd.trk[thiscd.ntracks].length;
   thiscd.cddbid = cddb_discid();
-        
+
   wm_lib_message(WM_MSG_LEVEL_DEBUG|WM_MSG_CLASS, "read_toc() successful\n");
   return 0;
 } /* read_toc() */
@@ -318,7 +312,7 @@ read_toc( void )
  *
  * Return values:
  *     see wm_cdrom.h
- * 
+ *
  * Updates variables.
  */
 int
@@ -326,7 +320,6 @@ wm_cd_status( void )
 {
   static int oldmode = WM_CDM_UNKNOWN;
   int mode = -1, err, tmp;
-
   if(!drive.proto) {
     oldmode = WM_CDM_UNKNOWN;
     err = wmcd_open( &drive );
@@ -421,7 +414,7 @@ wm_cd_status( void )
   case WM_CDM_FORWARD:
   case WM_CDM_EJECTED:
     wm_cur_cdmode = mode;
-    break;	
+    break;
   }
 
   wm_lib_message(WM_MSG_LEVEL_DEBUG|WM_MSG_CLASS,
@@ -436,13 +429,13 @@ wm_cd_getcurtrack( void )
     return 0;
   return thiscd.curtrack;
 }
-  
+
 int
 wm_cd_getcurtracklen( void )
 {
   if(WM_CDS_NO_DISC(wm_cur_cdmode))
     return 0;
-    
+
   return thiscd.curtracklen;
 }
 
@@ -451,7 +444,7 @@ wm_cd_getcountoftracks( void )
 {
   if(WM_CDS_NO_DISC(wm_cur_cdmode))
     return 0;
-    
+
   return thiscd.ntracks;
 }
 
@@ -475,7 +468,7 @@ int
 wm_cd_play( int start, int pos, int end )
 {
   int real_start, real_end, status;
-  
+
   status = wm_cd_status();
   if(WM_CDS_NO_DISC(status) || thiscd.ntracks < 1)
     return -1;
@@ -487,16 +480,16 @@ wm_cd_play( int start, int pos, int end )
     ;
   for(real_start = 1; (thiscd.trk[CARRAY(real_start)].data == DATATRACK); real_start++)
     ;
-  
+
   if(end == WM_ENDTRACK) end = real_end;
   if(end > real_end) end = real_end;
-  
+
   /*
    * handle as overrun
    */
   if(start < real_start) start = real_start;
   if(start > real_end) start = real_end;
-  
+
   /*
    * Try to avoid mixed mode and CD-EXTRA data tracks
    */
@@ -504,10 +497,10 @@ wm_cd_play( int start, int pos, int end )
     wm_cd_stop();
     return -1;
   }
-  
+
   cur_firsttrack = start;
   cur_lasttrack = end;
-    
+
   wm_cd_play_chunk(thiscd.trk[CARRAY(start)].start + pos * 75, end == thiscd.ntracks ?
     thiscd.length * 75 : thiscd.trk[CARRAY(end)].start - 1, thiscd.trk[CARRAY(start)].start);
   /* So we don't update the display with the old frame number */
@@ -515,7 +508,7 @@ wm_cd_play( int start, int pos, int end )
 
   return thiscd.curtrack;
 }
-  
+
 /*
  * wm_cd_play_chunk(start, end)
  *
@@ -525,15 +518,15 @@ int
 wm_cd_play_chunk( int start, int end, int realstart )
 {
   int status;
-  
+
   status = wm_cd_status();
   if(WM_CDS_NO_DISC(status))
     return -1;
-  
+
   end--;
   if (start >= end)
     start = end-1;
-  
+
   if(!(drive.proto) || !(drive.proto->gen_play)) {
     perror("WM gen_play:  function pointer NULL");
     return -1;
@@ -541,7 +534,7 @@ wm_cd_play_chunk( int start, int end, int realstart )
 
   return (drive.proto->gen_play)(&drive, start, end, realstart);
 }
-  
+
 /*
  * Set the offset into the current track and play.  -1 means end of track
  * (i.e., go to next track.)
@@ -550,11 +543,11 @@ int
 wm_cd_play_from_pos( int pos )
 {
   int status;
-  
+
   status = wm_cd_status();
   if(WM_CDS_NO_DISC(status))
     return -1;
-  
+
   if (pos == -1)
     pos = thiscd.trk[thiscd.curtrack - 1].length - 1;
 
@@ -575,7 +568,7 @@ wm_cd_pause( void )
 {
   static int paused_pos;
   int status;
-   
+
   status = wm_cd_status();
   if(WM_CDS_NO_DISC(status))
     return -1;
@@ -605,19 +598,19 @@ int
 wm_cd_stop( void )
 {
   int status;
-   
+
   status = wm_cd_status();
   if(WM_CDS_NO_DISC(status))
     return -1;
 
   if (status != WM_CDM_STOPPED) {
-    
+
     if(drive.proto && drive.proto->gen_stop)
       (drive.proto->gen_stop)(&drive);
 
     status = wm_cd_status();
   }
-  
+
   return (status != WM_CDM_STOPPED);
 } /* wm_cd_stop() */
 
@@ -633,7 +626,7 @@ wm_cd_eject( void )
   int err = -1;
 
   wm_cd_stop();
-  
+
   if(drive.proto && drive.proto->gen_eject)
     err = (drive.proto->gen_eject)(&drive);
 
@@ -670,10 +663,10 @@ wm_cd_get_cdtext( void )
   int status;
 
   status = wm_cd_status();
-  
+
   if(WM_CDS_NO_DISC(status))
     return NULL;
-  
+
   return get_glob_cdtext(&drive, 0);
 }
 
@@ -774,12 +767,12 @@ wm_cd_volume( int vol, int bal )
   if(vol > WM_VOLUME_MAXIMAL) vol = WM_VOLUME_MAXIMAL;
   if(bal < WM_BALANCE_ALL_LEFTS) bal = WM_BALANCE_ALL_LEFTS;
   if(bal > WM_BALANCE_ALL_RIGHTS) bal = WM_BALANCE_ALL_RIGHTS;
-  
+
   left = vol - (bal * bal1);
   right = vol + (bal * bal1);
-  
+
   wm_lib_message(WM_MSG_LEVEL_DEBUG|WM_MSG_CLASS, "calculate volume left %i, right %i\n", left, right);
-  
+
   if (left > WM_VOLUME_MAXIMAL)
     left = WM_VOLUME_MAXIMAL;
   if (right > WM_VOLUME_MAXIMAL)
