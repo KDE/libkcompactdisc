@@ -1,5 +1,5 @@
 /*
- * $Id$
+ * $Id: audio_sun.c 608126 2006-11-26 20:38:09Z kernalex $
  *
  * This file is part of WorkMan, the civilized CD player library
  * (c) 1991-1997 by Steven Grimm (original author)

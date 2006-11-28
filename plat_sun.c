@@ -1,5 +1,5 @@
 /*
- * $Id$
+ * $Id: plat_sun.c 608128 2006-11-26 20:40:07Z kernalex $
  *
  * This file is part of WorkMan, the civilized CD player library
  * (c) 1991-1997 by Steven Grimm (original author)
@@ -25,7 +25,7 @@
  * Sun-specific drive control routines.
  */
 
-static char plat_sun_id[] = "$Id$";
+static char plat_sun_id[] = "$Id: plat_sun.c 608128 2006-11-26 20:40:07Z kernalex $";
 
 #if defined(sun) || defined(__sun)
 

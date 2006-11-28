@@ -1,5 +1,5 @@
 /*
- * $Id$
+ * $Id: plat_svr4.c 587515 2006-09-23 02:48:38Z haeber $
  *
  * This file is part of WorkMan, the civilized CD player library
  * (c) 1991-1997 by Steven Grimm (original author)
@@ -25,7 +25,7 @@
  * SVR4 specific.  Much of this is similar to plat_hpux.c.
  */
 
-static char plat_svr4_id[] = "$Id$";
+static char plat_svr4_id[] = "$Id: plat_svr4.c 587515 2006-09-23 02:48:38Z haeber $";
 
 #if (defined(SVR4) || defined(__SVR4)) && !defined(sun) && !defined(__sun) && !defined(sony_news) && !defined(__sony_news)
 

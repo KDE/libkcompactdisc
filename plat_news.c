@@ -1,5 +1,5 @@
 /*
- * $Id$
+ * $Id: plat_news.c 587515 2006-09-23 02:48:38Z haeber $
  *
  * This file is part of WorkMan, the civilized CD player library
  * (c) 1991-1997 by Steven Grimm (original author)
@@ -25,7 +25,7 @@
  * Sony NEWS-specific drive control routines.
  */
 
-static char plat_news_id[] = "$Id$";
+static char plat_news_id[] = "$Id: plat_news.c 587515 2006-09-23 02:48:38Z haeber $";
 
 #if defined( __sony_news) || defined(sony_news)
 

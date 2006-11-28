@@ -1,5 +1,5 @@
 /*   
- * $Id$
+ * $Id: plat_scor5.c 587515 2006-09-23 02:48:38Z haeber $
  *
  * This file is part of WorkMan, the civilized CD player library
  * (c) 1991-1997 by Steven Grimm (original author)
@@ -27,7 +27,7 @@
  */
 
 
-static char plat_linux_id[] = "$Id$";
+static char plat_linux_id[] = "$Id: plat_scor5.c 587515 2006-09-23 02:48:38Z haeber $";
 
 #if defined(M_UNIX) || defined(__M_UNIX)
 

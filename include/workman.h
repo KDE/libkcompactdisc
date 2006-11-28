@@ -1,7 +1,7 @@
 #ifndef WORKMAN_H
 #define WORKMAN_H
 /*
- * $Id$
+ * $Id: workman.h 608127 2006-11-26 20:39:13Z kernalex $
  *
  * This file is part of WorkMan, the civilized CD player library
  * (c) 1991-1997 by Steven Grimm (original author)

@@ -1,5 +1,5 @@
 /*
- * $Id$
+ * $Id: plat_aix.c 587515 2006-09-23 02:48:38Z haeber $
  *
  * This file is part of WorkMan, the civilized CD player library
  * (c) 1991-1997 by Steven Grimm (original author)

@@ -1,5 +1,5 @@
 /*
- * $Id$
+ * $Id: cdinfo.c 531626 2006-04-19 17:03:06Z larkang $
  * 
  * This file is part of WorkMan, the civilized CD player library
  * (c) 1991-1997 by Steven Grimm (original author)

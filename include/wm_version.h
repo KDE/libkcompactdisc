@@ -1,7 +1,7 @@
 #ifndef WM_VERSION_H
 #define WM_VERSION_H
 /*
- * $Id$
+ * $Id: wm_version.h 486075 2005-12-06 18:29:02Z thiago $
  *
  * This file is part of WorkMan, the civilized CD player library
  * (c) 1991-1997 by Steven Grimm (original author)

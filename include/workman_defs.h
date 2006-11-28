@@ -1,7 +1,7 @@
 #ifndef WORKMAN_DEFS_H
 #define WORKMAN_DEFS_H
 /*
- * $Id$
+ * $Id: workman_defs.h 486075 2005-12-06 18:29:02Z thiago $
  *
  * This file is part of WorkMan, the civilized CD player program
  * (c) 1991-1997 by Steven Grimm (original author)
