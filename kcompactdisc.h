@@ -25,6 +25,24 @@
 #include <QTimer>
 #include <q3valuelist.h>
 
+
+#if defined Q_OS_WIN
+
+#ifndef KCOMPACTDISC_EXPORT
+# ifdef MAKE_KCOMPACTDISC_LIB
+#  define KCOMPACTDISC_EXPORT KDE_EXPORT
+# else
+#  define KCOMPACTDISC_EXPORT KDE_IMPORT
+# endif
+#endif
+
+#else /* UNIX */
+
+/* export statements for unix */
+#define KCOMPACTDISC_EXPORT KDE_EXPORT
+#endif
+
+
 /**
  *  KCompactDisc - A CD drive interface for the KDE Project.
  *
@@ -43,7 +61,7 @@
  *  All times in this interface are in milliseconds. Valid track numbers are
  *  positive numbers; zero is not a valid track number.
  */
-class KCompactDisc :
+class KCOMPACTDISC_EXPORT KCompactDisc :
     public QObject
 {
     Q_OBJECT
