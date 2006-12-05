@@ -419,6 +419,7 @@ wm_cd_status( void )
 
   wm_lib_message(WM_MSG_LEVEL_DEBUG|WM_MSG_CLASS,
     "wm_cd_status returns %s\n", gen_status(wm_cur_cdmode));
+
   return wm_cur_cdmode;
 }
 
@@ -720,7 +721,7 @@ wm_find_trkind( int track, int ind, int start )
       if(wm_cd_status() != 1 || wm_cur_cdmode != WM_CDM_PLAYING)
         return 0;
       else
-       wm_susleep(1);
+       wm_susleep(10);
     }
 
     if (thiscd.trk[thiscd.curtrack - 1].track > track)

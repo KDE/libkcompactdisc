@@ -176,7 +176,7 @@ void wmcdda_direction(int newdir);
 
 #include <stdio.h>
 
-#define DEBUG
+/* #define DEBUG */
 #ifdef DEBUG
  #define DEBUGLOG(fmt, args...) fprintf(stderr, fmt, ##args)
 #else

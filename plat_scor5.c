@@ -1,11 +1,11 @@
-/*   
+/*
  * $Id: plat_scor5.c 587515 2006-09-23 02:48:38Z haeber $
  *
  * This file is part of WorkMan, the civilized CD player library
  * (c) 1991-1997 by Steven Grimm (original author)
  * (c) by Dirk Försterling (current 'author' = maintainer)
  * The maintainer can be contacted by his e-mail address:
- * milliByte@DeathsDoor.com 
+ * milliByte@DeathsDoor.com
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Library General Public
@@ -73,58 +73,58 @@ create_cdrom_node(char *dev_name)
   struct stat sbuf;
   int err;
   int ccode;
-  
-  
+
+
   strncpy(pass_through, dev_name, sizeof(pass_through)-2);
   strcat(pass_through, "p" );
-  
+
   if (setreuid(-1,0) < 0)
     {
       perror("setregid/setreuid/access");
       return -1;
     }
-  
+
   ccode = access(pass_through, F_OK);
-  
+
   if (ccode < 0)
     {
-      
+
       if (stat(dev_name, &sbuf) < 0)
 	{
 	  perror("Call to get pass-through device number failed");
 	  return -1;
 	}
-      
+
       if (mknod(pass_through, (S_IFCHR | S_IREAD | S_IWRITE),
 		sbuf.st_rdev) < 0)
 	{
 	  perror("Unable to make pass-through node");
 	  return -1;
 	}
-      
+
       if (chown(pass_through, 0 , 0) < 0)
 	{
 	  perror("chown");
 	  return -1;
 	}
-      
+
       if (chmod(pass_through, 0660 ) < 0)
 	{
 	  perror("chmod");
 	  return -1;
 	}
     }
-  
+
   file_des = open( pass_through, O_RDONLY);
   err = errno;
-  
+
   /*
   if ( (setreuid(-1,getuid()) < 0) || (setregid(-1,getgid()) < 0) )
     {
       perror("setreuid/setregid");
       exit(1);
     }
-  
+
   */
 
   errno = err;
@@ -150,22 +150,22 @@ wmcd_open( struct wm_drive *d)
   int		fd;
   static int	warned = 0;
   char		vendor[9], model[17], rev[5];
-  
+
   if (d->fd >= 0)		/* Device already open? */
     {
       wm_lib_message(WM_MSG_LEVEL_DEBUG|WM_MSG_CLASS, "wmcd_open(): [device is open (fd=%d)]\n", d->fd);
       return (0);
     }
-  
+
   if (d->cd_device == NULL)
     {
       fprintf(stderr,"cd_device string empty\n");
       return (-1);
     }
-  
-  
+
+
   d->fd = create_cdrom_node(d->cd_device); /* this will do open */
-  
+
   if (d->fd < 0)
     {
       if (errno == EACCES)
@@ -181,30 +181,30 @@ wmcd_open( struct wm_drive *d)
 	  perror(d->cd_device);
           return( -6 );
 	}
-      
+
       /* cannot access CDROM device */
       return (-1);
     }
-  
+
   if (warned)
     {
       warned = 0;
       fprintf(stderr, "Thank you.\n");
     }
-  
+
   /* Now fill in the relevant parts of the wm_drive structure. */
-  
+
   fd = d->fd;
-  
+
   if (wm_scsi_get_drive_type(d, vendor, model, rev) < 0)
     {
       perror("Cannot inquiry drive for it's type");
       return (-1);
     }
   find_drive_struct(vendor, model, rev);
-  
+
   d->fd = fd;
-  
+
   return (0);
 } /* wmcd_open */
 
@@ -217,9 +217,9 @@ wmcd_reopen( struct wm_drive *d )
   int tries = 0;
   do {
     gen_close(d);
-    susleep( 1000 );
+    wm_susleep( 1000 );
     status = wmcd_open( d );
-    susleep( 1000 );
+    wm_susleep( 1000 );
     tries++;
   } while ( (status != 0) && (tries < 10) );
   return status;
@@ -228,49 +228,49 @@ wmcd_reopen( struct wm_drive *d )
 /*
  * Send a SCSI command out the bus.
  */
-int 
-wm_scsi(struct wm_drive *d, unsigned char *xcdb, int cdblen, 
+int
+wm_scsi(struct wm_drive *d, unsigned char *xcdb, int cdblen,
 	char *retbuf, int retbuflen, int getreply)
 {
   int ccode;
   int file_des = d->fd;
   unsigned char sense_buffer[ SENSE_SZ ];
-  
+
   /* getreply == 1 is read, == 0 is write */
-  
+
   struct scsicmd2 sb;	/* Use command with automatic sense */
-  
+
   if (cdblen > SCSICMDLEN)
     {
       fprintf(stderr,"Cannot handle longer commands than %d bytes.\n", SCSICMDLEN);
       exit(-1);
     }
-  
+
   /* Get the command */
   memcpy(sb.cmd.cdb, xcdb, cdblen);
   sb.cmd.cdb_len = cdblen;
-  
+
   /* Point to data buffer */
   sb.cmd.data_ptr = retbuf;
   sb.cmd.data_len = retbuflen;
-  
+
   /* Is this write or read ? */
   sb.cmd.is_write = (getreply==1) ? 0 : 1;
-  
+
   /* Zero out return status fields */
   sb.cmd.host_sts = 0;
   sb.cmd.target_sts = 0;
-  
+
   /* Set up for possible sense info */
-  
+
   sb.sense_ptr = sense_buffer;
   sb.sense_len = sizeof(sense_buffer);
-  
+
   ccode =  ioctl(file_des, SCSIUSERCMD2,  &sb);
-  
+
   if ( sb.cmd.target_sts != 02 )
     return ccode;
-  
+
   return 0;
 } /* wm_scsi() */
 
@@ -294,7 +294,7 @@ keep_cd_open() { }
  * numbers if the CD is playing or paused.
  */
 int
-gen_get_drive_status(wm_drive *d, int oldmode, int *mode, 
+gen_get_drive_status(wm_drive *d, int oldmode, int *mode,
 		     int *pos, int *track, int *index)
 {
   return (wm_scsi2_get_drive_status(d, oldmode, mode, pos, track, index));
@@ -372,9 +372,9 @@ int
 gen_eject(struct wm_drive *d)
 {
   int stat;
-  
+
   stat = wm_scsi2_eject(d);
-  sleep(2);
+  wm_susleep(1000);
   return (stat);
 } /* gen_eject() */
 

@@ -126,7 +126,7 @@ static int set_hwparams(snd_pcm_hw_params_t *params,
                 return err;
         }
 #endif
-        DEBUGLOG("buffersize %i\n", buffer_size);
+        DEBUGLOG("buffersize %lu\n", buffer_size);
 
         /* set the period time */
 #if (SND_LIB_MAJOR < 1)
@@ -148,7 +148,7 @@ static int set_hwparams(snd_pcm_hw_params_t *params,
         }
 #endif
 
-        DEBUGLOG("period_size %i\n", period_size);
+        DEBUGLOG("period_size %lu\n", period_size);
 
         /* write the parameters to device */
         err = snd_pcm_hw_params(handle, params);
@@ -256,7 +256,7 @@ alsa_play(struct cdda_block *blk)
 
   ptr = (signed short *)blk->buf;
   frames = blk->buflen / (channels * 2);
-  DEBUGLOG("play %i frames, %i bytes\n", frames, blk->buflen);
+  DEBUGLOG("play %i frames, %lu bytes\n", frames, blk->buflen);
   while (frames > 0) {
     err = snd_pcm_writei(handle, ptr, frames);
 
@@ -270,7 +270,7 @@ alsa_play(struct cdda_block *blk)
 
     ptr += err * channels;
     frames -= err;
-    DEBUGLOG("played %i, rest %i\n", err / channels, frames);
+    DEBUGLOG("played %i, rest %i\n", err, frames);
   }
 
   if (err < 0) {

@@ -29,6 +29,7 @@
 #include "include/wm_struct.h"
 #include "include/wm_cdda.h"
 #include "include/wm_cdrom.h"
+#include "include/wm_helpers.h"
 #include "audio/audio.h"
 #include <pthread.h>
 
@@ -39,8 +40,12 @@ int get_next_block(int x);
 void *cdda_fct_read(void* arg);
 void *cdda_fct_play(void* arg);
 
-#define NUMBLOCKS 2
-#define NUMFRAMES 10
+/* CDDABLKSIZE give us the 588 samples 4 bytes each(16 bit x 2 channel)
+   by rate 44100 HZ, 588 samples are 1/75 sec
+   if we read 15 frames(8820 samples), we get in each block, data for 1/5 sec */
+#define NUMFRAMES 15
+/* by 5 blocks in chain, the total chain contents data for 1 sec */
+#define NUMBLOCKS 5
 
 static struct cdda_block blks[NUMBLOCKS];
 static pthread_mutex_t blks_mutex[NUMBLOCKS];
@@ -103,9 +108,9 @@ gen_cdda_init( struct wm_drive *d )
     if (d->cdda_slave > -1) {
         cdda_stop(d);
 
-        sleep(1);
+        wm_susleep(1000);
         dev.blocks = 0;
-        sleep(1);
+        wm_susleep(1000);
     }
 
     memset(&blks, 0, sizeof(blks));
@@ -165,6 +170,7 @@ cdda_get_drive_status( struct wm_drive *d, int oldmode,
              */
             *mode = WM_CDM_TRACK_DONE;
         }
+
         return 0;
     }
 
@@ -177,6 +183,10 @@ cdda_play( struct wm_drive *d, int start, int end, int realstart )
     if (d->cdda_slave > -1) {
         dev.command = WM_CDM_STOPPED;
 
+        /* wait before reader, stops */
+        while(dev.status != dev.command)
+            wm_susleep(1000);
+
         wmcdda_setup(start, end, realstart);
 
         level = 2500;
@@ -185,7 +195,7 @@ cdda_play( struct wm_drive *d, int start, int end, int realstart )
         dev.track =  -1;
         dev.index =  0;
         dev.frame = start;
-        dev.command = WM_CDM_PLAYING;
+        dev.status = dev.command = WM_CDM_PLAYING;
 
         return 0;
     }
@@ -296,7 +306,7 @@ cdda_kill( struct wm_drive *d )
     if (d->cdda_slave > -1) {
         dev.command = WM_CDM_STOPPED;
         oops->wmaudio_stop();
-        sleep(1);
+        wm_susleep(2000);
         wmcdda_close(&dev);
         oops->wmaudio_close();
 
@@ -387,7 +397,7 @@ void *cdda_fct_read(void* arg)
     while (cddadev->blocks) {
         while(cddadev->command != WM_CDM_PLAYING) {
             cddadev->status = cddadev->command;
-            sleep(1);
+            wm_susleep(1000);
         }
 
         i = 0;

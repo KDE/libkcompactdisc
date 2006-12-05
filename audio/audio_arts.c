@@ -102,6 +102,7 @@ int
 arts_stop(void)
 {
   DEBUGLOG("arts_stop\n");
+
   return 0;
 }
 

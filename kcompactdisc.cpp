@@ -469,7 +469,7 @@ void KCompactDisc::timerExpired()
                 emit trayOpening();
                 break;
             default:
-                if (m_previousStatus == WM_CDM_PLAYING || m_previousStatus == WM_CDM_PAUSED
+                if ((m_previousStatus == WM_CDM_PLAYING || m_previousStatus == WM_CDM_PAUSED)
                       && m_status == WM_CDM_STOPPED)
                 {
                 emit discStopped();
