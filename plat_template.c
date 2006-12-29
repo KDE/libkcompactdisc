@@ -2,10 +2,10 @@
  * $Id: plat_template.c 587515 2006-09-23 02:48:38Z haeber $
  *
  * This file is part of WorkMan, the civilized CD player library
- * (c) 1991-1997 by Steven Grimm (original author)
- * (c) by Dirk Försterling (current 'author' = maintainer)
+ * Copyright (C) 1991-1997 by Steven Grimm (original author)
+ * Copyright (C) by Dirk Försterling (current 'author' = maintainer)
  * The maintainer can be contacted by his e-mail address:
- * milliByte@DeathsDoor.com 
+ * milliByte@DeathsDoor.com
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Library General Public
@@ -21,7 +21,7 @@
  * License along with this library; if not, write to the Free
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
  *
- * 
+ *
  * This file surely contains nonsense. It's the porter's part to fill
  * the gaps and assure that the resulting code makes sense.
  *
@@ -43,7 +43,7 @@ static char plat_template_id[] = "$Id: plat_template.c 587515 2006-09-23 02:48:3
  * gen_init();
  *
  */
-int 
+int
 gen_init(struct wm_drive *d)
 {
   return (0);
@@ -53,7 +53,7 @@ gen_init(struct wm_drive *d)
  * wmcd_open()
  *
  */
-int 
+int
 wmcd_open(struct wm_drive *d)
 {
   char vendor[32] = WM_STR_GENVENDOR;
@@ -81,7 +81,7 @@ wmcd_open(struct wm_drive *d)
     gen_close(d);
     return -1;
   }
-  
+
   d->init(d);
 
   return (0);
@@ -110,7 +110,7 @@ wmcd_reopen( struct wm_drive *d )
  * wm_scsi()
  *
  */
-int 
+int
 wm_scsi(struct wm_drive *d,
 	    uchar_t *cdb, int cdblen,void *retbuf,int retbuflen,int getreply)
 {
@@ -132,18 +132,18 @@ gen_close(struct wm_drive *d)
     return 0;
 } /* gen_close() */
 
-/* 
+/*
  * gen_get_drive_status()
  *
  */
-int 
+int
 gen_get_drive_status(struct wm_drive *d,
 			 int oldmode,
 			 int *mode,
 			 int *pos,
 			 int *track,
 			 int *index)
-{ 
+{
   return (0);
 } /* gen_get_drive_status() */
 
@@ -151,13 +151,13 @@ gen_get_drive_status(struct wm_drive *d,
  * gen_get_trackcount()
  *
  */
-int 
+int
 gen_get_trackcount(struct wm_drive *d,int *tracks)
-{ 
+{
   return (0);
 } /* gen_get_trackcount() */
 
-/* 
+/*
  * gen_get_trackinfo()
  *
  */
@@ -171,7 +171,7 @@ gen_get_trackinfo(struct wm_drive *d,int track,int *data,int *startframe)
  * gen_get_cdlen()
  *
  */
-int 
+int
 gen_get_cdlen(struct wm_drive *d,int *frames)
 {
   return (0);
@@ -181,17 +181,17 @@ gen_get_cdlen(struct wm_drive *d,int *frames)
  * gen_play()
  *
  */
-int 
+int
 gen_play(struct wm_drive *d,int start,int end)
 {
   return (0);
 } /* gen_play() */
 
-/* 
+/*
  * gen_pause()
  *
  */
-int 
+int
 gen_pause(struct wm_drive *d)
 {
   return ioctl( 0 );
@@ -201,7 +201,7 @@ gen_pause(struct wm_drive *d)
  * gen_resume
  *
  */
-int 
+int
 gen_resume(struct wm_drive *d)
 {
   return (0);
@@ -211,9 +211,9 @@ gen_resume(struct wm_drive *d)
  * gen_stop()
  *
  */
-int 
+int
 gen_stop(struct wm_drive *d)
-{ 
+{
   return (0);
 } /* gen_stop() */
 
@@ -221,7 +221,7 @@ gen_stop(struct wm_drive *d)
  * gen_eject()
  *
  */
-int 
+int
 gen_eject(struct wm_drive *d)
 {
   return (0);
@@ -246,13 +246,13 @@ int gen_closetray(struct wm_drive *d)
 #endif /* CAN_CLOSE */
 } /* gen_closetray() */
 
-int 
+int
 scale_volume(int vol,int max)
 {
   return ((vol * (max_volume - min_volume)) / max + min_volume);
 } /* scale_volume() */
 
-int 
+int
 unscale_volume(int vol,int max)
 {
   int n;
@@ -260,11 +260,11 @@ unscale_volume(int vol,int max)
   return (n <0)?0:n;
 } /* unscale_volume() */
 
-/* 
+/*
  * gen_set_volume()
  *
  */
-int 
+int
 gen_set_volume(struct wm_drive *d,int left,int right)
 {
   return (0);
@@ -274,7 +274,7 @@ gen_set_volume(struct wm_drive *d,int left,int right)
  * gen_get_volume()
  *
  */
-int 
+int
 gen_get_volume(struct wm_drive *d,int *left,int *right)
 {
   return (0);

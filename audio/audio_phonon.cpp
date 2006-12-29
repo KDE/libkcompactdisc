@@ -1,12 +1,22 @@
-/*
- *  Driver for Phonon Architecture, Matthias Kretz <kretz@kde.org>
- *
- *  adopted for libworkman cdda audio backend from Alexander Kern alex.kern@gmx.de
- *
- * This file comes under GPL license.
- */
+/*  This file is part of the KDE project
+    Copyright (C) 2006 Alexander Kern alex.kern@gmx.de
 
+    based on Driver for Phonon Architecture, Matthias Kretz <kretz@kde.org>
 
+    This library is free software; you can redistribute it and/or
+    modify it under the terms of the GNU Library General Public
+    License version 2 as published by the Free Software Foundation.
+
+    This library is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+    Library General Public License for more details.
+
+    You should have received a copy of the GNU Library General Public License
+    along with this library; see the file COPYING.LIB.  If not, write to
+    the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
+    Boston, MA 02110-1301, USA.
+*/
 
 #include <config.h>
 
@@ -23,63 +33,15 @@
 
 namespace Phonon { class ByteStream; }
 
-class LibWMPcmPlayer : public QThread {
+class LibWMPcmPlayer : public QObject {
 public:
     LibWMPcmPlayer()
     {
-        m_stream = NULL;
-        blk = NULL;
-    };
+        DEBUGLOG("LibWMPcmPlayer\n");
 
-    ~LibWMPcmPlayer()
-    {
-        if(m_stream)
-            delete m_stream;
         m_stream = NULL;
         blk = NULL;
 
-    };
-
-    void run()
-    {
-    };
-
-    void stop()
-    {
-        m_stream->stop();
-    };
-
-    void setNextBuffer(struct cdda_block *new_blk)
-    {
-        mutex.lock();
-
-        blk = new_blk;
-        bufferPlayed.wait(&mutex);
-
-        mutex.unlock();
-    };
-
-public slots:
-    void playNextBuffer()
-    {
-        if(!m_stream) {
-            attachToPhonon();
-        }
-
-        mutex.lock();
-
-        if(blk)
-            m_stream->writeData(QByteArray(blk->buf, blk->buflen));
-        blk = NULL;
-
-        bufferPlayed.wakeAll();
-
-        mutex.unlock();
-    };
-
-private:
-    void attachToPhonon()
-    {
         Phonon::AudioOutput* m_output = new Phonon::AudioOutput(Phonon::MusicCategory, this);
         Phonon::AudioPath* m_path = new Phonon::AudioPath(this);
         m_path->addOutput(m_output);
@@ -109,8 +71,56 @@ private:
             << static_cast<quint32>(0x7FFFFFFF-36)//Subchunk2Size
             ;
         m_stream->writeData(data);
-    }
 
+        DEBUGLOG("LibWMPcmPlayer end\n");
+    };
+
+    ~LibWMPcmPlayer()
+    {
+        DEBUGLOG("~LibWMPcmPlayer\n");
+
+        stop();
+        delete m_stream;
+        m_stream = NULL;
+        blk = NULL;
+    };
+
+    void run()
+    {
+    };
+
+    void stop()
+    {
+        m_stream->stop();
+    };
+
+    void setNextBuffer(struct cdda_block *new_blk)
+    {
+        DEBUGLOG("setNextBuffer\n");
+        mutex.lock();
+
+        blk = new_blk;
+        bufferPlayed.wait(&mutex);
+
+        mutex.unlock();
+    };
+
+public slots:
+    void playNextBuffer()
+    {
+        DEBUGLOG("playNextBuffer\n");
+        mutex.lock();
+
+        if(blk)
+            m_stream->writeData(QByteArray(blk->buf, blk->buflen));
+        blk = NULL;
+
+        bufferPlayed.wakeAll();
+
+        mutex.unlock();
+    };
+
+private:
     Phonon::ByteStream* m_stream;
     struct cdda_block *blk;
     QWaitCondition bufferPlayed;
@@ -125,7 +135,6 @@ int phonon_open(void)
 
     if(PhononObject) {
         ERRORLOG("Allready initialized!\n");
-
         return -1;
     }
 

@@ -2,10 +2,10 @@
  * $Id: plat_hpux.c 587515 2006-09-23 02:48:38Z haeber $
  *
  * This file is part of WorkMan, the civilized CD player library
- * (c) 1991-1997 by Steven Grimm (original author)
- * (c) by Dirk Försterling (current 'author' = maintainer)
+ * Copyright (C) 1991-1997 by Steven Grimm (original author)
+ * Copyright (C) by Dirk Försterling (current 'author' = maintainer)
  * The maintainer can be contacted by his e-mail address:
- * milliByte@DeathsDoor.com 
+ * milliByte@DeathsDoor.com
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Library General Public
@@ -81,32 +81,32 @@ wmcd_open( struct wm_drive *d )
   static int	warned = 0;
   /* unsigned ? */
   char		vendor[32], model[32], rev[32];
-  
+
   if (d->fd >= 0)		/* Device already open? */
     {
       wm_lib_message(WM_MSG_LEVEL_DEBUG|WM_MSG_CLASS, "wmcd_open(): [device is open (fd=%d)]\n", d->fd);
       return (0);
     }
-  
+
   if (d->cd_device == NULL)
     d->cd_device = DEFAULT_CD_DEVICE;
-  
+
   d->fd = open(d->cd_device, O_RDWR);
   if (d->fd < 0)
     {
       if (errno == EACCES)
 	{
           return -EACCES;
-	} 
+	}
       else if (errno != EINTR)
 	{
           return (-6);
 	}
-      
+
       /* No CD in drive. */
       return (1);
     }
-  
+
   /* Prepare the device to receive raw SCSI commands. */
   if (ioctl(d->fd, SIOC_CMD_MODE, &flag) < 0)
     {
@@ -114,21 +114,21 @@ wmcd_open( struct wm_drive *d )
 	      d->cd_device, strerror(errno));
       /*exit(1);*/
     }
-  
+
   /* Now fill in the relevant parts of the wm_drive structure. */
   fd = d->fd;
-  
+
   /* Default drive is the HP one, which might not respond to INQUIRY */
   strcpy(&vendor, "TOSHIBA");
   strcpy(&model, "XM-3301");
   rev[0] = '\0';
   wm_scsi_get_drive_type(d, vendor, model, rev);
   find_drive_struct(vendor, model, rev);
-    
+
   d->fd = fd;
-  
+
   (d->init)(d);
-  
+
   return (0);
 } /* wmcd_open() */
 
@@ -139,7 +139,7 @@ int
 wmcd_reopen( struct wm_drive *d )
 {
   int status;
-  
+
   do {
     wm_lib_message(WM_MSG_LEVEL_DEBUG|WM_MSG_CLASS, "wmcd_reopen\n");
     status = gen_close( d );
@@ -160,7 +160,7 @@ wm_scsi( struct wm_drive *d, unsigned char *cdb, int cdblen,
 {
 #ifdef SIOC_IO
   struct sctl_io		cmd;
-  
+
   memset(&cmd, 0, sizeof(cmd));
   cmd.cdb_length = cdblen;
   cmd.data = retbuf;
@@ -168,13 +168,13 @@ wm_scsi( struct wm_drive *d, unsigned char *cdb, int cdblen,
   cmd.max_msecs = 1000;
   cmd.flags = getreply ? SCTL_READ : 0;
   memcpy(cmd.cdb, cdb, cdblen);
-  
+
   return (ioctl(d->fd, SIOC_IO, &cmd));
 #else
   /* this code, for pre-9.0, is BROKEN!  ugh. */
   char			reply_buf[12];
   struct scsi_cmd_parms	cmd;
-  
+
   memset(&cmd, 0, sizeof(cmd));
   cmd.clock_ticks = 500;
   cmd.cmd_mode = 1;
@@ -182,7 +182,7 @@ wm_scsi( struct wm_drive *d, unsigned char *cdb, int cdblen,
   memcpy(cmd.command, cdb, cdblen);
   if (ioctl(d->fd, SIOC_SET_CMD, &cmd) < 0)
     return (-1);
-  
+
   if (! retbuf || ! retbuflen)
     (void) read(d->fd, reply_buf, sizeof(reply_buf));
   else if (getreply)
@@ -193,7 +193,7 @@ wm_scsi( struct wm_drive *d, unsigned char *cdb, int cdblen,
   else
     if (write(d->fd, retbuf, retbuflen) < 0)
       return (-1);
-  
+
   return (0);
 #endif
 } /* wm_scsi() */
@@ -246,7 +246,7 @@ int
 gen_get_cdlen(struct wm_drive *d, int *frames)
 {
   int		tmp;
-  
+
   return (wm_scsi2_get_cdlen(d, frames));
 } /* gen_get_cdlen() */
 
@@ -295,21 +295,21 @@ gen_eject( struct wm_drive *d )
 {
   struct stat	stbuf;
   struct ustat	ust;
-  
+
   if (fstat(d->fd, &stbuf) != 0)
     return (-2);
-  
+
   /* Is this a mounted filesystem? */
   if (ustat(stbuf.st_rdev, &ust) == 0)
     return (-3);
-  
+
   return (wm_scsi2_eject(d));
 } /* gen_eject() */
 
 /*----------------------------------------*
  * Close the CD tray
  *----------------------------------------*/
-int 
+int
 gen_closetray(struct wm_drive *d)
 {
 #ifdef CAN_CLOSE

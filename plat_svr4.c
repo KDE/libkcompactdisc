@@ -2,10 +2,10 @@
  * $Id: plat_svr4.c 587515 2006-09-23 02:48:38Z haeber $
  *
  * This file is part of WorkMan, the civilized CD player library
- * (c) 1991-1997 by Steven Grimm (original author)
- * (c) by Dirk Försterling (current 'author' = maintainer)
+ * Copyright (C) 1991-1997 by Steven Grimm (original author)
+ * Copyright (C) by Dirk Försterling (current 'author' = maintainer)
  * The maintainer can be contacted by his e-mail address:
- * milliByte@DeathsDoor.com 
+ * milliByte@DeathsDoor.com
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Library General Public
@@ -66,19 +66,19 @@ create_cdrom_node(char *dev_name)
   dev_t pass_thru_device;
   int err;
   int ccode;
-  
-  
+
+
   strncpy(pass_through, dev_name, sizeof(pass_through) - 2);
   strcat(pass_through, "p" );
-  
+
   if (setreuid(-1,0) < 0)
     {
       perror("setregid/setreuid/access");
       return -1;
     }
-  
+
   ccode = access(pass_through, F_OK);
-  
+
   if (ccode < 0)
     {
       if ((file_des = open(dev_name, O_RDONLY)) < 0)
@@ -86,38 +86,38 @@ create_cdrom_node(char *dev_name)
 	  perror("open cdrom devices failed");
 	  return -1;
 	}
-      
+
       if (ioctl(file_des, B_GETDEV, &pass_thru_device) < 0)
 	{
 	  perror("Call to get pass-through device number failed");
 	  return -1;
 	}
-      
+
       (void)close(file_des);
-      
+
       if (mknod(pass_through, (S_IFCHR | S_IREAD | S_IWRITE),
 		pass_thru_device) < 0)
 	{
 	  perror("Unable to make pass-through node");
 	  return -1;
 	}
-      
+
       if (chown(pass_through, 0 , 0) < 0)
 	{
 	  perror("chown");
 	  return -1;
 	}
-      
+
       if (chmod(pass_through, 0660 ) < 0)
 	{
 	  perror("chmod");
 	  return -1;
 	}
     }
-  
+
   file_des = open( pass_through, O_RDWR);
   err = errno;
-  
+
   if ( (setreuid(-1,getuid()) < 0) || (setregid(-1,getgid()) < 0) )
     {
       perror("setreuid/setregid");
@@ -136,13 +136,13 @@ find_cdrom()
   ** Thomas Biege <thomas@suse.de>
   */
   const char* device = NULL;
-  
+
   device = getenv("CDROM");
-  if ( (device != NULL) && 
-       !(strncmp("/dev/", device, 5) || 
+  if ( (device != NULL) &&
+       !(strncmp("/dev/", device, 5) ||
 	 strstr(_device, "/../") ))
     return device;
-  
+
   if (access("/dev/cdrom/cdrom1", F_OK) == 0)
     {
       return "/dev/cdrom/cdrom1";
@@ -178,18 +178,18 @@ wmcd_open(struct wm_drive *d)
   char	vendor[32] = WM_STR_GENVENDOR;
   char	 model[32] = WM_STR_GENMODEL;
   char	   rev[32] = WM_STR_GENREV;
-  
+
   if (d->fd >= 0)		/* Device already open? */
     {
       wm_lib_message(WM_MSG_LEVEL_DEBUG|WM_MSG_CLASS, "wmcd_open(): [device is open (fd=%d)]\n", d->fd);
       return (0);
     }
-  
+
   if (d->cd_device == NULL)
     d->cd_device = DEFAULT_CD_DEVICE;
-  
+
   d->fd = create_cdrom_node(d->cd_device); /* this will do open */
-  
+
   if (d->fd < 0)
     {
       if (errno == EACCES)
@@ -204,30 +204,30 @@ wmcd_open(struct wm_drive *d)
 	{
           return ( -6 );
 	}
-      
+
       /* No CD in drive. (Is this true also for svr4 ? XXX ) */
       return (1);
     }
-  
+
   if (warned)
     {
       warned = 0;
       fprintf(stderr, "Thank you.\n");
     }
-  
+
   /* Now fill in the relevant parts of the wm_drive structure. */
-  
+
   fd = d->fd;
-  
+
   if (wm_scsi_get_drive_type(d, vendor, model, rev) < 0)
     {
       perror("Cannot inquiry drive for it's type");
       exit(1);
     }
   find_drive_struct(vendor, model, rev);
-  
+
   d->fd = fd;
-  
+
   return (0);
 } /* wmcd_open() */
 
@@ -238,7 +238,7 @@ int
 wmcd_reopen( struct wm_drive *d )
 {
   int status;
-  
+
   do {
     wm_lib_message(WM_MSG_LEVEL_DEBUG|WM_MSG_CLASS, "wmcd_reopen\n");
     status = gen_close( d );
@@ -254,8 +254,8 @@ wmcd_reopen( struct wm_drive *d )
 /*
  * Send a SCSI command out the bus.
  */
-int 
-wm_scsi( struct wm_drive *d, unsigned char *xcdb, int cdblen, 
+int
+wm_scsi( struct wm_drive *d, unsigned char *xcdb, int cdblen,
 	 char *retbuf, int retbuflen, int getreply)
 {
   int ccode;
@@ -263,14 +263,14 @@ wm_scsi( struct wm_drive *d, unsigned char *xcdb, int cdblen,
   int i,j;
   unsigned char sense_buffer[ SENSE_SZ ];
   int errno_save;
-  
+
   /* getreply == 1 is read, == 0 is write */
-  
+
   struct sb sb;
   struct scs scs;
-  
+
   sb.sb_type = ISCB_TYPE;
-  
+
   sb.SCB.sc_comp_code = SDI_PROGRES;
   sb.SCB.sc_int = NULL;
   sb.SCB.sc_wd = 0;
@@ -281,28 +281,28 @@ wm_scsi( struct wm_drive *d, unsigned char *xcdb, int cdblen,
   sb.SCB.sc_status = 0;
   sb.SCB.sc_link = (struct sb *) NULL;
   sb.SCB.sc_resid = 0;
-  
+
   sb.SCB.sc_cmdpt = (void *)xcdb;
   sb.SCB.sc_cmdsz = cdblen;
-  
+
   sb.SCB.sc_datapt = retbuf ;
   sb.SCB.sc_datasz = retbuflen ;
-  
+
   if (getreply == 1)
     sb.SCB.sc_mode = SCB_READ;
   else
     sb.SCB.sc_mode = SCB_WRITE;
-  
+
   sb.SCB.sc_time = 500;
-  
+
   ccode =  ioctl(file_des, SDI_SEND,  &sb);
-  
+
   if ( (sb.SCB.sc_comp_code != 0xd000000e ) ||
        ( sb.SCB.sc_status != 02) )
     return ccode;
-  
+
   errno_save = errno;
-  
+
   sb.SCB.sc_comp_code = SDI_PROGRES;
   sb.SCB.sc_int = NULL;
   sb.SCB.sc_wd = 0;
@@ -313,27 +313,27 @@ wm_scsi( struct wm_drive *d, unsigned char *xcdb, int cdblen,
   sb.SCB.sc_status = 0;
   sb.SCB.sc_link = (struct sb *) NULL;
   sb.SCB.sc_resid = 0;
-  
+
   scs.ss_op	=	SS_REQSEN;
   scs.ss_lun	=	0;
   scs.ss_addr1	=	0;
   scs.ss_addr	=	0;
   scs.ss_len	=	SENSE_SZ;
   scs.ss_cont	=	0;
-  
+
   sb.SCB.sc_cmdpt = SCS_AD(&scs);
   sb.SCB.sc_cmdsz = SCS_SZ;
   sb.SCB.sc_datapt = sense_buffer;
   sb.SCB.sc_datasz = 18;
   sb.SCB.sc_mode = SCB_READ;
   sb.SCB.sc_time = 5000;
-  
+
   if (ioctl(file_des, SDI_SEND,  &sb) < 0)
     {
       fprintf(stderr,"Cannot read sense.\n");
       exit(-1);
     }
-  
+
   errno=errno_save;
   return -1;
 } /* wm_scsi() */
@@ -386,7 +386,7 @@ int
 gen_get_cdlen(struct wm_drive *d, int *frames)
 {
   int		tmp;
- 
+
   return (wm_scsi2_get_cdlen(d, frames));
 } /* gen_get_cdlen() */
 

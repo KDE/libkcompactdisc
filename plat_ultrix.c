@@ -2,10 +2,10 @@
  * $Id: plat_ultrix.c 587515 2006-09-23 02:48:38Z haeber $
  *
  * This file is part of WorkMan, the civilized CD player library
- * (c) 1991-1997 by Steven Grimm (original author)
- * (c) by Dirk Försterling (current 'author' = maintainer)
+ * Copyright (C) 1991-1997 by Steven Grimm (original author)
+ * Copyright (C) by Dirk Försterling (current 'author' = maintainer)
  * The maintainer can be contacted by his e-mail address:
- * milliByte@DeathsDoor.com 
+ * milliByte@DeathsDoor.com
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Library General Public
@@ -53,7 +53,7 @@ static char plat_ultrix_id[] = "$Id: plat_ultrix.c 587515 2006-09-23 02:48:38Z h
  * Ultrix doesn't seem to allow getting single TOC entries.
  *                              - Chris Ross (cross@eng.umd.edu)
  */
-struct cd_toc_header_and_entries 
+struct cd_toc_header_and_entries
 {
   struct cd_toc_header	cdth;
   struct cd_toc_entry		cdte[CDROM_MAX_TRACK+1];
@@ -81,8 +81,8 @@ fgetline( FILE *fp )
   static char     holdbuf[BUF_SIZE + 1];
   char            tmp[BUF_SIZE + 1];
   char            *stmp;
-  
-  if (!retval) 
+
+  if (!retval)
     {
       retval = malloc(BUF_SIZE * 3);  /* 3 lines can be joined */
       if (!retval)
@@ -90,23 +90,23 @@ fgetline( FILE *fp )
       else
 	*retval = '\0';
     }
-  
-  if (*holdbuf) 
+
+  if (*holdbuf)
     {
       strcpy(retval, holdbuf);
       retval[strlen(retval)-1] = '\0';
       memset(holdbuf, 0, BUF_SIZE+1);
     }
 
-  while (fgets(tmp, BUF_SIZE, fp)) 
+  while (fgets(tmp, BUF_SIZE, fp))
     {
       stmp = tmp + strspn(tmp, " \t");
-      if (*stmp == '_') 
+      if (*stmp == '_')
 	{                     /* Continuation line */
 	  retval[strlen(retval)-1] = '\0';   /* Trim off C/R */
 	  strcat(retval, stmp+1);
 	} else {
-	  if (*retval) 
+	  if (*retval)
 	    {
 	      strcpy(holdbuf, tmp);
 	      holdbuf[strlen(holdbuf)-1] = -1;
@@ -137,18 +137,18 @@ find_cdrom()
   int	fds[2];
   int	pid;
   const char* device = NULL;
-  
+
   device = getenv("CDROM");
-  
+
   if (device != NULL)
     {
       if(strncmp("/dev/", device, 5) || strstr(device, "/../"))
 	return NULL;
     }
-  
+
   pipe(fds);
-  
-  if ((pid = fork()) == 0) 
+
+  if ((pid = fork()) == 0)
     {
       close(fds[0]);
       dup2(fds[1], 1);
@@ -159,15 +159,15 @@ find_cdrom()
       perror("fork");
       return NULL; /* exit(1); */
     }
-  
+
   close(fds[1]);
   uerf = fdopen(fds[0], "r");
-  
+
   while (data = fgetline(uerf))
-    if (strstr(data, "RRD42")) 
+    if (strstr(data, "RRD42"))
       {
 	char	*device_p;
-	
+
 	ultrix_cd_device = (char *)malloc(sizeof("/dev/rrz##c"));
 	strcpy(ultrix_cd_device, "/dev/r");
 	device_p = strstr(data, "rz");
@@ -177,15 +177,15 @@ find_cdrom()
 	device = ultrix_cd_device;
 	break;
       }
-  
+
   fclose(uerf);
-  
-  if (device == NULL) 
+
+  if (device == NULL)
     {
       fprintf(stderr, "No cdrom (RRD42) is installed on this system\n");
       return NULL; /* exit(1); */
     }
-  
+
   kill(pid, 15);
   (void)wait((int *)NULL);
   return device;
@@ -209,16 +209,16 @@ wmcd_open( struct wm_drive *d )
 {
   int		fd;
   static int	warned = 0;
-  
+
   if (d->fd >= 0)		/* Device already open? */
     {
       wm_lib_message(WM_MSG_LEVEL_DEBUG|WM_MSG_CLASS, "wmcd_open(): [device is open (fd=%d)]\n", d->fd);
       return (0);
     }
-  
+
   if (d->cd_device == NULL)
     d->cd_device = find_cdrom();
-  
+
   d->fd = open(d->cd_device, 0);
   if (d->fd < 0)
     {
@@ -230,17 +230,17 @@ wmcd_open( struct wm_drive *d )
 	{
           return( -6 );
 	}
-      
+
       /* No CD in drive. */
       return (1);
     }
-  
+
   /* Now fill in the relevant parts of the wm_drive structure. */
   find_drive_struct("", "", "");
   d->fd = fd;
-  
+
   (d->init)(d);
-  
+
   return (0);
 } /* wmcd_open() */
 
@@ -251,7 +251,7 @@ int
 wmcd_reopen( struct wm_drive *d )
 {
   int status;
-  
+
   do {
     wm_lib_message(WM_MSG_LEVEL_DEBUG|WM_MSG_CLASS, "wmcd_reopen\n");
     status = gen_close( d );
@@ -267,7 +267,7 @@ wmcd_reopen( struct wm_drive *d )
  * Send an arbitrary SCSI command to a device.
  */
 int
-wm_scsi( struct wm_drive *d, unsigned char *cdb, int cdblen, 
+wm_scsi( struct wm_drive *d, unsigned char *cdb, int cdblen,
 	 void *retbuf, int retbuflen, int getreply )
 {
 	/* ULTRIX doesn't have a SCSI passthrough interface, does it? */
@@ -291,38 +291,38 @@ gen_close( struct wm_drive *d )
  * numbers if the CD is playing or paused.
  */
 int
-gen_get_drive_status( struct wm_drive *d, int oldmode, 
+gen_get_drive_status( struct wm_drive *d, int oldmode,
 		      int *mode, int *pos, int *track, int *index)
 {
   struct cd_sub_channel		sc;
   struct cd_subc_channel_data	scd;
-  
+
   /* If we can't get status, the CD is ejected, so default to that. */
   *mode = WM_CDM_EJECTED;
-  
+
   sc.sch_address_format	= CDROM_MSF_FORMAT;
   sc.sch_data_format	= CDROM_CURRENT_POSITION;
   sc.sch_track_number	= 0;
   sc.sch_alloc_length	= sizeof(scd);
   sc.sch_buffer		= (caddr_t)&scd;
-  
+
   /* Is the device open? */
   if (d->fd < 0)
     {
-      switch (wmcd_open(d)) 
+      switch (wmcd_open(d))
 	{
 	case -1:	/* error */
 	  return (-1);
-	  
+
 	case 1:		/* retry */
 	  return (0);
 	}
     }
-  
+
   if (ioctl(d->fd, CDROM_READ_SUBCHANNEL, &sc))
     return (0);	/* ejected */
-  
-  switch (scd.scd_header.sh_audio_status) 
+
+  switch (scd.scd_header.sh_audio_status)
     {
     case AS_PLAY_IN_PROGRESS:
       *mode = WM_CDM_PLAYING;
@@ -333,7 +333,7 @@ dopos:
       *track = scd.scd_position_data.scp_track_number;
       *index = scd.scd_position_data.scp_index_number;
       break;
-      
+
     case AS_PLAY_PAUSED:
       if (oldmode == WM_CDM_PLAYING || oldmode == WM_CDM_PAUSED)
 	{
@@ -343,11 +343,11 @@ dopos:
       else
 	*mode = WM_CDM_STOPPED;
       break;
-      
+
     case AS_PLAY_COMPLETED:
       *mode = WM_CDM_TRACK_DONE; /* waiting for next track. */
       break;
-      
+
     case AS_NO_STATUS:
       *mode = WM_CDM_STOPPED;
       break;
@@ -362,12 +362,12 @@ int
 gen_get_trackcount( struct wm_drive *d, int *tracks )
 {
   struct cd_toc_header	hdr;
-  
+
   if (ioctl(d->fd, CDROM_TOC_HEADER, &hdr))
     return (-1);
-  
+
   *tracks = hdr.th_ending_track;
-  
+
   return (0);
 } /* gen_get_trackcount() */
 
@@ -382,28 +382,28 @@ gen_get_trackinfo(struct wm_drive *d, int track, int *data, int *startframe)
   struct cd_toc				toc;
   struct cd_toc_header			hdr;
   struct cd_toc_header_and_entries	toc_buffer;
-  
+
   if (ioctl(d->fd, CDROM_TOC_HEADER, &hdr))
     return (-1);
-  
+
   bzero((char *)&toc_buffer, sizeof(toc_buffer));
   toc.toc_address_format = CDROM_MSF_FORMAT;
   toc.toc_starting_track = 0;
   toc.toc_alloc_length = (u_short)(((hdr.th_data_len1 << 8) +
 				    hdr.th_data_len0) & 0xfff) + 2;
   toc.toc_buffer = (caddr_t)&toc_buffer;
-  
+
   if (ioctl(d->fd, CDROM_TOC_ENTRYS, &toc))
     return (-1);
-  
+
   if (track == 0)
     track = hdr.th_ending_track + 1;
-  
+
   *data = (toc_buffer.cdte[track-1].te_control & CDROM_DATA_TRACK) ? 1:0;
   *startframe = toc_buffer.cdte[track - 1].te_absaddr.msf.m_units*60*75 +
     toc_buffer.cdte[track - 1].te_absaddr.msf.s_units * 75 +
     toc_buffer.cdte[track - 1].te_absaddr.msf.f_units;
-  
+
   return (0);
 } /* gen_get_trackinfo() */
 
@@ -424,19 +424,19 @@ int
 gen_play( struct wm_drive *d, int start, int end )
 {
   struct cd_play_audio_msf	msf;
-  
+
   msf.msf_starting_M_unit	= start / (60*75);
   msf.msf_starting_S_unit	= (start % (60*75)) / 75;
   msf.msf_starting_F_unit	= start % 75;
   msf.msf_ending_M_unit	= end / (60*75);
   msf.msf_ending_S_unit	= (end % (60*75)) / 75;
   msf.msf_ending_F_unit	= end % 75;
-  
+
   if (ioctl(d->fd, SCSI_START_UNIT))
     return (-1);
   if (ioctl(d->fd, CDROM_PLAY_MSF, &msf))
     return (-2);
-  
+
   return (0);
 } /* gen_play() */
 
@@ -476,14 +476,14 @@ gen_eject(struct wm_drive *d)
   /* On some systems, we can check to see if the CD is mounted. */
   struct stat	stbuf;
   struct ustat	ust;
-  
+
   if (fstat(d->fd, &stbuf) != 0)
     return (-2);
-  
+
   /* Is this a mounted filesystem? */
   if (ustat(stbuf.st_rdev, &ust) == 0)
     return (-3);
-  
+
   return (ioctl(d->fd, CDROM_EJECT_CADDY));
 } /* gen_eject() */
 
@@ -494,7 +494,7 @@ gen_eject(struct wm_drive *d)
  * milliByte@DeathsDoor.com
  *----------------------------------------*/
 
-int 
+int
 gen_closetray(struct wm_drive *d)
 {
 #ifdef CAN_CLOSE
@@ -554,7 +554,7 @@ static int
 unscale_volume( int cd_vol, int max )
 {
   int	vol = 0, top = max, bot = 0, scaled;
-  
+
   while (bot <= top)
     {
       vol = (top + bot) / 2;
@@ -566,12 +566,12 @@ unscale_volume( int cd_vol, int max )
       else
 	bot = vol + 1;
     }
-  
+
   if (vol < 0)
     vol = 0;
   else if (vol > max)
     vol = max;
-  
+
   return (vol);
 } /* unscale_volume() */
 
@@ -585,20 +585,20 @@ gen_set_volume( struct wm_drive *d, int left, int right )
   struct cd_playback		pb;
   struct cd_playback_status	ps;
   struct cd_playback_control	pc;
-  
+
   left = scale_volume(left, 100);
   right = scale_volume(right, 100);
-  
+
   bzero((char *)&pb, sizeof(pb));
   bzero((char *)&ps, sizeof(ps));
   bzero((char *)&pc, sizeof(pc));
-  
+
   pb.pb_alloc_length = sizeof(ps);
   pb.pb_buffer = (caddr_t)&ps;
-  
+
   if (ioctl(d->fd, CDROM_PLAYBACK_STATUS, &pb))
     return (-1);
-  
+
   pc.pc_chan0_select = ps.ps_chan0_select;
   pc.pc_chan0_volume = (left < CDROM_MIN_VOLUME) ?
     CDROM_MIN_VOLUME : (left > CDROM_MAX_VOLUME) ?
@@ -607,13 +607,13 @@ gen_set_volume( struct wm_drive *d, int left, int right )
   pc.pc_chan1_volume = (right < CDROM_MIN_VOLUME) ?
     CDROM_MIN_VOLUME : (right > CDROM_MAX_VOLUME) ?
     CDROM_MAX_VOLUME : right;
-  
+
   pb.pb_alloc_length = sizeof(pc);
   pb.pb_buffer = (caddr_t)&pc;
-  
+
   if (ioctl(d->fd, CDROM_PLAYBACK_CONTROL, &pb))
     return (-1);
-  
+
   return (0);
 } /* gen_set_volume() */
 
@@ -626,13 +626,13 @@ gen_get_volume(struct wm_drive *d, int *left, int *right)
 {
   struct cd_playback		pb;
   struct cd_playback_status	ps;
-  
+
   bzero((char *)&pb, sizeof(pb));
   bzero((char *)&ps, sizeof(ps));
-  
+
   pb.pb_alloc_length = sizeof(ps);
   pb.pb_buffer = (caddr_t)&ps;
-  
+
   if (d->fd >= 0)
     {
       if (ioctl(d->fd, CDROM_PLAYBACK_STATUS, &pb))
@@ -645,7 +645,7 @@ gen_get_volume(struct wm_drive *d, int *left, int *right)
     }
   else
     *left = *right = -1;
-  
+
   return (0);
 } /* gen_get_volume() */
 

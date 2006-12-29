@@ -2,10 +2,10 @@
  * $Id: drv_sony.c 486075 2005-12-06 18:29:02Z thiago $
  *
  * This file is part of WorkMan, the civilized CD player library
- * (c) 1991-1997 by Steven Grimm (original author)
- * (c) by Dirk Försterling (current 'author' = maintainer)
+ * Copyright (C) 1991-1997 by Steven Grimm (original author)
+ * Copyright (C) by Dirk Försterling (current 'author' = maintainer)
  * The maintainer can be contacted by his e-mail address:
- * milliByte@DeathsDoor.com 
+ * milliByte@DeathsDoor.com
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Library General Public
@@ -121,7 +121,7 @@ unscale_volume(cd_vol, max)
 		else
 			bot = vol + 1;
 	}
-	
+
 	/* Might have looked down too far for repeated scaled values */
 	if (cd_vol < scaled)
 		vol++;

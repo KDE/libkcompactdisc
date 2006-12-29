@@ -2,10 +2,10 @@
  * $Id: scsi.c 587515 2006-09-23 02:48:38Z haeber $
  *
  * This file is part of WorkMan, the civilized CD player library
- * (c) 1991-1997 by Steven Grimm (original author)
- * (c) by Dirk Försterling (current 'author' = maintainer)
+ * Copyright (C) 1991-1997 by Steven Grimm (original author)
+ * Copyright (C) by Dirk Försterling (current 'author' = maintainer)
  * The maintainer can be contacted by his e-mail address:
- * milliByte@DeathsDoor.com 
+ * milliByte@DeathsDoor.com
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Library General Public
@@ -119,7 +119,7 @@ sendscsi( struct wm_drive *d, void *buf,
 	case 0:
 		cdblen = 6;
 		break;
-	
+
 	case 5:
 		cdb[10] = a10;
 		cdb[11] = a11;
@@ -158,7 +158,7 @@ wm_scsi_mode_sense( struct wm_drive *d, unsigned char page, unsigned char *buf )
 			page, 0, sizeof(pagebuf), 0,0,0,0,0,0,0);
 	if (status < 0)
 		return (status);
-	
+
 	/*
 	 * The first byte of the returned data is the transfer length.  Then
 	 * two more bytes and the length of whatever header blocks are in
@@ -235,7 +235,7 @@ wm_scsi_get_drive_type( struct wm_drive *d, char *vendor,
 	rev[4] = '\0';
 	wm_lib_message(WM_MSG_CLASS_SCSI | WM_MSG_LEVEL_VERB, "SCSI Inquiry result: [%s|%s|%s]\n", vendor, model, rev);
 
-	
+
 	/* Remove "CD-ROM " from the model. */
 	if (! strncmp(model, "CD-ROM", 6))
 	{
@@ -298,7 +298,7 @@ wm_scsi2_get_trackinfo(struct wm_drive *d, int track,
 			0, 0, 0, 0, track, sizeof(buf) / 256,
 			sizeof(buf) % 256, 0,0,0))
 		return (-1);
-	
+
 	*data = buf[5] & 4 ? 1 : 0;
 	*startframe = buf[9] * 60 * 75 + buf[10] * 75 + buf[11];
 
@@ -334,12 +334,12 @@ wm_scsi2_get_drive_status(struct wm_drive *d, int oldmode,
 	{
 /*
  * stupid somehow, but necessary this time
- */		
+ */
 		switch( wmcd_open( d ) ) {
 
 		case -1:	/* error */
 			return (-1);
-		
+
 		case 1:		/* retry */
 			return (0);
 		}
@@ -350,7 +350,7 @@ wm_scsi2_get_drive_status(struct wm_drive *d, int oldmode,
 	if (sendscsi(d, buf, sizeof(buf), 1, SCMD_READ_SUBCHANNEL, 2, 64, 1,
 			0, 0, 0, sizeof(buf) / 256, sizeof(buf) % 256, 0,0,0))
 		return (0);
-	
+
         switch (buf[1]) {
         case SUBQ_STATUS_PLAY:
 		*mode = WM_CDM_PLAYING;
@@ -408,7 +408,7 @@ wm_scsi2_get_drive_status(struct wm_drive *d, int oldmode,
 		if( getenv( "WORKMAN_DEBUG" ) != NULL )
 			printf("wm_scsi2_get_drive_status: status is 0x%x\n",
 				buf[1]);
-#endif				
+#endif
 		break;
         }
 
@@ -517,7 +517,7 @@ wm_scsi2_set_volume(struct wm_drive *d, int left, int right)
 	/* Get the current audio parameters first. */
 	if (wm_scsi_mode_sense(d, PAGE_AUDIO, mode))
 		return (-1);
-	
+
 	/* Tweak the volume part of the parameters. */
 	mode[9] = (left * 255) / 100;
 	mode[11] = (right * 255) / 100;
@@ -533,7 +533,7 @@ wm_scsi2_set_volume(struct wm_drive *d, int left, int right)
  *
  *
  *------------------------------------------------------------------------*/
-  
+
 int
 wm_scsi_get_cdtext(struct wm_drive *d, unsigned char **pp_buffer, int *p_buffer_length)
 {
@@ -602,7 +602,7 @@ wm_scsi_get_cdtext(struct wm_drive *d, unsigned char **pp_buffer, int *p_buffer_
 
 #else
     cdtext_possible = 1;
-#endif /* IGNORE_FEATURE_LIST */	
+#endif /* IGNORE_FEATURE_LIST */
 
     free (dynamic_temp);
     dynamic_temp = 0;
@@ -621,7 +621,7 @@ wm_scsi_get_cdtext(struct wm_drive *d, unsigned char **pp_buffer, int *p_buffer_
 
   if(ret)
   {
-    wm_lib_message(WM_MSG_LEVEL_INFO|WM_MSG_CLASS, 
+    wm_lib_message(WM_MSG_LEVEL_INFO|WM_MSG_CLASS,
       "CDTEXT ERROR: READ_TOC(0x43) with format code 0x05 not implemented or broken. ret = %i!\n", ret);
   }
   else
@@ -639,8 +639,8 @@ wm_scsi_get_cdtext(struct wm_drive *d, unsigned char **pp_buffer, int *p_buffer_
     ret = sendscsi(d, dynamic_temp, cdtext_data_length, 1,
       SCMD_READ_TOC, 0x00, 0x05, 0, 0, 0,
       0, (cdtext_data_length>>8) & 0xFF, cdtext_data_length & 0xFF, 0, 0, 0);
-   
-    if(ret)	
+
+    if(ret)
     {
       wm_lib_message(WM_MSG_LEVEL_INFO|WM_MSG_CLASS,
       "CDTEXT ERROR: READ_TOC(0x43) with format code 0x05 not implemented or broken. ret = %i!\n", ret);

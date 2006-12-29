@@ -4,10 +4,10 @@
  * $Id: wm_struct.h 486075 2005-12-06 18:29:02Z thiago $
  *
  * This file is part of WorkMan, the civilized CD player library
- * (c) 1991-1997 by Steven Grimm (original author)
- * (c) by Dirk Försterling (current 'author' = maintainer)
+ * Copyright (C) 1991-1997 by Steven Grimm (original author)
+ * Copyright (C) by Dirk Försterling (current 'author' = maintainer)
  * The maintainer can be contacted by his e-mail address:
- * milliByte@DeathsDoor.com 
+ * milliByte@DeathsDoor.com
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Library General Public
@@ -31,7 +31,7 @@
  * Structure for a single track.  This is pretty much self-explanatory --
  * one of these exists for each track on the current CD.
  */
-struct wm_trackinfo 
+struct wm_trackinfo
 {
   char	*songname;	/* Name of song, dynamically allocated */
   char	*otherdb;	/* Unrecognized info for this track */
@@ -62,7 +62,7 @@ struct wm_trackinfo
  * the total playing time of the playlist (which will usually be overestimated,
  * since we don't play leadouts in some cases.)
  */
-struct wm_play 
+struct wm_play
 {
   int	start;		/* Start track, or 0 if end of list */
   int	end;		/* last track plus 1 */
@@ -74,7 +74,7 @@ struct wm_play
  * followed by a zero-terminated list of track numbers to play.  The list
  * is terminated by a NULL name.
  */
-struct wm_playlist 
+struct wm_playlist
 {
   char	*name;		/* Name of this playlist */
   int	*list;		/* List of tracks */
@@ -133,7 +133,7 @@ struct wm_drive_proto
   int (*gen_get_cdtext)();
 };
 
-struct wm_drive 
+struct wm_drive
 {
   int  cdda;         /* cdda 1, cdin 0 */
   const char *cd_device;
@@ -148,7 +148,7 @@ struct wm_drive
   char *revision;    /* Revision of the drive */
   void	*aux;		/* Pointer to optional platform-specific info */
   void	*daux;		/* Pointer to optional drive-specific info */
-  
+
   struct wm_drive_proto *proto;
 };
 

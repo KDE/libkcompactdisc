@@ -2,10 +2,10 @@
  * $Id: plat_irix.c 587515 2006-09-23 02:48:38Z haeber $
  *
  * This file is part of WorkMan, the civilized CD player library
- * (c) 1991-1997 by Steven Grimm (original author)
- * (c) by Dirk Försterling (current 'author' = maintainer)
+ * Copyright (C) 1991-1997 by Steven Grimm (original author)
+ * Copyright (C) by Dirk Försterling (current 'author' = maintainer)
  * The maintainer can be contacted by his e-mail address:
- * milliByte@DeathsDoor.com 
+ * milliByte@DeathsDoor.com
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Library General Public
@@ -32,7 +32,7 @@
  */
 
 #if defined(sgi) || defined(__sgi)
- 
+
 #include "include/wm_config.h"
 
 /*
@@ -106,12 +106,12 @@ cbplayaudio(void *arg, CDDATATYPES type, short* audio)
 	ALwritesamps(audioport, audio, CDDA_NUMSAMPLES);
 } /* cbplayaudio() */
 
-static void 
+static void
 alarmsignal()
 {
   int n, i;
   if(playing != PLAYING) return;
-  if( ALgetfilled(audioport) < CDDA_NUMSAMPLES*8 ) 
+  if( ALgetfilled(audioport) < CDDA_NUMSAMPLES*8 )
     {
       /* Only get more samples and play them if we're getting low
        * this ensures that the CD stays close to the sound
@@ -143,13 +143,13 @@ gen_init( struct wm_drive *d )
   Param[2] = AL_CHANNEL_MODE;     Param[3] = AL_STEREO;
   ALsetparams(AL_DEFAULT_DEVICE, Param, 4);
   audioport = ALopenport("KDE KSCD Audio", "w", aconfig);
-  
+
   /* setup cdparser */
   icdp = CDcreateparser();
   CDaddcallback(icdp, cd_audio, (CDCALLBACKFUNC)cbplayaudio, 0);
   CDaddcallback(icdp, cd_pnum, (CDCALLBACKFUNC)cbprognum, 0);
   CDaddcallback(icdp, cd_atime, (CDCALLBACKFUNC)cbabstime, 0);
-  
+
   /* Lets handle those floating point exceptions expeditiously. */
   sigfpe_[_UNDERFL].repls = _ZERO;
   handle_sigfpes(_ON, _EN_UNDERFL, NULL, _ABORT_ON_ERROR, NULL);
@@ -165,20 +165,20 @@ wmcd_open( struct wm_drive *d )
 {
   int	fd;
   CDSTATUS s;
-  
+
   if (d->fd < 0)		/* Device already open? */
     {
       if (d->cd_device == NULL)
         d->cd_device = DEFAULT_CD_DEVICE;
-      
+
       d->fd = 1;
-      
+
       /* Now fill in the relevant parts of the wm_drive structure. */
       fd = d->fd;
       find_drive_struct("", "", "");
       d->fd = fd;
       (d->init)(d);
-      
+
       d->daux = CDopen(d->cd_device,"r");
       if (d->daux == 0)
 	{
@@ -190,11 +190,11 @@ wmcd_open( struct wm_drive *d )
     } else {
       wm_lib_message(WM_MSG_LEVEL_DEBUG|WM_MSG_CLASS, "wmcd_open(): [device is open (fd=%d)]\n", d->fd);
     }
-  
+
   CDgetstatus(d->daux, &s);
   if( s.state==CD_NODISC || s.state==CD_ERROR )
     return 1;
-  
+
   return (0);
 } /* wmcd_open() */
 
@@ -205,7 +205,7 @@ int
 wmcd_reopen( struct wm_drive *d )
 {
   int status;
-  
+
   do {
     wm_lib_message(WM_MSG_LEVEL_DEBUG|WM_MSG_CLASS, "wmcd_reopen\n");
     status = gen_close( d );
@@ -221,8 +221,8 @@ wmcd_reopen( struct wm_drive *d )
 /*----------------------------------*
  * Send a SCSI command out the bus.
  *----------------------------------*/
-int 
-wm_scsi( struct wm_drive *d, unsigned char *xcdb, int cdblen, 
+int
+wm_scsi( struct wm_drive *d, unsigned char *xcdb, int cdblen,
 	 char *retbuf, int retbuflen, int getreply)
 {
   return -1;
@@ -411,7 +411,7 @@ gen_eject( struct wm_drive *d )
  * milliByte@Deathsdoor.com
  *----------------------------------------*/
 
-int 
+int
 gen_closetray(struct wm_drive *d)
 {
 #ifdef CAN_CLOSE

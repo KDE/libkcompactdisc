@@ -2,10 +2,10 @@
  * $Id: plat_bsd386.c 587515 2006-09-23 02:48:38Z haeber $
  *
  * This file is part of WorkMan, the civilized CD player library
- * (c) 1991-1997 by Steven Grimm (original author)
- * (c) by Dirk Försterling (current 'author' = maintainer)
+ * Copyright (C) 1991-1997 by Steven Grimm (original author)
+ * Copyright (C) by Dirk Försterling (current 'author' = maintainer)
  * The maintainer can be contacted by his e-mail address:
- * milliByte@DeathsDoor.com 
+ * milliByte@DeathsDoor.com
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Library General Public
@@ -67,7 +67,7 @@ static char plat_bsd386_id[] = "$Id: plat_bsd386.c 587515 2006-09-23 02:48:38Z h
  * library doesn't provide "pause" or "resume" functions, use the daux field
  * to point to the frame number at which we paused.
  */
-struct pause_info 
+struct pause_info
 {
   int	frame;
   int	endframe;
@@ -106,22 +106,22 @@ wmcd_open(struct wm_drvie *d)
 {
   void	*aux = NULL, *daux = NULL;
   int fd = -1;
-  
+
   if (d->aux)	/* Device already open? */
     {
       wm_lib_message(WM_MSG_LEVEL_DEBUG|WM_MSG_CLASS, "wmcd_open(): [device is open (aux=%d)]\n", d->aux);
       return (0);
     }
-  
+
   if ((aux = cdopen(d->cd_device)) == NULL)
     {
       fprintf(stderr, "No cdrom found by libcdrom\n");
       return (-6);
     }
-  
+
   if ((daux = malloc(sizeof(struct pause_info))) == NULL)
     return (-1);
-  
+
 #ifdef SOUNDBLASTER
   fd = open("/dev/mixer", O_RDWR, 0);
 #endif
@@ -133,9 +133,9 @@ wmcd_open(struct wm_drvie *d)
   d->fd = fd;
   PAUSE_FRAME = 0;
   END_FRAME = 0;
-  
+
   (d->init)(d);
-  
+
   return (0);
 } /* wmcd_open() */
 
@@ -147,7 +147,7 @@ wmcd_reopen( struct wm_drive *d )
 {
   int status;
   int tries = 0;
-  
+
   do {
     wm_lib_message(WM_MSG_LEVEL_DEBUG|WM_MSG_CLASS, "wmcd_reopen\n");
     status = gen_close( d );
@@ -203,42 +203,42 @@ gen_get_drive_status(struct wm_drive *d, int oldmode,
 {
   struct cdstatus	status;
   extern enum wm_cd_modes cur_cdmode;
-  
+
   /* If we can't get status, the CD is ejected, so default to that. */
   *mode = WM_CDM_EJECTED;
-  
+
   /* Is the device open? */
   if (d->aux == NULL)
     {
-      switch (wmcd_open(d)) 
+      switch (wmcd_open(d))
 	{
 	case -1:	/* error */
 	  return (-1);
-	  
+
 	case 1:		/* retry */
 	  return (0);
 	}
     }
-  
+
   if (cdstatus (CUR_CD, &status) < 0)
     {
       *mode = WM_CDM_TRACK_DONE;	/* waiting for next track. */
       return (0);
     }
-  
-  switch (status.state) 
+
+  switch (status.state)
     {
     case cdstate_playing:
       *mode = WM_CDM_PLAYING;
       DOPOS;
       break;
-      
+
     case cdstate_stopped:
       /* the MITSUMI drive doesn't have a "paused" state,
 	 so it always comes here and not to the paused section.
 	 The PAUSE_FRAME stuff below (in gen_pause())
 	 fakes out the paused state. */
-      if (oldmode == WM_CDM_PLAYING) 
+      if (oldmode == WM_CDM_PLAYING)
 	{
 	  *mode = WM_CDM_TRACK_DONE;
 	  break;
@@ -248,18 +248,18 @@ gen_get_drive_status(struct wm_drive *d, int oldmode,
 	  break;
 	}
       /* fall through if paused */
-      
+
     case cdstate_paused:
       /* the SCSI2 code in the cdrom library only pauses with
 	 cdstop(); it never truly stops a disc (until an in-progress
 	 play reaches the end).  So it always comes here. */
-      if (cur_cdmode == WM_CDM_STOPPED) 
+      if (cur_cdmode == WM_CDM_STOPPED)
 	{
 	  *mode = WM_CDM_STOPPED;
 	  DOPOS;
 	  break;
 	}
-      if (oldmode == WM_CDM_PLAYING || oldmode == WM_CDM_PAUSED) 
+      if (oldmode == WM_CDM_PLAYING || oldmode == WM_CDM_PAUSED)
 	{
 	  *mode = WM_CDM_PAUSED;
 	  DOPOS;
@@ -268,11 +268,11 @@ gen_get_drive_status(struct wm_drive *d, int oldmode,
 	  DOPOS;
 	}
       break;
-      
+
     default:
       *mode = WM_CDM_STOPPED;
     }
-  
+
   return (0);
 } /* gen_get_drive_status() */
 
@@ -284,7 +284,7 @@ int
 gen_get_trackcount(struct wm_drive *d, int *tracks)
 {
   *tracks = CUR_CD->ntracks;
-  
+
   return (0);
 } /* gen_get_trackcount() */
 
@@ -296,7 +296,7 @@ gen_get_trackinfo(struct wm_drive *d, int track, int *data, int *startframe)
 {
   *data = (CUR_CD->tracks[track - 1].control & 4) ? 1 : 0;
   *startframe = CUR_CD->tracks[track - 1].start_frame;
-  
+
   return (0);
 } /* gen_get_trackinfo() */
 
@@ -307,7 +307,7 @@ int
 gen_get_cdlen(struct wm_drive *d, int *frames)
 {
   *frames = CUR_CD->total_frames;
-  
+
   return (0);
 } /* gen_get_cdlen() */
 
@@ -333,7 +333,7 @@ int
 gen_pause(struct wm_drive *d)
 {
   struct cdstatus	status;
-  
+
   if (cdstatus(d->aux, &status) < 0)
     return (-1);
   if (status.state != cdstate_playing)
@@ -342,7 +342,7 @@ gen_pause(struct wm_drive *d)
     PAUSE_FRAME = status.abs_frame;
   if (cdstop(d->aux) < 0)
     return (-1);
-  
+
   return (0);
 } /* gen_pause() */
 
@@ -353,7 +353,7 @@ int
 gen_resume(struct wm_drive *d)
 {
   int	status;
-  
+
   status = (d->play)(d, PAUSE_FRAME, END_FRAME);
   PAUSE_FRAME = 0;
   return (status);
@@ -379,7 +379,7 @@ gen_eject(struct wm_drive *d)
   d->aux = NULL;
   free(d->daux);
   d->daux = NULL;
-  
+
   if (d->fd >= 0)
      close(d->fd);     /* close mixer */
   d->fd = -1;
@@ -389,7 +389,7 @@ gen_eject(struct wm_drive *d)
 /*----------------------------------------*
  * Close the CD tray
  *----------------------------------------*/
-int 
+int
 gen_closetray(struct wm_drive *d)
 {
 #ifdef CAN_CLOSE
@@ -427,7 +427,7 @@ static int
 unscale_volume(int cd_vol, int max)
 {
   int	vol = 0, top = max, bot = 0, scaled;
-  
+
   while (bot <= top)
     {
       vol = (top + bot) / 2;
@@ -439,12 +439,12 @@ unscale_volume(int cd_vol, int max)
       else
 	bot = vol + 1;
     }
-  
+
   if (vol < 0)
     vol = 0;
   else if (vol > max)
     vol = max;
-  
+
   return (vol);
 } /* unscale_volume() */
 
@@ -459,8 +459,8 @@ gen_set_volume(struct wm_drive *d, int left, int right)
 
   left = scale_volume(left, 100);
   right = scale_volume(right, 100);
-  level = right << 8 | left; 
-  
+  level = right << 8 | left;
+
   /* Send a Mixer IOCTL */
   if (d->fd >= 0)
        (void) ioctl(d->fd, MIXER_WRITE(SOUND_MIXER_VOLUME), &level);
@@ -469,7 +469,7 @@ gen_set_volume(struct wm_drive *d, int left, int right)
      Pick it up from the archives on bsdi.com */
   cdvolume2 (CUR_CD, left < 0 ? 0 : left > 255 ? 255 : left,
 	     right < 0 ? 0 : right > 255 ? 255 : right);
-  
+
 #endif
   return (0);
 }

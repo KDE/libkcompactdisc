@@ -2,10 +2,10 @@
  * $Id: plat_openbsd.c 587515 2006-09-23 02:48:38Z haeber $
  *
  * This file is part of WorkMan, the civilized CD player library
- * (c) 1991-1997 by Steven Grimm (original author)
- * (c) by Dirk Försterling (current 'author' = maintainer)
+ * Copyright (C) 1991-1997 by Steven Grimm (original author)
+ * Copyright (C) by Dirk Försterling (current 'author' = maintainer)
  * The maintainer can be contacted by his e-mail address:
- * milliByte@DeathsDoor.com 
+ * milliByte@DeathsDoor.com
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Library General Public
@@ -21,7 +21,7 @@
  * License along with this library; if not, write to the Free
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
  *
- *        
+ *
  * OpenBSD-specific drive control routines. (Based on plat_freebsd.c)
  *
  * Michael Shalayeff, 7/24/96
@@ -94,13 +94,13 @@ wmcd_open(struct wm_drive *d)
   char  model[32] = WM_STR_GENMODEL;
   char    rev[32] = WM_STR_GENREV;
   int i;
-  
+
   if (d->fd >= 0)		/* Device already open? */
     {
        wm_lib_message(WM_MSG_LEVEL_DEBUG|WM_MSG_CLASS, "wmcd_open(): [device is open (fd=%d)]\n", d->fd);
        return (0);
     }
-  
+
   if (d->cd_device == NULL)
     {
       for (i = 0; cds[i] != NULL; i++)
@@ -121,16 +121,16 @@ wmcd_open(struct wm_drive *d)
       else
       	return -errno;
     }
-  
+
   /* Now fill in the relevant parts of the wm_drive structure. */
   fd = d->fd;
-  
+
   find_drive_struct(vendor, model, rev);
-  
+
   (d->init)(d);
-  
+
   d->fd = fd;
-  
+
   return (0);
 } /* wmcd_open() */
 
@@ -141,7 +141,7 @@ int
 wmcd_reopen( struct wm_drive *d )
 {
   int status;
-  
+
   do {
     wm_lib_message(WM_MSG_LEVEL_DEBUG|WM_MSG_CLASS, "wmcd_reopen\n");
     status = gen_close( d );
@@ -186,29 +186,29 @@ gen_get_drive_status(struct wm_drive *d, int oldmode,
 {
   struct ioc_read_subchannel	sc;
   struct cd_sub_channel_info	scd;
-  
+
   /* If we can't get status, the CD is ejected, so default to that. */
   *mode = WM_CDM_EJECTED;
-  
+
   sc.address_format	= CD_MSF_FORMAT;
   sc.data_format	= CD_CURRENT_POSITION;
   sc.track		= 0;
   sc.data_len		= sizeof(scd);
   sc.data		= (struct cd_sub_channel_info *)&scd;
-  
+
   /* Is the device open? */
   if (d->fd < 0)
     {
       switch (wmcd_open(d)) {
       case -1:	/* error */
 	return (-1);
-	
+
       case 1:		/* retry */
 	return (0);
       }
     }
-  
-  if (ioctl(d->fd, CDIOCREADSUBCHANNEL, &sc)) 
+
+  if (ioctl(d->fd, CDIOCREADSUBCHANNEL, &sc))
     {
       /* we need to release the device so the kernel will notice
 	 reloaded media */
@@ -216,8 +216,8 @@ gen_get_drive_status(struct wm_drive *d, int oldmode,
       d->fd = -1;
       return (0);	/* ejected */
     }
-  
-  switch (scd.header.audio_status) 
+
+  switch (scd.header.audio_status)
     {
     case CD_AS_PLAY_IN_PROGRESS:
       *mode = WM_CDM_PLAYING;
@@ -228,7 +228,7 @@ gen_get_drive_status(struct wm_drive *d, int oldmode,
       *track = scd.what.position.track_number;
       *index = scd.what.position.index_number;
       break;
-      
+
     case CD_AS_PLAY_PAUSED:
       if (oldmode == WM_CDM_PLAYING || oldmode == WM_CDM_PAUSED)
 	{
@@ -238,17 +238,17 @@ gen_get_drive_status(struct wm_drive *d, int oldmode,
       else
 	*mode = WM_CDM_STOPPED;
       break;
-      
+
     case CD_AS_PLAY_COMPLETED:
       *mode = WM_CDM_TRACK_DONE; /* waiting for next track. */
       break;
-      
+
     case CD_AS_NO_STATUS:
     case 0:
       *mode = WM_CDM_STOPPED;
       break;
     }
-  
+
   return (0);
 } /* gen_get_drive_status() */
 
@@ -259,11 +259,11 @@ int
 gen_get_trackcount(struct wm_drive *d, int *tracks)
 {
   struct ioc_toc_header	hdr;
-  
+
   if (ioctl(d->fd, CDIOREADTOCHEADER, &hdr) == -1)
     return (-1);
-  
-  *tracks = hdr.ending_track - hdr.starting_track + 1; 
+
+  *tracks = hdr.ending_track - hdr.starting_track + 1;
   return (0);
 } /* gen_get_trackcount() */
 
@@ -277,22 +277,22 @@ gen_get_trackinfo(struct wm_drive *d, int track, int *data, int *startframe)
 {
   struct ioc_read_toc_entry	toc;
   struct cd_toc_entry		toc_buffer;
-  
+
   bzero((char *)&toc_buffer, sizeof(toc_buffer));
   toc.address_format = CD_MSF_FORMAT;
   toc.starting_track = track;
   toc.data_len = sizeof(toc_buffer);
   toc.data = &toc_buffer;
-  
+
   if (ioctl(d->fd, CDIOREADTOCENTRYS, &toc))
     return (-1);
-  
+
   *data = ((toc_buffer.control & 0x4) != 0);
-  
+
   *startframe = toc_buffer.addr.msf.minute*60*75 +
     toc_buffer.addr.msf.second * 75 +
     toc_buffer.addr.msf.frame;
-  
+
   return (0);
 } /* gen_get_trackinfo() */
 
@@ -305,7 +305,7 @@ gen_get_cdlen(struct wm_drive *d, int *frames)
   int		tmp;
   struct ioc_toc_header		hdr;
   int status;
-  
+
 #define LEADOUT 0xaa			/* see scsi.c.  what a hack! */
   return gen_get_trackinfo(d, LEADOUT, &tmp, frames);
 } /* gen_get_cdlen() */
@@ -317,20 +317,20 @@ int
 gen_play(struct wm_drive *d, int start, int end)
 {
   struct ioc_play_msf	msf;
-  
+
   msf.start_m	= start / (60*75);
   msf.start_s	= (start % (60*75)) / 75;
   msf.start_f	= start % 75;
   msf.end_m	= end / (60*75);
   msf.end_s	= (end % (60*75)) / 75;
   msf.end_f	= end % 75;
-  
+
   if (ioctl(d->fd, CDIOCSTART))
     return (-1);
-  
+
   if (ioctl(d->fd, CDIOCPLAYMSF, &msf))
     return (-2);
-  
+
   return (0);
 } /* gen_play() */
 
@@ -371,14 +371,14 @@ gen_eject(struct wm_drive *d)
   struct stat	stbuf;
   struct statfs	buf;
   int rval;
-  
+
   if (fstat(d->fd, &stbuf) != 0)
     return (-2);
-  
+
   /* Is this a mounted filesystem? */
   if (fstatfs(stbuf.st_rdev, &buf) == 0)
     return (-3);
-  
+
   rval = ioctl(d->fd, CDIOCALLOW);
   if (rval == 0)
     rval = ioctl(d->fd, CDIOCEJECT);
@@ -398,7 +398,7 @@ gen_eject(struct wm_drive *d)
  * milliByte@DeathsDoor.com
  *----------------------------------------*/
 
-int 
+int
 gen_closetray(struct wm_drive *d)
 {
 #ifdef CAN_CLOSE
@@ -468,7 +468,7 @@ unscale_volume(int cd_vol, int max)
 		else
 			bot = vol + 1;
 	}
-	
+
 	if (vol < 0)
 		vol = 0;
 	else if (vol > max)
@@ -485,22 +485,22 @@ int
 gen_set_volume(struct wm_drive *d, int left, int right)
 {
   struct ioc_vol vol;
-  
+
   if (left < 0)	/* don't laugh, I saw this happen once! */
     left = 0;
   if (right < 0)
     right = 0;
   left = scale_volume(left, 100);
   right = scale_volume(right, 100);
-  
+
   bzero((char *)&vol, sizeof(vol));
-  
+
   vol.vol[LEFT_PORT] = left;
   vol.vol[RIGHT_PORT] = right;
-  
+
   if (ioctl(d->fd, CDIOCSETVOL, &vol))
     return (-1);
-  
+
   return (0);
 } /* gen_set_volume() */
 
@@ -513,11 +513,11 @@ int
 gen_get_volume(struct wm_drive *d, int *left, int *right)
 {
   struct ioc_vol vol;
-  
+
   if (d->fd >= 0)
     {
       bzero((char *)&vol, sizeof(vol));
-      
+
       if (ioctl(d->fd, CDIOCGETVOL, &vol))
 	*left = *right = -1;
       else
@@ -528,7 +528,7 @@ gen_get_volume(struct wm_drive *d, int *left, int *right)
     }
   else
     *left = *right = -1;
-  
+
   return (0);
 } /* gen_get_volume() */
 

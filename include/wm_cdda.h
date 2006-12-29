@@ -4,8 +4,8 @@
  * $Id: wm_cdda.h 608127 2006-11-26 20:39:13Z kernalex $
  *
  * This file is part of WorkMan, the civilized CD player library
- * (c) 1991-1997 by Steven Grimm (original author)
- * (c) by Dirk Försterling (current 'author' = maintainer)
+ * Copyright (C)  1991-1997 by Steven Grimm (original author)
+ * Copyright (C)  by Dirk Försterling (current 'author' = maintainer)
  * The maintainer can be contacted by his e-mail address:
  * milliByte@DeathsDoor.com
  *
@@ -176,7 +176,7 @@ void wmcdda_direction(int newdir);
 
 #include <stdio.h>
 
-/* #define DEBUG */
+#define DEBUG
 #ifdef DEBUG
  #define DEBUGLOG(fmt, args...) fprintf(stderr, fmt, ##args)
 #else

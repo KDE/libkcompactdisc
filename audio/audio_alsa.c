@@ -1,20 +1,26 @@
-/*
- *  Driver for Advanced Linux Sound Architecture, http://alsa.jcu.cz
- *
- *  mpg123 comments:
- *  Code by Anders Semb Hermansen <ahermans@vf.telia.no>
- *  Cleanups by Jaroslav Kysela <perex@jcu.cz>
- *              Ville Syrjala <syrjala@sci.fi>
- *
- *  adopted for libworkman cdda audio backend from Alexander Kern alex.kern@gmx.de
- *
- *  Adapted to support both ALSA V0.x and V1.x APIs for PCM calls
- *  (Philip Nelson <teamdba@scotdb.com> 2004-03-15)
- *
- * This file comes under GPL license.
- */
+/*  This file is part of the KDE project
+    Copyright (C) Alexander Kern alex.kern@gmx.de
 
+    Adapted to support both ALSA V0.x and V1.x APIs for PCM calls
+     (Philip Nelson <teamdba@scotdb.com> 2004-03-15)
 
+    based on mpg123 , Anders Semb Hermansen <ahermans@vf.telia.no>,
+    Jaroslav Kysela <perex@jcu.cz>, Ville Syrjala <syrjala@sci.fi>
+
+    This library is free software; you can redistribute it and/or
+    modify it under the terms of the GNU Library General Public
+    License version 2 as published by the Free Software Foundation.
+
+    This library is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+    Library General Public License for more details.
+
+    You should have received a copy of the GNU Library General Public License
+    along with this library; see the file COPYING.LIB.  If not, write to
+    the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
+    Boston, MA 02110-1301, USA.
+*/
 
 #include <config.h>
 #include <config-alsa.h>

@@ -4,10 +4,10 @@
  * $Id: workman_defs.h 486075 2005-12-06 18:29:02Z thiago $
  *
  * This file is part of WorkMan, the civilized CD player program
- * (c) 1991-1997 by Steven Grimm (original author)
- * (c) by Dirk Försterling (current 'author' = maintainer)
+ * Copyright (C)  1991-1997 by Steven Grimm (original author)
+ * Copyright (C)  by Dirk Försterling (current 'author' = maintainer)
  * The maintainer can be contacted by his e-mail address:
- * milliByte@DeathsDoor.com 
+ * milliByte@DeathsDoor.com
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -20,7 +20,7 @@
  * GNU General Public License for more details.
  *
  * #defined CONSTANTS
- * 
+ *
  * Too bad this file seems to be so empty...
  *
  */

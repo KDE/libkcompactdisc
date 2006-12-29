@@ -2,10 +2,10 @@
  * $Id: plat_aix.c 587515 2006-09-23 02:48:38Z haeber $
  *
  * This file is part of WorkMan, the civilized CD player library
- * (c) 1991-1997 by Steven Grimm (original author)
- * (c) by Dirk Försterling (current 'author' = maintainer)
+ * Copyright (C) 1991-1997 by Steven Grimm (original author)
+ * Copyright (C) by Dirk Försterling (current 'author' = maintainer)
  * The maintainer can be contacted by his e-mail address:
- * milliByte@DeathsDoor.com 
+ * milliByte@DeathsDoor.com
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Library General Public
@@ -24,7 +24,7 @@
  *
  * plat_aix - AIX 4.x IDE and SCSI support  16 Dec 1998
  *
- * AIX 4.x Port: Erik O'Shaughnessy 
+ * AIX 4.x Port: Erik O'Shaughnessy
  * Original AIX IDE Code: Cloyce Spradling (xmcd libdi_d/aixioc.c )
  *
  * Taken from the ascd distribution.
@@ -61,9 +61,9 @@ int max_volume = 255;
  *
  * FUNCTION:
  *
- * RETURNS: 
+ * RETURNS:
  */
-int 
+int
 gen_init(struct wm_drive *d)
 {
   return 0;
@@ -76,15 +76,15 @@ gen_init(struct wm_drive *d)
  *
  * RETURNS:
  */
-int 
+int
 wmcd_open(struct wm_drive *d)
 {
   char vendor[32] = WM_STR_GENVENDOR;
   char  model[32] = WM_STR_GENMODEL;
   char    rev[32] = WM_STR_GENREV;
-  
+
   int fd;
-  
+
   if( ! d )
     {
       errno = EFAULT;
@@ -106,9 +106,9 @@ wmcd_open(struct wm_drive *d)
       return -6;
       /* return 1 */
     }
-  
+
   find_drive_struct(vendor, model, rev);
-  
+
   d->fd = fd;
   d->init(d);
   return 0;
@@ -121,7 +121,7 @@ int
 wmcd_reopen( struct wm_drive *d )
 {
   int status;
-  
+
   do {
     wm_lib_message(WM_MSG_LEVEL_DEBUG|WM_MSG_CLASS, "wmcd_reopen\n");
     status = gen_close( d );
@@ -139,7 +139,7 @@ wmcd_reopen( struct wm_drive *d )
  *
  * RETURNS:
  */
-int 
+int
 wm_scsi(struct wm_drive *d,
 	uchar_t *cdb, int cdblen,
 	void *retbuf, int retbuflen,
@@ -165,18 +165,18 @@ gen_close( struct wm_drive *d )
  *
  * RETURNS:
  */
-int 
+int
 gen_get_drive_status(struct wm_drive *d,
 		     int oldmode,
 		     int *mode,
 		     int *pos,
 		     int *track,
 		     int *index)
-{ 
+{
   struct cd_audio_cmd cmd;
-  
+
   *mode = WM_CDM_EJECTED;
-  
+
   if(d->fd < 0)
     switch( wmcd_open(d) )
       {
@@ -185,12 +185,12 @@ gen_get_drive_status(struct wm_drive *d,
       case 1:
 	return 0;
       }
-  
+
   cmd.audio_cmds = CD_INFO_AUDIO;
 
   if( ioctl(d->fd,DKAUDIO,&cmd) < 0)
     return -1;
-  
+
   switch(cmd.status)
     {
     case CD_PLAY_AUDIO:
@@ -201,7 +201,7 @@ gen_get_drive_status(struct wm_drive *d,
 	cmd.indexing.info_audio.current_secs * 75 +
 	cmd.indexing.info_audio.current_frames;
       break;
-      
+
     case CD_PAUSE_AUDIO:
       *mode = WM_CDM_PAUSED;
       *track = cmd.indexing.info_audio.current_track;
@@ -209,7 +209,7 @@ gen_get_drive_status(struct wm_drive *d,
       *pos = cmd.indexing.info_audio.current_mins * 60 * 75 +
 	cmd.indexing.info_audio.current_secs * 75 +
 	cmd.indexing.info_audio.current_frames;
-      
+
       break;
     case CD_NO_AUDIO:		/* no play audio in progress */
     case CD_COMPLETED:		/* play operation completed successfully */
@@ -221,7 +221,7 @@ gen_get_drive_status(struct wm_drive *d,
       *mode = WM_CDM_UNKNOWN;
       break;
     }
-  
+
   return 0;
 } /* gen_get_drive_status() */
 
@@ -233,14 +233,14 @@ gen_get_drive_status(struct wm_drive *d,
  *
  * RETURNS:
  */
-int 
+int
 gen_get_trackcount(struct wm_drive *d,int *tracks)
 {
   struct cd_audio_cmd cmd;
-  
+
   cmd.audio_cmds = CD_TRK_INFO_AUDIO;
   cmd.msf_flag = 0;
-  
+
   if( ioctl(d->fd,DKAUDIO,&cmd) < 0)
     {
       perror("DKAUDIO");
@@ -248,7 +248,7 @@ gen_get_trackcount(struct wm_drive *d,int *tracks)
     }
 
   *tracks = cmd.indexing.track_index.last_track;
-  
+
   return 0;
 } /* gen_get_trackcount() */
 
@@ -258,25 +258,25 @@ gen_get_trackcount(struct wm_drive *d,int *tracks)
  *
  * RETURNS:
  */
-int 
+int
 gen_get_trackinfo(struct wm_drive *d,int track,int *data,int *startframe)
 {
   struct cd_audio_cmd cmd;
-  
+
   cmd.audio_cmds = CD_GET_TRK_MSF;
   cmd.msf_flag = 1;
-  
+
   cmd.indexing.track_msf.track = track;
-  
+
   if( ioctl(d->fd,DKAUDIO,&cmd) < 0)
     return -1;
-  
+
   *startframe = cmd.indexing.track_msf.mins * 60 * 75 +
     cmd.indexing.track_msf.secs * 75 +
     cmd.indexing.track_msf.frames;
-  
+
   *data = 0;
-  
+
   return 0;
 } /* gen_get_trackinfo() */
 
@@ -286,11 +286,11 @@ gen_get_trackinfo(struct wm_drive *d,int track,int *data,int *startframe)
  *
  * RETURNS:
  */
-int 
+int
 gen_get_cdlen(struct wm_drive *d,int *frames)
 {
   int tmp;
-  
+
   return gen_get_trackinfo(d,LEADOUT,&tmp,frames);
 } /* gen_get_cdlen() */
 
@@ -301,22 +301,22 @@ gen_get_cdlen(struct wm_drive *d,int *frames)
  *
  * RETURNS:
  */
-int 
+int
 gen_play(struct wm_drive *d,int start,int end)
 {
   struct cd_audio_cmd cmd;
-  
+
   cmd.audio_cmds = CD_PLAY_AUDIO;
   cmd.msf_flag = 1;
-  
+
   cmd.indexing.msf.first_mins = start / (60*75);
   cmd.indexing.msf.first_secs = (start % (60*75)) / 75;
   cmd.indexing.msf.first_frames = start % 75;
-  
+
   cmd.indexing.msf.last_mins = end / (60*75);
   cmd.indexing.msf.last_secs = (end % (60*75)) / 75;
   cmd.indexing.msf.last_frames = end % 75;
-  
+
   if( ioctl(d->fd,DKAUDIO,&cmd) < 0)
     {
       perror("DKAUDIO:CD_PLAY_AUDIO");
@@ -331,13 +331,13 @@ gen_play(struct wm_drive *d,int start,int end)
  *
  * RETURNS:
  */
-int 
+int
 gen_pause(struct wm_drive *d)
 {
   struct cd_audio_cmd cmd;
-  
+
   cmd.audio_cmds = CD_PAUSE_AUDIO;
-  
+
   return ioctl(d->fd,DKAUDIO,&cmd);
 } /* gen_pause() */
 
@@ -348,11 +348,11 @@ gen_pause(struct wm_drive *d)
  *
  * RETURNS:
  */
-int 
+int
 gen_resume(struct wm_drive *d)
 {
   struct cd_audio_cmd cmd;
-  
+
   cmd.audio_cmds = CD_RESUME_AUDIO;
   return ioctl(d->fd,DKAUDIO,&cmd);
 } /* gen_resume() */
@@ -363,11 +363,11 @@ gen_resume(struct wm_drive *d)
  *
  * RETURNS:
  */
-int 
+int
 gen_stop(struct wm_drive *d)
 {
   struct cd_audio_cmd cmd;
-  
+
   cmd.audio_cmds = CD_STOP_AUDIO;
   return ioctl(d->fd,DKAUDIO,&cmd);
 } /* gen_stop() */
@@ -378,7 +378,7 @@ gen_stop(struct wm_drive *d)
  *
  * RETURNS:
  */
-int 
+int
 gen_eject(struct wm_drive *d)
 {
   return ioctl(d->fd,DKEJECT,NULL);
@@ -387,7 +387,7 @@ gen_eject(struct wm_drive *d)
 /*----------------------------------------*
  * Close the CD tray
  *----------------------------------------*/
-int 
+int
 gen_closetray(struct wm_drive *d)
 {
 #ifdef CAN_CLOSE
@@ -405,13 +405,13 @@ gen_closetray(struct wm_drive *d)
 } /* gen_closetray() */
 
 
-int 
+int
 scale_volume(int vol,int max)
 {
   return ((vol * (max_volume - min_volume)) / max + min_volume);
 }
 
-int 
+int
 unscale_volume(int vol,int max)
 {
   int n;
@@ -425,23 +425,23 @@ unscale_volume(int vol,int max)
  *
  * RETURNS:
  */
-int 
+int
 gen_set_volume(struct wm_drive *d,int left,int right)
 {
   struct cd_audio_cmd cmd;
-  
+
   cmd.audio_cmds = CD_SET_VOLUME;
   cmd.volume_type = CD_VOLUME_CHNLS;
-  
+
   cmd.out_port_0_vol = scale_volume(left,100);
   cmd.out_port_1_vol = scale_volume(right,100);
-  
+
   if( ioctl(d->fd,DKAUDIO,&cmd) < 0)
     {
       perror("CD_SET_VOLUME");
       return -1;
     }
-  
+
   return 0;
 } /* gen_set_volume() */
 
@@ -451,21 +451,21 @@ gen_set_volume(struct wm_drive *d,int left,int right)
  *
  * RETURNS:
  */
-int 
+int
 gen_get_volume(struct wm_drive *d,int *left,int *right)
-{ 
+{
   struct cd_audio_cmd cmd;
   int l,r;
-  
+
   fprintf(stderr,"gen_get_volume\n");
-  
+
   cmd.audio_cmds = CD_INFO_AUDIO;
   if( ioctl(d->fd,DKAUDIO,&cmd) < 0)
     return -1;
-  
+
   *left = unscale_volume(cmd.out_port_0_vol,100);
   *right = unscale_volume(cmd.out_port_1_vol,100);
-  
+
   return 0;
 } /* gen_get_volume() */
 
