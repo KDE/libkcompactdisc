@@ -1,7 +1,5 @@
 project(libkcompactdisc)
 
-macro_optional_find_package(Alsa)
-
 ########### next target ###############
 
 set(audio_SRCS
