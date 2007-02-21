@@ -23,8 +23,11 @@
 
 #include <QObject>
 #include <QTimer>
+#include <QtCore/QStringList>
 #include <q3valuelist.h>
 
+
+#include <kdemacros.h>
 
 #if defined Q_OS_WIN
 
@@ -242,7 +245,7 @@ public:
 
     bool isPlaying() const;
 
-signals:
+Q_SIGNALS:
 
     /**
      * A disc is being inserted.
@@ -314,7 +317,7 @@ private:
     class KCompactDiscPrivate *d;
     InformationMode m_infoMode;
 
-private slots:
+private Q_SLOTS:
     void timerExpired();
 };
 
