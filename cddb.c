@@ -45,13 +45,11 @@
 
 #include "include/wm_config.h"
 #include "include/wm_struct.h"
-#include "include/wm_cdinfo.h"
 #include "include/wm_helpers.h"
 #include "include/wm_cddb.h"
+#include "include/wm_cdrom.h"
 
 struct wm_cddb cddb;
-
-extern struct wm_cdinfo thiscd;
 
 /* local prototypes */
 int cddb_sum(int);
@@ -86,14 +84,14 @@ cddb_discid(void)
 		n = 0;
 
 	/* For backward compatibility this algorithm must not change */
-	for (i = 0; i < thiscd.ntracks; i++) {
+	for (i = 0; i < wm_cd_getref()->ntracks; i++) {
 
-		n += cddb_sum(thiscd.trk[i].start / 75);
+		n += cddb_sum(wm_cd_getref()->trk[i].start / 75);
 	/*
 	 * Just for demonstration (See below)
 	 *
-	 *	t += (thiscd.trk[i+1].start / 75) -
-	 *	     (thiscd.trk[i  ].start / 75);
+	 *	t += (wm_cd_getref()->trk[i+1].start / 75) -
+	 *	     (wm_cd_getref()->trk[i  ].start / 75);
 	 */
 	}
 
@@ -108,8 +106,8 @@ cddb_discid(void)
          * fields.
          */
 
-        t = (thiscd.trk[thiscd.ntracks].start / 75)
-          - (thiscd.trk[0].start / 75);
-	return ((n % 0xff) << 24 | t << 8 | thiscd.ntracks);
+        t = (wm_cd_getref()->trk[wm_cd_getref()->ntracks].start / 75)
+          - (wm_cd_getref()->trk[0].start / 75);
+	return ((n % 0xff) << 24 | t << 8 | wm_cd_getref()->ntracks);
 } /* cddb_discid() */
 

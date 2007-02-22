@@ -42,7 +42,6 @@
 #include "include/wm_cdrom.h"
 #include "include/wm_platform.h"
 #include "include/wm_helpers.h"
-#include "include/wm_cdinfo.h"
 #include "include/wm_cdtext.h"
 
 #ifdef CAN_CLOSE
@@ -105,7 +104,15 @@ static struct wm_drive drive = {
   NULL
 };
 
-extern struct wm_cdinfo thiscd;
+static int cur_index = 0;	/* Current index mark */
+static int cur_pos_rel = 0;	/* Current track-relative position in seconds */
+static int cur_pos_abs = 0;	/* Current absolute position in seconds */
+static int cur_frame = 0;	/* Current frame number */
+static int cur_lasttrack = 999;	/* Last track to play in current chunk */
+static int cur_firsttrack = 0;	/* First track of current chunk */
+static int cur_listno;	/* Current index into the play list, if playing */
+static struct wm_play *playlist = NULL;
+static struct wm_cdinfo thiscd;
 
 /*
  * Macro magic
@@ -120,6 +127,31 @@ extern struct wm_cdinfo thiscd;
 #define CARRAY(id) ((id)-1)
 
 #define DATATRACK 1
+
+/*
+ * get the pointer of static struct
+ */
+struct wm_cdinfo *wm_cd_getref( void )
+{
+  return &thiscd;
+}
+
+/*
+ * get the current position
+ */
+int wm_get_cur_pos_rel( void )
+{
+  return cur_pos_rel;
+}
+
+/*
+ * get the current position
+ */
+int wm_get_cur_pos_abs( void )
+{
+  return cur_pos_abs;
+}
+
 /*
  * init the workmanlib
  */
@@ -190,7 +222,7 @@ const char *wm_drive_device( void )
  * on the vendor, model, and revision of the current drive.
  */
 int
-find_drive_struct(const char *vendor, const char *model, const char *rev)
+find_drive_struct(const char *vendor, const char *model, const char *rev )
 {
   struct drivelist *d;
 
@@ -388,9 +420,6 @@ wm_cd_status( void )
 
   case WM_CDM_STOPPED:
     if(thiscd.curtrack >= 1 && thiscd.curtrack <= thiscd.ntracks && thiscd.trk != NULL) {
-      cur_trackname = thiscd.trk[CARRAY(thiscd.curtrack)].songname;
-      cur_avoid = thiscd.trk[CARRAY(thiscd.curtrack)].avoid;
-      cur_contd = thiscd.trk[CARRAY(thiscd.curtrack)].contd;
       cur_pos_rel = (cur_frame - thiscd.trk[CARRAY(thiscd.curtrack)].start) / 75;
       if (cur_pos_rel < 0)
         cur_pos_rel = -cur_pos_rel;
@@ -644,7 +673,7 @@ wm_cd_eject( void )
   return 0;
 }
 
-int wm_cd_closetray(void)
+int wm_cd_closetray( void )
 {
   int status, err = -1;
 

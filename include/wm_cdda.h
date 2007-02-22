@@ -4,10 +4,9 @@
  * $Id: wm_cdda.h 608127 2006-11-26 20:39:13Z kernalex $
  *
  * This file is part of WorkMan, the civilized CD player library
- * Copyright (C)  1991-1997 by Steven Grimm (original author)
- * Copyright (C)  by Dirk Försterling (current 'author' = maintainer)
- * The maintainer can be contacted by his e-mail address:
- * milliByte@DeathsDoor.com
+ * Copyright (C) 1991-1997 by Steven Grimm <koreth@midwinter.com>
+ * Copyright (C) by Dirk Försterling <milliByte@DeathsDoor.com>
+ * Copyright (C) 2004-2006 Alexander Kern <alex.kern@gmx.de>
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Library General Public
@@ -173,15 +172,5 @@ int wmcdda_setup(int start, int end, int realstart);
 long wmcdda_read(struct cdda_device*, struct cdda_block *block);
 void wmcdda_speed(int speed);
 void wmcdda_direction(int newdir);
-
-#include <stdio.h>
-
-#define DEBUG
-#ifdef DEBUG
- #define DEBUGLOG(fmt, args...) fprintf(stderr, fmt, ##args)
-#else
- #define DEBUGLOG(fmt, args...)
-#endif
-#define ERRORLOG(fmt, args...) fprintf(stderr, fmt, ##args)
 
 #endif /* WM_CDDA_H */

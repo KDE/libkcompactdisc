@@ -12,7 +12,6 @@ set(audio_SRCS
 
 set(libwm_SRCS ${audio_SRCS}
 	cddb.c
-	cdinfo.c
 	cdrom.c
 	wm_helpers.c
 	cdtext.c
@@ -39,7 +38,7 @@ set(libwm_SRCS ${audio_SRCS}
 
 set(kcompactdisc_LIB_SRCS ${libwm_SRCS} kcompactdisc.cpp)
 
-kde4_automoc(${kcompactdisc_LIB_SRCS})
+kde4_automoc(${kcompactdisc_LIB_SRCS} audio/audio_phonon.cpp)
 
 kde4_add_library(kcompactdisc SHARED ${kcompactdisc_LIB_SRCS})
 

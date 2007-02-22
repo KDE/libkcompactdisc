@@ -3,11 +3,9 @@
 /*
  * $Id: workman_defs.h 486075 2005-12-06 18:29:02Z thiago $
  *
- * This file is part of WorkMan, the civilized CD player program
- * Copyright (C)  1991-1997 by Steven Grimm (original author)
- * Copyright (C)  by Dirk Försterling (current 'author' = maintainer)
- * The maintainer can be contacted by his e-mail address:
- * milliByte@DeathsDoor.com
+ * This file is part of WorkMan, the civilized CD player library
+ * Copyright (C) 1991-1997 by Steven Grimm <koreth@midwinter.com>
+ * Copyright (C) by Dirk Försterling <milliByte@DeathsDoor.com>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by

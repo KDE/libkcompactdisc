@@ -64,12 +64,8 @@ extern "C"
 {
 // We don't have libWorkMan installed already, so get everything
 // from within our own directory
-#include "include/wm_cddb.h"
 #include "include/wm_cdrom.h"
 #include "include/wm_cdtext.h"
-#include "include/wm_config.h"
-#include "include/wm_cdinfo.h"
-#include "include/wm_helpers.h"
 
 // Sun, Ultrix etc. have a canonical CD device specified in the
 // respective plat_xxx.c file. On those platforms you need not
@@ -139,7 +135,7 @@ unsigned KCompactDisc::discLength() const
 
 unsigned KCompactDisc::discPosition() const
 {
-    return cur_pos_abs * 1000 - FRAMES_TO_MS(m_trackStartFrames[0]);
+    return wm_get_cur_pos_abs() * 1000 - FRAMES_TO_MS(m_trackStartFrames[0]);
 }
 
 QString KCompactDisc::discStatus(int status)
@@ -339,12 +335,12 @@ unsigned KCompactDisc::trackLength(unsigned track) const
 {
     if (NO_DISC || !TRACK_VALID(track))
         return 0;
-    return cd->trk[track - 1].length * 1000;
+    return wm_cd_getref()->trk[track - 1].length * 1000;
 }
 
 unsigned KCompactDisc::trackPosition() const
 {
-    return cur_pos_rel * 1000;
+    return wm_get_cur_pos_rel() * 1000;
 }
 
 unsigned KCompactDisc::tracks() const
@@ -368,7 +364,7 @@ bool KCompactDisc::isAudio(unsigned track) const
 {
     if (NO_DISC || !TRACK_VALID(track))
         return 0;
-    return !(cd->trk[track - 1].data);
+    return !(wm_cd_getref()->trk[track - 1].data);
 }
 
 /*
@@ -434,10 +430,10 @@ void KCompactDisc::timerExpired()
                     m_trackTitles.append(ki18n("Track %1").subs(i, 2).toString());
                 }
                 // FIXME: KDE4
-                // track.length = cd->trk[i - 1].length;
-                m_trackStartFrames.append(cd->trk[i - 1].start);
+                // track.length = wm_cd_getref()->trk[i - 1].length;
+                m_trackStartFrames.append(wm_cd_getref()->trk[i - 1].start);
             }
-            m_trackStartFrames.append(cd->trk[m_tracks].start);
+            m_trackStartFrames.append(wm_cd_getref()->trk[m_tracks].start);
             emit discChanged(m_discId);
         }
 

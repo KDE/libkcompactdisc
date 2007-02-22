@@ -1,7 +1,7 @@
 /*  This file is part of the KDE project
-    Copyright (C) 2006 Alexander Kern alex.kern@gmx.de
+    Copyright (C) 2006 Alexander Kern <alex.kern@gmx.de>
 
-    based on Driver for Phonon Architecture, Matthias Kretz <kretz@kde.org>
+    based on example for Phonon Architecture, Matthias Kretz <kretz@kde.org>
 
     This library is free software; you can redistribute it and/or
     modify it under the terms of the GNU Library General Public
@@ -30,102 +30,89 @@
 #include <phonon/audiopath.h>
 #include <phonon/bytestream.h>
 #include "audio.h"
+#include "audio_phonon.h"
 
-namespace Phonon { class ByteStream; }
+LibWMPcmPlayer::LibWMPcmPlayer()
+{
+    DEBUGLOG("LibWMPcmPlayer\n");
 
-class LibWMPcmPlayer : public QObject {
-public:
-    LibWMPcmPlayer()
-    {
-        DEBUGLOG("LibWMPcmPlayer\n");
+    m_stream = NULL;
+    blk = NULL;
 
-        m_stream = NULL;
-        blk = NULL;
+    Phonon::AudioOutput* m_output = new Phonon::AudioOutput(Phonon::MusicCategory, this);
+    Phonon::AudioPath* m_path = new Phonon::AudioPath(this);
+    m_path->addOutput(m_output);
+    m_stream = new Phonon::ByteStream(this);
+    m_stream->addAudioPath(m_path);
+    m_stream->setStreamSeekable(false);
+    m_stream->setStreamSize(0x7FFFFFFF);
 
-        Phonon::AudioOutput* m_output = new Phonon::AudioOutput(Phonon::MusicCategory, this);
-        Phonon::AudioPath* m_path = new Phonon::AudioPath(this);
-        m_path->addOutput(m_output);
-        m_stream = new Phonon::ByteStream(this);
-        m_stream->addAudioPath(m_path);
-        m_stream->setStreamSeekable(false);
-        m_stream->setStreamSize(0x7FFFFFFF);
+    connect(m_stream, SIGNAL(needData()), this, SLOT(playNextBuffer()));
 
-        connect(m_stream, SIGNAL(needData()), this, SLOT(playNextBuffer()));
+    QByteArray data;
+    QDataStream stream(&data, QIODevice::WriteOnly);
+    stream.setByteOrder(QDataStream::LittleEndian);
+    stream
+        << 0x46464952 //"RIFF"
+        << static_cast<quint32>(0x7FFFFFFF)
+        << 0x45564157 //"WAVE"
+        << 0x20746D66 //"fmt "           //Subchunk1ID
+        << static_cast<quint32>(16)    //Subchunk1Size
+        << static_cast<quint16>(1)     //AudioFormat
+        << static_cast<quint16>(2)     //NumChannels
+        << static_cast<quint32>(44100 ) //SampleRate
+        << static_cast<quint32>(2*2*44100)//ByteRate
+        << static_cast<quint16>(2*2)   //BlockAlign
+        << static_cast<quint16>(16)    //BitsPerSample
+        << 0x61746164 //"data"              //Subchunk2ID
+        << static_cast<quint32>(0x7FFFFFFF-36)//Subchunk2Size
+        ;
+    m_stream->writeData(data);
 
-        QByteArray data;
-        QDataStream stream(&data, QIODevice::WriteOnly);
-        stream.setByteOrder(QDataStream::LittleEndian);
-        stream
-            << 0x46464952 //"RIFF"
-            << static_cast<quint32>(0x7FFFFFFF)
-            << 0x45564157 //"WAVE"
-            << 0x20746D66 //"fmt "           //Subchunk1ID
-            << static_cast<quint32>(16)    //Subchunk1Size
-            << static_cast<quint16>(1)     //AudioFormat
-            << static_cast<quint16>(2)     //NumChannels
-            << static_cast<quint32>(44100 ) //SampleRate
-            << static_cast<quint32>(2*2*44100)//ByteRate
-            << static_cast<quint16>(2*2)   //BlockAlign
-            << static_cast<quint16>(16)    //BitsPerSample
-            << 0x61746164 //"data"              //Subchunk2ID
-            << static_cast<quint32>(0x7FFFFFFF-36)//Subchunk2Size
-            ;
-        m_stream->writeData(data);
+    DEBUGLOG("LibWMPcmPlayer end\n");
+}
 
-        DEBUGLOG("LibWMPcmPlayer end\n");
-    };
+LibWMPcmPlayer::~LibWMPcmPlayer()
+{
+    DEBUGLOG("~LibWMPcmPlayer\n");
 
-    ~LibWMPcmPlayer()
-    {
-        DEBUGLOG("~LibWMPcmPlayer\n");
+    stop();
+    delete m_stream;
+    m_stream = NULL;
+    blk = NULL;
+}
 
-        stop();
-        delete m_stream;
-        m_stream = NULL;
-        blk = NULL;
-    };
+void LibWMPcmPlayer::run(void)
+{
+}
 
-    void run()
-    {
-    };
+void LibWMPcmPlayer::setNextBuffer(struct cdda_block *new_blk)
+{
+    DEBUGLOG("setNextBuffer\n");
+    mutex.lock();
+    DEBUGLOG("setNextBuffer a\n");
+    blk = new_blk;
+    DEBUGLOG("setNextBuffer b\n");
+    bufferPlayed.wait(&mutex);
+    DEBUGLOG("setNextBuffer c\n");
+    mutex.unlock();
+    DEBUGLOG("setNextBuffer end\n");
+}
 
-    void stop()
-    {
-        m_stream->stop();
-    };
+void LibWMPcmPlayer::playNextBuffer()
+{
+    DEBUGLOG("playNextBuffer\n");
+    mutex.lock();
 
-    void setNextBuffer(struct cdda_block *new_blk)
-    {
-        DEBUGLOG("setNextBuffer\n");
-        mutex.lock();
+    if(blk)
+        m_stream->writeData(QByteArray(blk->buf, blk->buflen));
+    blk = NULL;
 
-        blk = new_blk;
-        bufferPlayed.wait(&mutex);
+    bufferPlayed.wakeAll();
 
-        mutex.unlock();
-    };
-
-public slots:
-    void playNextBuffer()
-    {
-        DEBUGLOG("playNextBuffer\n");
-        mutex.lock();
-
-        if(blk)
-            m_stream->writeData(QByteArray(blk->buf, blk->buflen));
-        blk = NULL;
-
-        bufferPlayed.wakeAll();
-
-        mutex.unlock();
-    };
-
-private:
-    Phonon::ByteStream* m_stream;
-    struct cdda_block *blk;
-    QWaitCondition bufferPlayed;
-    QMutex mutex;
-};
+    mutex.unlock();
+    DEBUGLOG("playNextBuffer end\n");
+}
 
 static LibWMPcmPlayer *PhononObject = NULL;
 
@@ -227,3 +214,5 @@ setup_phonon(const char *dev, const char *ctl)
 
     return &phonon_oops;
 }
+
+#include "audio_phonon.moc"

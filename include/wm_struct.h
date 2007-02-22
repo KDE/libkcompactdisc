@@ -4,10 +4,8 @@
  * $Id: wm_struct.h 486075 2005-12-06 18:29:02Z thiago $
  *
  * This file is part of WorkMan, the civilized CD player library
- * Copyright (C) 1991-1997 by Steven Grimm (original author)
- * Copyright (C) by Dirk Försterling (current 'author' = maintainer)
- * The maintainer can be contacted by his e-mail address:
- * milliByte@DeathsDoor.com
+ * Copyright (C) 1991-1997 by Steven Grimm <koreth@midwinter.com>
+ * Copyright (C) by Dirk Försterling <milliByte@DeathsDoor.com>
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Library General Public
@@ -103,8 +101,6 @@ struct wm_cdinfo
 
 /* The global variable "cd" points to the struct for the CD that's playing. */
 extern struct wm_cdinfo *cd;
-
-extern struct wm_playlist *new_playlist();
 
 #define WM_STR_GENVENDOR "Generic"
 #define WM_STR_GENMODEL  "drive"

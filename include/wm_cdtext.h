@@ -1,24 +1,25 @@
 #ifndef WM_CDTEXT_H
 #define WM_CDTEXT_H
 
-/***************************************************************************
-                          wm_cdtext.h  -  description
-                             -------------------
-    begin                : Mon Feb 12 2001
-    copyright            : (C) 2001 by Alex Kern
-    email                : alex.kern@gmx.de
- ***************************************************************************/
-
-/***************************************************************************
- *                                                                         *
- *   This program is free software; you can redistribute it and/or modify  *
- *   it under the terms of the GNU General Public License as published by  *
- *   the Free Software Foundation; either version 2 of the License, or     *
- *   (at your option) any later version.                                   *
- *                                                                         *
- ***************************************************************************/
-
 /*
+ * This file is part of WorkMan, the civilized CD player library
+ * Copyright (C) Alexander Kern <alex.kern@gmx.de>
+ *
+ * This library is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Library General Public
+ * License as published by the Free Software Foundation; either
+ * version 2 of the License, or (at your option) any later version.
+ *
+ * This library is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * Library General Public License for more details.
+ *
+ * You should have received a copy of the GNU Library General Public
+ * License along with this library; if not, write to the Free
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
+ *
+ *
  * cdtext base structure and defines
  */
 

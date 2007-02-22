@@ -30,7 +30,6 @@
 #include "include/wm_cdrom.h"
 #include "include/wm_platform.h"
 #include "include/wm_helpers.h"
-#include "include/wm_cdinfo.h"
 #include "include/wm_cdtext.h"
 
 #define WM_MSG_CLASS WM_MSG_CLASS_MISC
@@ -136,7 +135,7 @@ struct cdtext_info_block* malloc_cdtext_info_block(int count_of_tracks)
   if(!lp_block->message)
     goto bail_out;
   memset(lp_block->message, 0, memamount);
-		
+
   lp_block->UPC_EAN_ISRC_code = malloc(memamount);
   if(!lp_block->UPC_EAN_ISRC_code)
     goto bail_out;
@@ -216,7 +215,7 @@ struct cdtext_info*
 get_glob_cdtext(struct wm_drive *d, int redo)
 {
   /* alloc cdtext_info */
- 
+
   unsigned char *buffer;
   int buffer_length;
   int ret;

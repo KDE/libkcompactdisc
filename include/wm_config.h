@@ -4,10 +4,8 @@
  * $Id: wm_config.h 608127 2006-11-26 20:39:13Z kernalex $
  *
  * This file is part of WorkMan, the civilized CD player library
- * Copyright (C) 1991-1997 by Steven Grimm (original author)
- * Copyright (C) by Dirk Försterling (current 'author' = maintainer)
- * The maintainer can be contacted by his e-mail address:
- * milliByte@DeathsDoor.com
+ * Copyright (C) 1991-1997 by Steven Grimm <koreth@midwinter.com>
+ * Copyright (C) by Dirk Försterling <milliByte@DeathsDoor.com>
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Library General Public
@@ -66,14 +64,6 @@
  *  *  *  ***  ****  ****  ***  *  **  **  ***  *  *  *  *  ***  **
  *  *  *    *    **  ****    *  *  **  **  ****   **  *  *  ***  **
  ******************************************************************/
-
-/*
- * This option is obvious. But please do not forget the original
- * WorkMan version string if you need support.
- */
-
-#define WORKMAN_NAME "LibWorkMan"
-#define WORKMAN_VERSION "1.4.0"
 
 /*
  * If your CD-ROM drive closes its tray if the device is opened, then
@@ -352,6 +342,17 @@
 #endif /* IBM AIX */
 
 /******************************************************************/
+
+#include <stdio.h>
+
+#define DEBUG
+#ifdef DEBUG
+ #define DEBUGLOG(fmt, args...) fprintf(stderr, fmt, ##args)
+#else
+ #define DEBUGLOG(fmt, args...)
+#endif
+#define ERRORLOG(fmt, args...) fprintf(stderr, fmt, ##args)
+
 #endif /* WM_CONFIG_H */
 
 
