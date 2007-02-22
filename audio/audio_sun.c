@@ -1,8 +1,8 @@
 /*  This file is part of the KDE project
-    Copyright (C) 2006 Alexander Kern alex.kern@gmx.de
 
-    Copyright (C) 1991-1997 by Steven Grimm (original author)
-    Copyright (C) by Dirk Försterling
+    Copyright (C) 1991-1997 by Steven Grimm <koreth@midwinter.com>
+    Copyright (C) by Dirk Försterling <milliByte@DeathsDoor.com>
+    Copyright (C) 2006 Alexander Kern <alex.kern@gmx.de>
 
     This library is free software; you can redistribute it and/or
     modify it under the terms of the GNU Library General Public

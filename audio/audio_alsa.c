@@ -1,5 +1,5 @@
 /*  This file is part of the KDE project
-    Copyright (C) Alexander Kern alex.kern@gmx.de
+    Copyright (C) Alexander Kern <alex.kern@gmx.de>
 
     Adapted to support both ALSA V0.x and V1.x APIs for PCM calls
      (Philip Nelson <teamdba@scotdb.com> 2004-03-15)

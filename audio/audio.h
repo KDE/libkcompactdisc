@@ -1,5 +1,5 @@
 /*  This file is part of the KDE project
-    Copyright (C) 2006 Alexander Kern alex.kern@gmx.de
+    Copyright (C) 2006 Alexander Kern <alex.kern@gmx.de>
 
     This library is free software; you can redistribute it and/or
     modify it under the terms of the GNU Library General Public
@@ -15,6 +15,9 @@
     the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
     Boston, MA 02110-1301, USA.
 */
+
+#ifndef __AUDIO_H__
+#define __AUDIO_H__
 
 #include "../include/wm_cdda.h"
 
@@ -42,4 +45,4 @@ struct audio_oops *setup_soundsystem(const char *, const char *, const char *);
     }
 #endif
 
-
+#endif /* __AUDIO_H__ */
