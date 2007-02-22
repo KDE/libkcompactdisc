@@ -2,10 +2,9 @@
  * $Id: scsi.c 587515 2006-09-23 02:48:38Z haeber $
  *
  * This file is part of WorkMan, the civilized CD player library
- * Copyright (C) 1991-1997 by Steven Grimm (original author)
- * Copyright (C) by Dirk Försterling (current 'author' = maintainer)
- * The maintainer can be contacted by his e-mail address:
- * milliByte@DeathsDoor.com
+ * Copyright (C) 1991-1997 by Steven Grimm <koreth@midwinter.com>
+ * Copyright (C) by Dirk Försterling <milliByte@DeathsDoor.com>
+ * Copyright (C) 2004-2006 Alexander Kern <alex.kern@gmx.de>
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Library General Public
