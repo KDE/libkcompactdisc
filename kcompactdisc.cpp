@@ -57,7 +57,7 @@
 #define KSCDMAGIC 0
 #endif
 
-#include <kprocess.h>
+#include <k3process.h>
 #include <config.h>
 
 extern "C"
