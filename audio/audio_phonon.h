@@ -40,7 +40,7 @@ public:
     LibWMPcmPlayer();
     ~LibWMPcmPlayer();
 
-    void stop() { m_stream->stop(); };
+    void stop() { m_stream->stop(); }
     void setNextBuffer(struct cdda_block *new_blk);
     virtual void run(void);
 
