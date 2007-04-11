@@ -179,6 +179,7 @@ cdda_play( struct wm_drive *d, int start, int end, int realstart )
 {
     if (d->cdda_slave > -1) {
         dev.command = WM_CDM_STOPPED;
+        oops->wmaudio_stop();
 
         /* wait before reader, stops */
         while(dev.status != dev.command)
@@ -206,6 +207,8 @@ cdda_pause( struct wm_drive *d )
     if (d->cdda_slave > -1) {
         if(WM_CDM_PLAYING == dev.command) {
             dev.command = WM_CDM_PAUSED;
+            if(oops->wmaudio_pause)
+                oops->wmaudio_pause();
         } else {
             dev.command = WM_CDM_PLAYING;
         }

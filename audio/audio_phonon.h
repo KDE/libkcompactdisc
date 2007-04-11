@@ -21,9 +21,8 @@
 #ifndef __AUDIO_PHONON_H__
 #define __AUDIO_PHONON_H__
 
-#include <QThread>
 #include <QByteArray>
-#include <QDataStream>
+#include <QTimer>
 #include <QWaitCondition>
 #include <QMutex>
 
@@ -33,25 +32,34 @@
 
 namespace Phonon { class ByteStream; }
 
-class LibWMPcmPlayer : public QThread {
+class LibWMPcmPlayer : public QObject {
     Q_OBJECT
 
 public:
     LibWMPcmPlayer();
     ~LibWMPcmPlayer();
 
-    void stop() { m_stream->stop(); }
-    void setNextBuffer(struct cdda_block *new_blk);
-    virtual void run(void);
+    QByteArray wavHeader() const;
+    void setNextBuffer(struct cdda_block *blk);
 
 public slots:
-    void playNextBuffer();
+    void play(void);
+    void pause(void);
+    void stop(void);
+    void moreData(void);
+    void executeCmd(int cmd);
+    void stateChanged( Phonon::State newstate, Phonon::State oldstate );
+
+signals:
+    void cmdChanged(int cmd);
 
 private:
+    QTimer* m_timer;
     Phonon::ByteStream* m_stream;
-    struct cdda_block *blk;
-    QWaitCondition bufferPlayed;
-    QMutex mutex;
+    unsigned char m_cmd;
+    struct cdda_block *m_blk;
+    QWaitCondition m_readyToPlay;
+    QMutex m_mutex;
 };
 
 #endif /* __AUDIO_PHONON_H__ */
