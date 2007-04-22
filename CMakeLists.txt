@@ -42,7 +42,7 @@ kde4_automoc(${kcompactdisc_LIB_SRCS} audio/audio_phonon.cpp)
 
 kde4_add_library(kcompactdisc SHARED ${kcompactdisc_LIB_SRCS})
 
-target_link_libraries(kcompactdisc ${KDE4_KDECORE_LIBS} ${KDE4_PHONONCORE_LIBS})
+target_link_libraries(kcompactdisc ${KDE4_KIO_LIBS} ${KDE4_PHONONCORE_LIBS})
 if (HAVE_LIBASOUND2)
     target_link_libraries(kcompactdisc ${ASOUND_LIBRARY})
 endif (HAVE_LIBASOUND2)

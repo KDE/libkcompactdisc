@@ -27,6 +27,12 @@
 #include <netwm.h>
 #include <QtDBus>
 
+#include <solid/devicemanager.h>
+#include <solid/device.h>
+#include <solid/capability.h>
+#include <solid/cdrom.h>
+#include <solid/block.h>
+
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
@@ -91,6 +97,28 @@ extern "C"
 
 const QString KCompactDisc::defaultDevice = DEFAULT_CD_DEVICE;
 const unsigned KCompactDisc::missingDisc = (unsigned)-1;
+
+const QStringList KCompactDisc::audioSystems()
+{
+    QStringList list;
+    list << "phonon" << "arts" << "alsa";
+    return list;
+}
+
+const QStringList KCompactDisc::devices()
+{
+	Solid::DeviceManager &manager = Solid::DeviceManager::self();
+	QStringList list;
+
+	//get a list of all devices that are Cdrom
+	foreach(Solid::Device device, manager.findDevicesFromQuery(Solid::Capability::Cdrom, QString()) )
+	{
+		kDebug() << device.udi().toLatin1().constData() << endl;
+		Solid::Block *d = device.as<Solid::Block>();
+		list << d->device().toLatin1().constData();
+	}
+	return list;
+}
 
 KCompactDisc::KCompactDisc(InformationMode infoMode) :
     m_device(QString::null),

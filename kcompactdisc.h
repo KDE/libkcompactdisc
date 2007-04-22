@@ -126,6 +126,16 @@ public:
     static const QString defaultDevice;
 
     /**
+     * All installed audio backends.
+     */
+    static const QStringList audioSystems();
+
+    /**
+     * All exist CDROM devices.
+     */
+    static const QStringList devices();
+
+    /**
      * Current device.
      *
      * @return Null string if no usable device set.
