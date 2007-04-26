@@ -97,7 +97,7 @@ public:
      * If the url is a media:/ or system:/ URL returns
      * the device it represents, otherwise returns device
      */
-    static QString urlToDevice(const QString& device);
+    static QString urlToDevice(const KUrl &deviceUrl);
 
     /**
      * @param device Name of CD device, e.g. /dev/cdrom.
@@ -107,7 +107,7 @@ public:
      * @return true if the device seemed usable.
      */
     bool setDevice(
-        const QString &device = defaultDevice,
+        const KUrl &deviceUrl,
         unsigned volume = 50,
         bool digitalPlayback = true,
         const QString &audioSystem = QString::null,
@@ -123,7 +123,7 @@ public:
     /**
      * The default CD for this system.
      */
-    static const QString defaultDevice;
+    static const KUrl defaultDeviceUrl;
 
     /**
      * All installed audio backends.
@@ -133,14 +133,14 @@ public:
     /**
      * All exist CDROM devices.
      */
-    static const QStringList devices();
+    static const QStringList deviceUrls();
 
     /**
      * Current device.
      *
      * @return Null string if no usable device set.
      */
-    const QString &device() const;
+    const KUrl &deviceUrl() const;
 
     /**
      * The discId for a missing disc.
@@ -309,7 +309,7 @@ Q_SIGNALS:
 
 private:
     QTimer timer;
-    QString m_device;
+    KUrl m_device;
     int m_status;
     int m_previousStatus;
     unsigned m_discId;

@@ -95,17 +95,28 @@ extern "C"
 #define TRACK_VALID(track) \
 ((track) && (track <= m_tracks))
 
-const QString KCompactDisc::defaultDevice = DEFAULT_CD_DEVICE;
+const KUrl KCompactDisc::defaultDeviceUrl = KUrl::fromPath(DEFAULT_CD_DEVICE);
 const unsigned KCompactDisc::missingDisc = (unsigned)-1;
 
 const QStringList KCompactDisc::audioSystems()
 {
     QStringList list;
-    list << "phonon" << "arts" << "alsa";
+
+    list << "phonon"
+#ifdef USE_ARTS
+        << "arts"
+#endif
+#if defined(HAVE_LIBASOUND2)
+        << "alsa"
+#endif
+#if defined(sun) || defined(__sun__)
+        << "sun"
+#endif
+    ;
     return list;
 }
 
-const QStringList KCompactDisc::devices()
+const QStringList KCompactDisc::deviceUrls()
 {
 	Solid::DeviceManager &manager = Solid::DeviceManager::self();
 	QStringList list;
@@ -149,7 +160,7 @@ KCompactDisc::~KCompactDisc()
     wm_cd_destroy();
 }
 
-const QString &KCompactDisc::device() const
+const KUrl &KCompactDisc::deviceUrl() const
 {
     return m_device;
 }
@@ -256,9 +267,8 @@ void KCompactDisc::play(unsigned startTrack, unsigned startTrackPosition, unsign
     wm_cd_play(TRACK_VALID(startTrack) ? startTrack : 1, startTrackPosition / 1000, TRACK_VALID(endTrack) ? endTrack : WM_ENDTRACK );
 }
 
-QString KCompactDisc::urlToDevice(const QString& device)
+QString KCompactDisc::urlToDevice(const KUrl& deviceUrl)
 {
-    KUrl deviceUrl(device);
     if (deviceUrl.protocol() == "media" || deviceUrl.protocol() == "system")
     {
         kDebug() << "Asking mediamanager for " << deviceUrl.fileName() << endl;
@@ -270,7 +280,7 @@ QString KCompactDisc::urlToDevice(const QString& device)
         if (!reply.isValid() || properties.count() < 6)
         {
             kError() << "Invalid reply from mediamanager" << endl;
-            return defaultDevice;
+            return deviceUrl.url();
         }
         else
         {
@@ -279,11 +289,11 @@ QString KCompactDisc::urlToDevice(const QString& device)
         }
     }
 
-    return device;
+    return deviceUrl.url();
 }
 
 bool KCompactDisc::setDevice(
-    const QString &device_,
+    const KUrl &deviceUrl,
     unsigned volume,
     bool digitalPlayback,
     const QString &audioSystem,
@@ -291,7 +301,7 @@ bool KCompactDisc::setDevice(
 {
     timer.stop();
 
-    QString device = urlToDevice(device_);
+    QString device = urlToDevice(deviceUrl);
 
     wm_cd_set_verbosity(9);
     int status = wm_cd_init(
@@ -300,7 +310,7 @@ bool KCompactDisc::setDevice(
                     digitalPlayback ? audioSystem.toAscii().data() : 0,
                     digitalPlayback ? audioDevice.toAscii().data() : 0,
                     0);
-    m_device = wm_drive_device();
+    m_device = KUrl::fromPath(wm_drive_device());
     kDebug() << "Device change: "
         << (digitalPlayback ? "WM_CDDA, " : "WM_CDIN, ")
         << m_device << ", "
@@ -328,7 +338,7 @@ bool KCompactDisc::setDevice(
         timer.setSingleShot(true);
         timer.start(1000);
     }
-    return !m_device.isNull();
+    return !m_device.url().isNull();
 }
 
 void KCompactDisc::setVolume(unsigned volume)
@@ -405,7 +415,7 @@ void KCompactDisc::timerExpired()
 {
     m_status = wm_cd_status();
 
-    if (WM_CDS_NO_DISC(m_status) || m_device.isNull())
+    if (WM_CDS_NO_DISC(m_status) || m_device.url().isNull())
     {
         if (m_previousStatus != m_status)
         {
