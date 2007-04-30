@@ -28,34 +28,32 @@
 
 #include <phonon/audiooutput.h>
 #include <phonon/audiopath.h>
-#include <phonon/bytestream.h>
+#include <phonon/mediaobject.h>
 #include "audio.h"
 #include "audio_phonon.h"
 
-LibWMPcmPlayer::LibWMPcmPlayer() : m_timer(NULL), m_stream(NULL),
+LibWMPcmPlayer::LibWMPcmPlayer() : m_timer(NULL), m_media(NULL),
     m_cmd(WM_CDM_UNKNOWN), m_blk(NULL)
 {
     Phonon::AudioOutput* m_output = new Phonon::AudioOutput(Phonon::MusicCategory, this);
     Phonon::AudioPath* m_path = new Phonon::AudioPath(this);
     m_path->addOutput(m_output);
-    m_stream = new Phonon::ByteStream(this);
-    m_stream->addAudioPath(m_path);
-    m_stream->setStreamSeekable(false);
-    m_stream->setStreamSize(0x7FFFFFFF);
+    m_media = new Phonon::MediaObject(this);
+    m_media->addAudioPath(m_path);
+
+    setStreamSeekable(false);
+    setStreamSize(0x7FFFFFFF);
 
     m_timer = new QTimer( this );
     m_timer->setInterval( 0 );
 
     connect(this, SIGNAL(cmdChanged(int)), this, SLOT(executeCmd(int)));
-    connect(m_stream, SIGNAL(stateChanged(Phonon::State, Phonon::State)),
+    connect(m_media, SIGNAL(stateChanged(Phonon::State, Phonon::State)),
         this, SLOT(stateChanged(Phonon::State, Phonon::State)));
 
     connect( m_timer, SIGNAL( timeout() ), SLOT( moreData() ) );
 
-    connect( m_stream, SIGNAL( needData() ), m_timer, SLOT( start() ) );
-    connect( m_stream, SIGNAL( enoughData() ), m_timer, SLOT( stop() ) );
-
-    m_stream->writeData( wavHeader() );
+    writeData( wavHeader() );
 }
 
 LibWMPcmPlayer::~LibWMPcmPlayer()
@@ -63,7 +61,17 @@ LibWMPcmPlayer::~LibWMPcmPlayer()
     stop();
 }
 
-#define SAMPLE_RATE 44100
+void LibWMPcmPlayer::needData()
+{
+    m_timer->start();
+}
+
+void LibWMPcmPlayer::enoughData()
+{
+    m_timer->stop();
+}
+
+static const int SAMPLE_RATE = 44100;
 
 QByteArray LibWMPcmPlayer::wavHeader() const
 {
@@ -138,7 +146,7 @@ void LibWMPcmPlayer::moreData(void)
         m_mutex.lock();
         if(m_blk) {
             DEBUGLOG("play frame %i\n", m_blk->frame);
-            m_stream->writeData(QByteArray(m_blk->buf, m_blk->buflen));
+            writeData(QByteArray(m_blk->buf, m_blk->buflen));
             m_blk = NULL;
         } else {
             //DEBUGLOG("null packet\n");
@@ -152,17 +160,17 @@ void LibWMPcmPlayer::executeCmd(int cmd)
     switch(cmd) {
     case WM_CDM_PLAYING:
 DEBUGLOG("set play\n");
-        m_stream->play();
+        m_media->play();
         QTimer::singleShot( 0, m_timer, SLOT( start() ) );
         break;
     case WM_CDM_PAUSED:
 DEBUGLOG("set pause\n");
-        m_stream->pause();
+        m_media->pause();
         QTimer::singleShot( 0, m_timer, SLOT( stop() ) );
         break;
     case WM_CDM_STOPPED:
 DEBUGLOG("set stop\n");
-        m_stream->stop();
+        m_media->stop();
         QTimer::singleShot( 0, m_timer, SLOT( stop() ) );
         break;
     default:

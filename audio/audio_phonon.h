@@ -26,13 +26,11 @@
 #include <QWaitCondition>
 #include <QMutex>
 
-#include <phonon/audiooutput.h>
-#include <phonon/audiopath.h>
-#include <phonon/bytestream.h>
+#include <phonon/abstractmediastream.h>
 
-namespace Phonon { class ByteStream; }
+namespace Phonon { class MediaObject; }
 
-class LibWMPcmPlayer : public QObject {
+class LibWMPcmPlayer : public Phonon::AbstractMediaStream {
     Q_OBJECT
 
 public:
@@ -50,12 +48,16 @@ public slots:
     void executeCmd(int cmd);
     void stateChanged( Phonon::State newstate, Phonon::State oldstate );
 
+protected:
+    void needData();
+    void enoughData();
+
 signals:
     void cmdChanged(int cmd);
 
 private:
     QTimer* m_timer;
-    Phonon::ByteStream* m_stream;
+    Phonon::MediaObject* m_media;
     unsigned char m_cmd;
     struct cdda_block *m_blk;
     QWaitCondition m_readyToPlay;
