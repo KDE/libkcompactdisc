@@ -27,10 +27,8 @@
 #include <netwm.h>
 #include <QtDBus>
 
-#include <solid/devicemanager.h>
 #include <solid/device.h>
-#include <solid/capability.h>
-#include <solid/cdrom.h>
+#include <solid/deviceinterface.h>
 #include <solid/block.h>
 
 #include <stdlib.h>
@@ -118,11 +116,10 @@ const QStringList KCompactDisc::audioSystems()
 
 const QStringList KCompactDisc::deviceUrls()
 {
-	Solid::DeviceManager &manager = Solid::DeviceManager::self();
 	QStringList list;
 
 	//get a list of all devices that are Cdrom
-	foreach(Solid::Device device, manager.findDevicesFromQuery(Solid::Capability::Cdrom, QString()) )
+	foreach(Solid::Device device, Solid::Device::listFromType(Solid::DeviceInterface::OpticalDrive) )
 	{
 		kDebug() << device.udi().toLatin1().constData() << endl;
 		Solid::Block *d = device.as<Solid::Block>();
