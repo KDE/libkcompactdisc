@@ -26,7 +26,7 @@
 #include <QWaitCondition>
 #include <QMutex>
 
-#include <phonon/abstractmediastream.h>
+#include <Phonon/AbstractMediaStream>
 
 namespace Phonon { class MediaObject; }
 
@@ -34,7 +34,7 @@ class LibWMPcmPlayer : public Phonon::AbstractMediaStream {
     Q_OBJECT
 
 public:
-    LibWMPcmPlayer();
+    LibWMPcmPlayer(QObject *parent);
     ~LibWMPcmPlayer();
 
     QByteArray wavHeader() const;

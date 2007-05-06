@@ -24,7 +24,7 @@
 #include <QObject>
 #include <QTimer>
 #include <QtCore/QStringList>
-#include <q3valuelist.h>
+//#include <q3valuelist.h>
 
 
 #include <kdemacros.h>
@@ -121,11 +121,6 @@ public:
     void stop();
 
     /**
-     * The default CD for this system.
-     */
-    static const KUrl defaultDeviceUrl;
-
-    /**
      * All installed audio backends.
      */
     static const QStringList audioSystems();
@@ -136,11 +131,46 @@ public:
     static const QStringList deviceUrls();
 
     /**
+     * All exist CDROM devices.
+     */
+    static const QStringList deviceNames();
+
+    /**
+     * The default CD for this system.
+     */
+    static const KUrl defaultDeviceUrl();
+
+    /**
+     * The default CD for this system.
+     */
+    static const QString defaultDeviceName();
+
+    /**
      * Current device.
      *
      * @return Null string if no usable device set.
      */
+    const QString &deviceName() const;
+
+    /**
+     * Current device as URL.
+     *
+     * @return Null string if no usable device set.
+     */
     const KUrl &deviceUrl() const;
+
+    const QString deviceVendor() const;
+
+    const QString deviceModel() const;
+
+    const QString deviceRevision() const;
+
+    /**
+     * Current device as path.
+     *
+     * @return Null string if no usable device set.
+     */
+    const QString devicePath() const;
 
     /**
      * The discId for a missing disc.
@@ -309,23 +339,27 @@ Q_SIGNALS:
 
 private:
     QTimer timer;
-    KUrl m_device;
+    unsigned m_tracks;
+    QList<unsigned> m_trackStartFrames;
+    QStringList m_trackArtists;
+    QStringList m_trackTitles;
+
+    QString m_deviceName;
+    KUrl m_deviceUrl;
     int m_status;
     int m_previousStatus;
     unsigned m_discId;
     unsigned m_previousDiscId;
     QString m_artist;
     QString m_title;
-    unsigned m_tracks;
-    QList<unsigned> m_trackStartFrames;
-    QStringList m_trackArtists;
-    QStringList m_trackTitles;
     unsigned m_track;
     unsigned m_previousTrack;
+    InformationMode m_infoMode;
+
     void checkDeviceStatus();
     QString discStatus(int status);
+
     class KCompactDiscPrivate *d;
-    InformationMode m_infoMode;
 
 private Q_SLOTS:
     void timerExpired();

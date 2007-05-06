@@ -30,7 +30,8 @@
 #include "wm_struct.h"
 #include "wm_cddb.h"
 
-#define WM_CDS_NO_DISC(status) (status == WM_CDM_UNKNOWN ||\
+#define WM_CDS_NO_DISC(status) (status < 0 ||\
+                                status == WM_CDM_UNKNOWN ||\
                                 status == WM_CDM_EJECTED ||\
                                 status == WM_CDM_NO_DISC)
 

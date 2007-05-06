@@ -32,7 +32,8 @@
 #include "audio.h"
 #include "audio_phonon.h"
 
-LibWMPcmPlayer::LibWMPcmPlayer() : m_timer(NULL), m_media(NULL),
+LibWMPcmPlayer::LibWMPcmPlayer(QObject *parent) : AbstractMediaStream(parent),
+    m_timer(NULL), m_media(NULL),
     m_cmd(WM_CDM_UNKNOWN), m_blk(NULL)
 {
     Phonon::AudioOutput* m_output = new Phonon::AudioOutput(Phonon::MusicCategory, this);
@@ -42,7 +43,7 @@ LibWMPcmPlayer::LibWMPcmPlayer() : m_timer(NULL), m_media(NULL),
     m_media->addAudioPath(m_path);
 
     setStreamSeekable(false);
-    setStreamSize(0x7FFFFFFF);
+    setStreamSize(-2);
 
     m_timer = new QTimer( this );
     m_timer->setInterval( 0 );
@@ -195,7 +196,7 @@ int phonon_open(void)
         return -1;
     }
 
-    PhononObject = new LibWMPcmPlayer;
+    PhononObject = new LibWMPcmPlayer(NULL);
 
     return 0;
 }
