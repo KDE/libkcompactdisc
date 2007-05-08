@@ -94,12 +94,6 @@ public:
     void pause();
 
     /**
-     * If the url is a media:/ or system:/ URL returns
-     * the device it represents, otherwise returns device
-     */
-    static QString urlToDevice(const KUrl &deviceUrl);
-
-    /**
      * @param device Name of CD device, e.g. /dev/cdrom.
      * @param digitalPlayback Select digial or analog playback.
      * @param audioSystem For analog playback, system to use, e.g. "arts".
@@ -107,7 +101,7 @@ public:
      * @return true if the device seemed usable.
      */
     bool setDevice(
-        const KUrl &deviceUrl,
+        const QString &device,
         unsigned volume = 50,
         bool digitalPlayback = true,
         const QString &audioSystem = QString::null,
@@ -121,56 +115,72 @@ public:
     void stop();
 
     /**
+     * If the url is a media:/ or system:/ URL returns
+     * the device it represents, otherwise returns device
+     */
+    static QString urlToDevice(const KUrl& url);
+
+    /**
      * All installed audio backends.
      */
     static const QStringList audioSystems();
 
     /**
-     * All exist CDROM devices.
-     */
-    static const QStringList deviceUrls();
-
-    /**
-     * All exist CDROM devices.
+     * All present CDROM devices.
      */
     static const QStringList deviceNames();
 
     /**
-     * The default CD for this system.
+     * The default CDROM device for this system.
+     */
+    static const QString defaultDevice();
+
+    /**
+     * The Url of default CDROM device for this system.
      */
     static const KUrl defaultDeviceUrl();
 
     /**
-     * The default CD for this system.
+     * SCSI parameter VENDOR of current CDROM device.
+     *
+     * @return Null string if no usable device set.
      */
-    static const QString defaultDeviceName();
+    const QString deviceVendor() const;
 
     /**
-     * Current device.
+     * SCSI parameter MODEL of current CDROM device.
+     *
+     * @return Null string if no usable device set.
+     */
+    const QString deviceModel() const;
+
+    /**
+     * SCSI parameter REVISION of current CDROM device.
+     *
+     * @return Null string if no usable device set.
+     */
+    const QString deviceRevision() const;
+
+    /**
+     * Current CDROM device.
      *
      * @return Null string if no usable device set.
      */
     const QString &deviceName() const;
 
     /**
-     * Current device as URL.
+     * Current CDROM device as URL.
      *
      * @return Null string if no usable device set.
      */
     const KUrl &deviceUrl() const;
-
-    const QString deviceVendor() const;
-
-    const QString deviceModel() const;
-
-    const QString deviceRevision() const;
 
     /**
      * Current device as path.
      *
      * @return Null string if no usable device set.
      */
-    const QString devicePath() const;
+    const QString &devicePath() const;
 
     /**
      * The discId for a missing disc.
@@ -346,6 +356,7 @@ private:
 
     QString m_deviceName;
     KUrl m_deviceUrl;
+    QString m_devicePath;
     int m_status;
     int m_previousStatus;
     unsigned m_discId;

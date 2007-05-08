@@ -34,7 +34,7 @@ class LibWMPcmPlayer : public Phonon::AbstractMediaStream {
     Q_OBJECT
 
 public:
-    LibWMPcmPlayer(QObject *parent);
+    LibWMPcmPlayer();
     ~LibWMPcmPlayer();
 
     QByteArray wavHeader() const;
@@ -56,7 +56,6 @@ signals:
     void cmdChanged(int cmd);
 
 private:
-    QTimer* m_timer;
     Phonon::MediaObject* m_media;
     unsigned char m_cmd;
     struct cdda_block *m_blk;

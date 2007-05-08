@@ -32,27 +32,26 @@
 #include "audio.h"
 #include "audio_phonon.h"
 
-LibWMPcmPlayer::LibWMPcmPlayer(QObject *parent) : AbstractMediaStream(parent),
-    m_timer(NULL), m_media(NULL),
-    m_cmd(WM_CDM_UNKNOWN), m_blk(NULL)
+LibWMPcmPlayer::LibWMPcmPlayer() : AbstractMediaStream(NULL),
+    m_media(NULL),
+    m_cmd(WM_CDM_UNKNOWN),
+    m_blk(NULL)
 {
     Phonon::AudioOutput* m_output = new Phonon::AudioOutput(Phonon::MusicCategory, this);
     Phonon::AudioPath* m_path = new Phonon::AudioPath(this);
     m_path->addOutput(m_output);
     m_media = new Phonon::MediaObject(this);
     m_media->addAudioPath(m_path);
-
+    m_media->setCurrentSource(this);
+    m_media->setTickInterval(200);
     setStreamSeekable(false);
     setStreamSize(-2);
-
-    m_timer = new QTimer( this );
-    m_timer->setInterval( 0 );
 
     connect(this, SIGNAL(cmdChanged(int)), this, SLOT(executeCmd(int)));
     connect(m_media, SIGNAL(stateChanged(Phonon::State, Phonon::State)),
         this, SLOT(stateChanged(Phonon::State, Phonon::State)));
 
-    connect( m_timer, SIGNAL( timeout() ), SLOT( moreData() ) );
+    connect( m_media, SIGNAL( tick(qint64) ), SLOT( moreData() ) );
 
     writeData( wavHeader() );
 }
@@ -64,12 +63,12 @@ LibWMPcmPlayer::~LibWMPcmPlayer()
 
 void LibWMPcmPlayer::needData()
 {
-    m_timer->start();
+    DEBUGLOG("needData\n");
 }
 
 void LibWMPcmPlayer::enoughData()
 {
-    m_timer->stop();
+    DEBUGLOG("enoughData\n");
 }
 
 static const int SAMPLE_RATE = 44100;
@@ -146,7 +145,7 @@ void LibWMPcmPlayer::moreData(void)
 
         m_mutex.lock();
         if(m_blk) {
-            DEBUGLOG("play frame %i\n", m_blk->frame);
+            DEBUGLOG("writeData frame %i\n", m_blk->frame);
             writeData(QByteArray(m_blk->buf, m_blk->buflen));
             m_blk = NULL;
         } else {
@@ -162,17 +161,14 @@ void LibWMPcmPlayer::executeCmd(int cmd)
     case WM_CDM_PLAYING:
 DEBUGLOG("set play\n");
         m_media->play();
-        QTimer::singleShot( 0, m_timer, SLOT( start() ) );
         break;
     case WM_CDM_PAUSED:
 DEBUGLOG("set pause\n");
         m_media->pause();
-        QTimer::singleShot( 0, m_timer, SLOT( stop() ) );
         break;
     case WM_CDM_STOPPED:
 DEBUGLOG("set stop\n");
         m_media->stop();
-        QTimer::singleShot( 0, m_timer, SLOT( stop() ) );
         break;
     default:
         cmd = WM_CDM_STOPPED;
@@ -196,7 +192,7 @@ int phonon_open(void)
         return -1;
     }
 
-    PhononObject = new LibWMPcmPlayer(NULL);
+    PhononObject = new LibWMPcmPlayer();
 
     return 0;
 }

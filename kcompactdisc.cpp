@@ -93,6 +93,69 @@ extern "C"
 #define TRACK_VALID(track) \
 ((track) && (track <= m_tracks))
 
+static QMap<QString, KUrl> mapCdroms;
+
+static void refreshListOfDevices()
+{
+    mapCdroms.clear();
+    QString name, type;
+    KUrl url;
+
+    //get a list of all devices that are Cdrom
+    foreach(Solid::Device device, Solid::Device::listFromType(Solid::DeviceInterface::OpticalDrive) )
+    {
+        kDebug() << device.udi().toLatin1().constData() << endl;
+        Solid::Block *b = device.as<Solid::Block>();
+        Solid::OpticalDrive *o = device.as<Solid::OpticalDrive>();
+        Solid::OpticalDrive::MediumTypes mediumType = o->supportedMedia();
+
+        url = KUrl::fromPath(b->device().toLatin1());
+
+        if (mediumType < Solid::OpticalDrive::Cdrw)
+        {
+            type = "CD-ROM";
+        }
+        else if (mediumType < Solid::OpticalDrive::Dvd)
+        {
+            type = "CDRW";
+        }
+        else if (mediumType < Solid::OpticalDrive::Dvdr)
+        {
+            type = "DVD-ROM";
+        }
+        else if (mediumType < Solid::OpticalDrive::Bd)
+        {
+            type = "DVDRW";
+        }
+        else if (mediumType < Solid::OpticalDrive::HdDvd)
+        {
+            type = "Blu-ray";
+        }
+        else
+        {
+            type = "High Density DVD";
+        }
+
+        if(!o->vendor().isEmpty())
+            name = (QString("[") + type + " - " + o->vendor() + " - " + o->product() + "]");
+        else
+            name = (QString("[") + type + " - Manufacturer? - " + o->product() + "]");
+
+        mapCdroms.insert(name, url);
+    }
+
+    if(mapCdroms.empty())
+        mapCdroms.insert(QString("Generic CDROM []"), KUrl::fromPath(DEFAULT_CD_DEVICE));
+}
+
+static QMap<QString, KUrl> &getListOfDevices()
+{
+    if(mapCdroms.empty())
+        refreshListOfDevices();
+
+    return mapCdroms;
+}
+
 const unsigned KCompactDisc::missingDisc = (unsigned)-1;
 
 const QStringList KCompactDisc::audioSystems()
@@ -113,57 +176,25 @@ const QStringList KCompactDisc::audioSystems()
     return list;
 }
 
-const QStringList KCompactDisc::deviceUrls()
-{
-    QStringList list;
-
-    //get a list of all devices that are Cdrom
-    foreach(Solid::Device device, Solid::Device::listFromType(Solid::DeviceInterface::OpticalDrive) )
-    {
-        kDebug() << device.udi().toLatin1().constData() << endl;
-        Solid::Block *d = device.as<Solid::Block>();
-        list << d->device().toLatin1().constData();
-    }
-    return list;
-}
-
 const QStringList KCompactDisc::deviceNames()
 {
-    QStringList list;
+    return getListOfDevices().keys();
+}
 
-    //get a list of all devices that are Cdrom
-    foreach(Solid::Device device, Solid::Device::listFromType(Solid::DeviceInterface::OpticalDrive) )
-    {
-        kDebug() << device.udi().toLatin1().constData() << endl;
-        Solid::OpticalDrive *d = device.as<Solid::OpticalDrive>();
-        QString s = d->vendor() + " " + d->product();
-        list << s;
-    }
-    return list;
+const QString KCompactDisc::defaultDevice()
+{
+    return getListOfDevices().keys().at(0);
 }
 
 const KUrl KCompactDisc::defaultDeviceUrl()
 {
-    QStringList list = deviceUrls();
-    if (list.isEmpty())
-        return KUrl::fromPath(DEFAULT_CD_DEVICE);
-    else
-        return KUrl::fromPath(list[0]);
-}
-
-const QString KCompactDisc::defaultDeviceName()
-{
-    QStringList list = deviceNames();
-    if (list.isEmpty())
-        return DEFAULT_CD_DEVICE;
-    else
-        return list[0];
-
+    return getListOfDevices().values().at(0);
 }
 
 KCompactDisc::KCompactDisc(InformationMode infoMode) :
     m_deviceName(QString()),
-    m_deviceUrl(QString()),
+    m_deviceUrl(KUrl()),
+    m_devicePath(QString()),
     m_status(0),
     m_previousStatus(123456),
     m_discId(missingDisc),
@@ -191,17 +222,6 @@ KCompactDisc::~KCompactDisc()
     wm_cd_destroy();
 }
 
-const QString &KCompactDisc::deviceName() const
-{
-    return m_deviceName;
-}
-
-const KUrl &KCompactDisc::deviceUrl() const
-{
-    return m_deviceUrl;
-}
-
-
 const QString KCompactDisc::deviceVendor() const
 {
     return QString(wm_drive_vendor());
@@ -217,9 +237,19 @@ const QString KCompactDisc::deviceRevision() const
     return QString(wm_drive_revision());
 }
 
-const QString KCompactDisc::devicePath() const
+const QString &KCompactDisc::deviceName() const
 {
-    return m_deviceUrl.path();
+    return m_deviceName;
+}
+
+const KUrl &KCompactDisc::deviceUrl() const
+{
+    return m_deviceUrl;
+}
+
+const QString &KCompactDisc::devicePath() const
+{
+    return m_devicePath;
 }
 
 unsigned KCompactDisc::discLength() const
@@ -345,12 +375,18 @@ QString KCompactDisc::urlToDevice(const KUrl& deviceUrl)
             return properties[5];
         }
     }
-
-    return deviceUrl.path();
+    else if (deviceUrl.protocol() == "file")
+    {
+        return deviceUrl.path();
+    }
+    else
+    {
+        return QString();
+    }
 }
 
 bool KCompactDisc::setDevice(
-    const KUrl &deviceUrl,
+    const QString &device,
     unsigned volume,
     bool digitalPlayback,
     const QString &audioSystem,
@@ -358,16 +394,21 @@ bool KCompactDisc::setDevice(
 {
     timer.stop();
 
-    QString device = urlToDevice(deviceUrl);
+    KUrl deviceUrl(device);
+    QString devicePath = urlToDevice(KUrl(device));
+
+    if(devicePath.isNull())
+        devicePath = getListOfDevices().value(device, KCompactDisc::defaultDeviceUrl()).path();
 
     wm_cd_set_verbosity(9);
     int status = wm_cd_init(
                     digitalPlayback ? WM_CDDA : WM_CDIN,
-                    device.toAscii().data(),
-                    digitalPlayback ? audioSystem.toAscii().data() : 0,
-                    digitalPlayback ? audioDevice.toAscii().data() : 0,
+                    devicePath.toAscii().data(),
+                    digitalPlayback ? audioSystem.toAscii().data() : NULL,
+                    digitalPlayback ? audioDevice.toAscii().data() : NULL,
                     0);
     m_deviceUrl = KUrl::fromPath(wm_drive_device());
+    m_devicePath = m_deviceUrl.path();
     kDebug() << "Device change: "
         << (digitalPlayback ? "WM_CDDA, " : "WM_CDIN, ")
         << m_deviceUrl << ", "
@@ -395,7 +436,7 @@ bool KCompactDisc::setDevice(
         timer.setSingleShot(true);
         timer.start(1000);
     }
-    return !m_deviceUrl.url().isNull();
+    return !m_devicePath.isNull();
 }
 
 void KCompactDisc::setVolume(unsigned volume)
