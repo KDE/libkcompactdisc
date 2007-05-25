@@ -43,35 +43,23 @@ LibWMPcmPlayer::LibWMPcmPlayer() : AbstractMediaStream(NULL),
     m_media = new Phonon::MediaObject(this);
     m_media->addAudioPath(m_path);
     m_media->setCurrentSource(this);
-    m_media->setTickInterval(200);
     setStreamSeekable(false);
-    setStreamSize(-2);
+    setStreamSize(0xffffffff);
 
     connect(this, SIGNAL(cmdChanged(int)), this, SLOT(executeCmd(int)));
+    connect(this, SIGNAL(nextBuffer(struct cdda_block *)), this, SLOT(playBuffer(struct cdda_block *)));
     connect(m_media, SIGNAL(stateChanged(Phonon::State, Phonon::State)),
         this, SLOT(stateChanged(Phonon::State, Phonon::State)));
 
-    connect( m_media, SIGNAL( tick(qint64) ), SLOT( moreData() ) );
-
+    DEBUGLOG("writeHeader\n");
     writeData( wavHeader() );
+    DEBUGLOG("writeHeader end\n");
 }
 
 LibWMPcmPlayer::~LibWMPcmPlayer()
 {
     stop();
 }
-
-void LibWMPcmPlayer::needData()
-{
-    DEBUGLOG("needData\n");
-}
-
-void LibWMPcmPlayer::enoughData()
-{
-    DEBUGLOG("enoughData\n");
-}
-
-static const int SAMPLE_RATE = 44100;
 
 QByteArray LibWMPcmPlayer::wavHeader() const
 {
@@ -86,36 +74,42 @@ QByteArray LibWMPcmPlayer::wavHeader() const
         << static_cast<quint32>( 16 )    //Subchunk1Size
         << static_cast<quint16>( 1 )     //AudioFormat
         << static_cast<quint16>( 2 )     //NumChannels
-        << static_cast<quint32>( SAMPLE_RATE ) //SampleRate
-        << static_cast<quint32>( 2*2*SAMPLE_RATE )//ByteRate
+        << static_cast<quint32>( 44100 ) //SampleRate
+        << static_cast<quint32>( 2*2*44100 )//ByteRate
         << static_cast<quint16>( 2*2 )   //BlockAlign
         << static_cast<quint16>( 16 )    //BitsPerSample
         << 0x61746164 //"data"                   //Subchunk2ID
         << static_cast<quint32>( 0x7FFFFFFF-36 )//Subchunk2Size
         ;
+
     return data;
 }
 
+void LibWMPcmPlayer::needData()
+{
+    DEBUGLOG("needData\n");
+    m_mutex.lock();
+    m_readyToPlay.wakeAll();
+    m_mutex.unlock();
+
+}
 
 void LibWMPcmPlayer::setNextBuffer(struct cdda_block *blk)
 {
-    play();
+    emit nextBuffer(blk);
     m_mutex.lock();
-
-    if(m_cmd == WM_CDM_PLAYING) {
-        m_readyToPlay.wait(&m_mutex);
-        m_blk = blk;
-    }
-
+    m_readyToPlay.wait(&m_mutex);
     m_mutex.unlock();
 }
 
-void LibWMPcmPlayer::play(void)
+void LibWMPcmPlayer::playBuffer(struct cdda_block *blk)
 {
     if(m_cmd != WM_CDM_PLAYING) {
         emit cmdChanged(WM_CDM_PLAYING);
         m_cmd = WM_CDM_PLAYING;
     }
+    writeData(QByteArray(blk->buf, blk->buflen));
+
 }
 
 void LibWMPcmPlayer::pause(void)
@@ -136,23 +130,6 @@ void LibWMPcmPlayer::stop(void)
 
         m_readyToPlay.wakeAll();
     }
-}
-
-void LibWMPcmPlayer::moreData(void)
-{
-    //if(m_cmd == WM_CDM_PLAYING) {
-        m_readyToPlay.wakeAll();
-
-        m_mutex.lock();
-        if(m_blk) {
-            DEBUGLOG("writeData frame %i\n", m_blk->frame);
-            writeData(QByteArray(m_blk->buf, m_blk->buflen));
-            m_blk = NULL;
-        } else {
-            //DEBUGLOG("null packet\n");
-        }
-        m_mutex.unlock();
-    //}
 }
 
 void LibWMPcmPlayer::executeCmd(int cmd)

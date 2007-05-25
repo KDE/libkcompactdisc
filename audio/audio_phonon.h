@@ -41,19 +41,18 @@ public:
     void setNextBuffer(struct cdda_block *blk);
 
 public slots:
-    void play(void);
+    void playBuffer(struct cdda_block *blk);
     void pause(void);
     void stop(void);
-    void moreData(void);
     void executeCmd(int cmd);
     void stateChanged( Phonon::State newstate, Phonon::State oldstate );
 
 protected:
     void needData();
-    void enoughData();
 
 signals:
     void cmdChanged(int cmd);
+    void nextBuffer(struct cdda_block *blk);
 
 private:
     Phonon::MediaObject* m_media;
