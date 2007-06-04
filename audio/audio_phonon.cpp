@@ -85,6 +85,15 @@ QByteArray LibWMPcmPlayer::wavHeader() const
     return data;
 }
 
+void LibWMPcmPlayer::reset()
+{
+    setStreamSeekable(false);
+    setStreamSize(0xffffffff);
+    DEBUGLOG("writeHeader\n");
+    writeData( wavHeader() );
+    DEBUGLOG("writeHeader end\n");
+}
+
 void LibWMPcmPlayer::needData()
 {
     DEBUGLOG("needData\n");

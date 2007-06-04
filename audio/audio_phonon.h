@@ -48,6 +48,7 @@ public slots:
     void stateChanged( Phonon::State newstate, Phonon::State oldstate );
 
 protected:
+    void reset();
     void needData();
 
 signals:
