@@ -49,7 +49,7 @@ endif (HAVE_LIBASOUND2)
 
 macro_display_feature_log()
 
-set_target_properties(kcompactdisc PROPERTIES VERSION 1.0.0 SOVERSION 1 )
+set_target_properties(kcompactdisc PROPERTIES VERSION ${GENERIC_LIB_VERSION} SOVERSION ${GENERIC_LIB_SOVERSION} )
 install(TARGETS kcompactdisc  DESTINATION ${LIB_INSTALL_DIR} )
 
 ########### install files ###############
