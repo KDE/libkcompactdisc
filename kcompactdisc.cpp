@@ -135,11 +135,10 @@ static void refreshListOfDevices()
         {
             type = "High Density DVD";
         }
-
-        if(!o->vendor().isEmpty())
-            name = (QString("[") + type + " - " + o->vendor() + " - " + o->product() + "]");
-        else
-            name = (QString("[") + type + " - Manufacturer? - " + o->product() + "]");
+	if( !device.vendor().isEmpty())
+	      name = (QString("[") + type + " - " + device.vendor() + " - " + device.product() + "]");
+	else
+	      name = (QString("[") + type + " - Manufacturer? - " + device.product() + "]");
 
         mapCdroms.insert(name, url);
     }
