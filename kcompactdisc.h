@@ -2,6 +2,7 @@
  *  KCompactDisc - A CD drive interface for the KDE Project.
  *
  *  Copyright (C) 2005 Shaheedur R. Haque <srhaque@iee.org>
+ *  Copyright (C) 2007 Alexander Kern <alex.kern@gmx.de>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -24,10 +25,9 @@
 #include <QObject>
 #include <QTimer>
 #include <QtCore/QStringList>
-//#include <q3valuelist.h>
-
 
 #include <kdemacros.h>
+
 
 #if defined Q_OS_WIN
 
@@ -45,29 +45,94 @@
 #define KCOMPACTDISC_EXPORT KDE_EXPORT
 #endif
 
+class KCompactDiscPrivate;
 
 /**
  *  KCompactDisc - A CD drive interface for the KDE Project.
  *
- *  The disc lifecycle is modelled by these signals:
+ *  The disc interface is modelled by these slots:
  *
- * @see #trayClosing(): A disc is being inserted.
- * @see #discChanged(): A disc was inserted or removed.
- * @see #trayOpening(): A disc is being removed.
+ * @see #playoutTrack(unsigned track): Play specified track.
+ * @see #playoutPosition(unsigned position): seek to specified position.
+ * @see #playNext(): Play next track in the playlist.
+ * @see #playPrev(): Play previous track in the playlist.
+ * @see #pauseResumePlayout(): Toggle between pause/resume.
+ * @see #stopPlayout(): Stop playout:
+ * @see #eject(): Stop playout and eject disc or Close
+ *                        tray and try to read TOC from disc.
  *
  *  The progress of playout is modelled by these signals:
  *
- * @see #trackPlaying(): A track started playing, or is still playing.
- * @see #trackPaused(): A track was paused.
- * @see #discStopped(): The disc stopped.
+ * @see #playoutPositionChanged(unsigned position): A position in a track.
+ * @see #playoutTrackChanged(unsigned track): A playout of this track is started.
  *
- *  All times in this interface are in milliseconds. Valid track numbers are
+ *
+ *  The shape of playlist is controlled by these accessors.
+ *
+ * @see #setRandomPlaylist(bool): Shuffle the playlist.
+ * @see #setLoopPlaylist(bool): Couple begin and end of playlist.
+ *
+ *
+ *  The disc lifecycle is modelled by these signals:
+ *
+ * @see #discChanged(...): A new disc was inserted.
+ * @see #discStatusChanged(KCompactDisc::Playing): A disc started playout.
+ * @see #discStatusChanged(KCompactDisc::Paused): A disc was paused.
+ * @see #discStatusChanged(KCompactDisc::Stopped): The disc stopped.
+ * @see #discStatusChanged(KCompactDisc::NoDisc): The disc is removed. No disc in tray or data disc.
+ * @see #discStatusChanged(KCompactDisc::NotReady): The disc is present. But playout is not possible.
+ * @see #discInformation(QStringList info): A content for disc information is arrived.
+ *
+ *
+ *  The volume control is modelled by these slots:
+ *
+ * @see #setVolume(unsigned): A new volume value.
+ * @see #setBalance(unsigned): A new balance value.
+ *
+ *
+ *  And these signals:
+ *
+ * @see #volumeChanged(unsigned): A current volume value.
+ * @see #balanceChanged(unsigned): A current balance value.
+ *
+ *
+ *  All times in this interface are in seconds. Valid track numbers are
  *  positive numbers; zero is not a valid track number.
  */
-class KCOMPACTDISC_EXPORT KCompactDisc :
-    public QObject
+class KCOMPACTDISC_EXPORT KCompactDisc : public QObject
 {
     Q_OBJECT
+/*
+    Q_CLASSINFO("D-Bus Interface", "org.kde.KSCD")
+
+public Q_SLOTS:
+    Q_SCRIPTABLE bool playing();
+    Q_SCRIPTABLE void play() { play(); }
+    Q_SCRIPTABLE void stop() { stop(); }
+    Q_SCRIPTABLE void previous() { prev(); }
+    Q_SCRIPTABLE void next() { next(); }
+    Q_SCRIPTABLE void jumpTo(int seconds) { jumpToTime(seconds); }
+    Q_SCRIPTABLE void eject() { eject(); }
+    Q_SCRIPTABLE void toggleLoop() { loop(); }
+    Q_SCRIPTABLE void toggleShuffle() { random(); }
+    Q_SCRIPTABLE void toggleTimeDisplay() { cycleplaytimemode(); }
+    Q_SCRIPTABLE void cddbDialog() { CDDialogSelected(); }
+    Q_SCRIPTABLE void optionDialog() { showConfig(); }
+    Q_SCRIPTABLE void setTrack(int t) { trackSelected(t > 0 ? t - 1 : 0); }
+    Q_SCRIPTABLE void volumeDown() { decVolume(); }
+    Q_SCRIPTABLE void volumeUp() { incVolume(); }
+    Q_SCRIPTABLE void setVolume(int v);
+    Q_SCRIPTABLE void setDevice(const QString& dev);
+    Q_SCRIPTABLE int  getVolume() { return Prefs::volume(); }
+    Q_SCRIPTABLE int currentTrack();
+    Q_SCRIPTABLE int currentTrackLength();
+    Q_SCRIPTABLE int currentPosition();
+    Q_SCRIPTABLE int getStatus();
+    Q_SCRIPTABLE QString currentTrackTitle();
+    Q_SCRIPTABLE QString currentAlbum();
+    Q_SCRIPTABLE QString currentArtist();
+    Q_SCRIPTABLE QStringList trackList();
+*/
 public:
     enum InformationMode
     {
@@ -75,29 +140,44 @@ public:
         Asynchronous // Block until cdrom and cddb infromation has been obtained
     };
 
-    KCompactDisc(InformationMode=Synchronous);
+	enum DiscCommand
+	{
+		Play,
+		Pause,
+		Next,
+		Prev,
+		Stop,
+		Eject,
+		Loop,
+		Random
+	};
+	
+    enum DiscStatus
+    {
+        Playing,
+        Paused,
+        Stopped,
+        Ejected,
+        NoDisc,
+        NotReady,
+        Error
+    };
+
+    enum DiscInfo
+    {
+        Cdtext,
+        Cddb,
+        PhononMetadata
+    };
+
+    KCompactDisc(InformationMode = KCompactDisc::Synchronous);
     virtual ~KCompactDisc();
-
-    /**
-     * Open/close tray.
-     */
-    void eject();
-
-    /**
-     * Start playout at given position of track.
-     */
-    void play(unsigned startTrack = 0, unsigned startTrackPosition = 0, unsigned endTrack = 0);
-
-    /**
-     * Pause/resume playout.
-     */
-    void pause();
 
     /**
      * @param device Name of CD device, e.g. /dev/cdrom.
      * @param digitalPlayback Select digial or analog playback.
-     * @param audioSystem For analog playback, system to use, e.g. "arts".
-     * @param audioDevice For analog playback, device to use.
+     * @param audioSystem For digial playback, system to use, e.g. "arts".
+     * @param audioDevice For digial playback, device to use.
      * @return true if the device seemed usable.
      */
     bool setDevice(
@@ -106,13 +186,6 @@ public:
         bool digitalPlayback = true,
         const QString &audioSystem = QString::null,
         const QString &audioDevice = QString::null);
-
-    void setVolume(unsigned volume);
-
-    /**
-     * Stop playout.
-     */
-    void stop();
 
     /**
      * If the url is a media:/ or system:/ URL returns
@@ -128,252 +201,340 @@ public:
     /**
      * All present CDROM devices.
      */
-    static const QStringList deviceNames();
+    static const QStringList cdromDeviceNames();
 
     /**
      * The default CDROM device for this system.
      */
-    static const QString defaultDevice();
+    static const QString defaultCdromDeviceName();
 
     /**
      * The Url of default CDROM device for this system.
      */
-    static const KUrl defaultDeviceUrl();
+    static const KUrl defaultCdromDeviceUrl();
+
+    /**
+     * The Url of named CDROM device for this system.
+     */
+	static const KUrl cdromDeviceUrl(const QString &);
+
+    /**
+     * The Udi of default CDROM device for this system.
+     */
+	static const QString defaultCdromDeviceUdi();
+
+    /**
+     * The Udi of named CDROM device for this system.
+     */
+	static const QString cdromDeviceUdi(const QString &);
 
     /**
      * SCSI parameter VENDOR of current CDROM device.
      *
      * @return Null string if no usable device set.
      */
-    const QString deviceVendor() const;
+    const QString &deviceVendor();
 
     /**
      * SCSI parameter MODEL of current CDROM device.
      *
      * @return Null string if no usable device set.
      */
-    const QString deviceModel() const;
+    const QString &deviceModel();
 
     /**
      * SCSI parameter REVISION of current CDROM device.
      *
      * @return Null string if no usable device set.
      */
-    const QString deviceRevision() const;
+    const QString &deviceRevision();
 
     /**
      * Current CDROM device.
      *
      * @return Null string if no usable device set.
      */
-    const QString &deviceName() const;
+    const QString &deviceName();
 
     /**
-     * Current CDROM device as URL.
-     *
-     * @return Null string if no usable device set.
+     * Current device as Kurl.
      */
-    const KUrl &deviceUrl() const;
+    const KUrl deviceUrl();
 
     /**
-     * Current device as path.
-     *
-     * @return Null string if no usable device set.
+     * Current disc, 0 if no disc or impossible to calculate id.
      */
-    const QString &devicePath() const;
+    unsigned discId();
 
     /**
-     * The discId for a missing disc.
+     * CDDB signature of disc, empty if no disc or not possible to deliever.
      */
-    static const unsigned missingDisc;
-
-    /**
-     * Current disc, missingDisc if no disc.
-     */
-    unsigned discId() const { return m_discId; }
-
-    /**
-     * CDDB signature of disc.
-     */
-    const QList<unsigned> &discSignature() const { return m_trackStartFrames; }
+    const QList<unsigned> &discSignature();
 
     /**
      * Artist for whole disc.
      *
      * @return Disc artist or null string.
      */
-    const QString &discArtist() const { return m_artist; }
+    const QString &discArtist();
 
     /**
      * Title of disc.
      *
      * @return Disc title or null string.
      */
-    const QString &discTitle() const { return m_title; }
+    const QString &discTitle();
 
     /**
-     * Length of disc.
+     * Known length of disc.
      *
-     * @return Disc length in milliseconds.
+     * @return Disc length in seconds.
      */
-    unsigned discLength() const;
+    unsigned discLength();
 
     /**
-     * Position in disc.
+     * Current position on the disc.
      *
-     * @return Position in milliseconds.
+     * @return Position in seconds.
      */
-    unsigned discPosition() const;
+    unsigned discPosition();
+
+    /**
+     * Current status.
+     *
+     * @return Current status.
+     */
+    KCompactDisc::DiscStatus discStatus();
+
     /**
      * Artist of current track.
      *
      * @return Track artist or null string.
      */
-    QString trackArtist() const;
+    QString trackArtist();
 
     /**
      * Artist of given track.
      *
      * @return Track artist or null string.
      */
-    QString trackArtist(unsigned track) const;
+    QString trackArtist(unsigned track);
 
     /**
      * Title of current track.
      *
      * @return Track title or null string.
      */
-    QString trackTitle() const;
+    QString trackTitle();
 
     /**
      * Title of given track.
      *
      * @return Track title or null string.
      */
-    QString trackTitle(unsigned track) const;
+    QString trackTitle(unsigned track);
+
+    /**
+     * Length of current track.
+     *
+     * @return Track length in seconds.
+     */
+    unsigned trackLength();
+
+    /**
+     * Length of given track.
+     *
+     * @param track Track number.
+     * @return Track length in seconds.
+     */
+    unsigned trackLength(unsigned track);
 
     /**
      * Current track.
      *
      * @return Track number.
      */
-    unsigned track() const;
+    unsigned track();
+
+    /**
+     * Current track position.
+     *
+     * @return Track position in seconds.
+     */
+    unsigned trackPosition();
 
     /**
      * Number of tracks.
      */
-    unsigned tracks() const;
+    unsigned tracks();
+
+    /**
+     * Is status playing.
+     */
+    bool isPlaying();
+
+    /**
+     * Is status pausing.
+     */
+    bool isPaused();
+
+    /**
+     * Is status no disc.
+     */
+    bool isNoDisc();
 
     /**
      * @return if the track is actually an audio track.
      */
-    bool isAudio(unsigned track) const;
+    bool isAudio(unsigned track);
+
+
+public Q_SLOTS:
 
     /**
-     * Length of current track.
-     *
-     * @return Track length in milliseconds.
+     * Start playout of track.
      */
-    unsigned trackLength() const;
+    void playTrack(unsigned track);
 
     /**
-     * Length of given track.
-     *
-     * @param track Track number.
-     * @return Track length in milliseconds.
+     * Start playout or seek to given position of track.
      */
-    unsigned trackLength(unsigned track) const;
+    void playPosition(unsigned position);
+
+    /* GUI bindings */
+    /**
+     * Start playout.
+     */
+	void play();
 
     /**
-     * Position in current track.
-     *
-     * @return Position in milliseconds.
+     * Start playout of next track.
      */
-    unsigned trackPosition() const;
+    void next();
 
-    bool isPaused() const;
+    /**
+     * Start playout of previous track.
+     */
+    void prev();
 
-    bool isPlaying() const;
+    /**
+     * Pause/resume playout.
+     */
+    void pause();
+
+    /**
+     * Stop playout.
+     */
+    void stop();
+
+    /**
+     * Open/close tray.
+     */
+    void eject();
+
+    /**
+     * Switch endless playout on/off.
+     */
+	void loop();
+
+    /**
+     * Switch random playout on/off.
+     */
+    void random();
+
+    /**
+     * Pipe GUI command.
+     */
+	void doCommand(KCompactDisc::DiscCommand);
 
 Q_SIGNALS:
-
     /**
-     * A disc is being inserted.
-     */
-    void trayClosing();
-
-    /**
-     * A disc is being removed.
-     */
-    void trayOpening();
-
-    /**
-     * A disc was inserted or removed.
-     *
-     * @param discId Current disc, missingDisc if no disc.
-     */
-    void discChanged(unsigned discId);
-
-    /**
-     * Disc stopped. See @see #trackPaused.
-     */
-    void discStopped();
-
-    /**
-     * The current track changed.
-     *
-     * @param track Track number.
-     * @param trackLength Length within track in milliseconds.
-     */
-    void trackChanged(unsigned track, unsigned trackLength);
-
-    /**
-     * A track started playing, or is still playing. This signal is delivered at
+     * A new position in a track. This signal is delivered at
      * approximately 1 second intervals while a track is playing. At first sight,
      * this might seem overzealous, but its likely that any CD player UI will use
      * this to track the second-by-second position, so we may as well do it for
      * them.
      *
-     * @param track Track number.
-     * @param trackPosition Position within track in milliseconds.
+     * @param position Position within track in seconds.
      */
-    void trackPlaying(unsigned track, unsigned trackPosition);
+    void playoutPositionChanged(unsigned position);
 
     /**
-     * A track paused playing.
+     * A new track is started.
      *
      * @param track Track number.
-     * @param trackPosition Position within track in milliseconds.
      */
-    void trackPaused(unsigned track, unsigned trackPosition);
+    void playoutTrackChanged(unsigned track);
+
+
+public Q_SLOTS:
+
+    void setRandomPlaylist(bool);
+    void setLoopPlaylist(bool);
+	void setAutoMetadataLookup(bool);
+
+
+Q_SIGNALS:
+
+	void randomPlaylistChanged(bool);
+    void loopPlaylistChanged(bool);
+
+
+Q_SIGNALS:
+
+    /**
+     * A new Disc is inserted
+     *
+     */
+    void discChanged(unsigned tracks);
+
+    /**
+     * A new Disc information is arrived
+     *
+     */
+    void discInformation(KCompactDisc::DiscInfo info);
+
+    /**
+     * A Disc status changed
+     *
+     */
+    void discStatusChanged(KCompactDisc::DiscStatus status, QString statusText = QString());
+
+
+public Q_SLOTS:
+
+    /**
+     * Set volume
+     */
+    void setVolume(unsigned volume);
+
+    /**
+     * Set balance
+     */
+    void setBalance(unsigned balance);
+
+Q_SIGNALS:
+
+    /**
+     * New volume
+     */
+    void volumeChanged(unsigned volume);
+
+    /**
+     * New balance
+     */
+    void balanceChanged(unsigned balance);
+
+
+protected:
+    KCompactDiscPrivate * d_ptr;
+    KCompactDiscPrivate * dummy_ptr;
+    KCompactDisc(KCompactDiscPrivate &dd, QObject *parent);
 
 private:
-    QTimer timer;
-    unsigned m_tracks;
-    QList<unsigned> m_trackStartFrames;
-    QStringList m_trackArtists;
-    QStringList m_trackTitles;
-
-    QString m_deviceName;
-    KUrl m_deviceUrl;
-    QString m_devicePath;
-    int m_status;
-    int m_previousStatus;
-    unsigned m_discId;
-    unsigned m_previousDiscId;
-    QString m_artist;
-    QString m_title;
-    unsigned m_track;
-    unsigned m_previousTrack;
-    InformationMode m_infoMode;
-
-    void checkDeviceStatus();
-    QString discStatus(int status);
-
-    class KCompactDiscPrivate *d;
-
-private Q_SLOTS:
-    void timerExpired();
+    Q_DECLARE_PRIVATE(KCompactDisc)
+	friend class KWMLibCompactDiscPrivate;
+	friend class KPhononCompactDiscPrivate;
 };
 
 #endif

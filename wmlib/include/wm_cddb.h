@@ -1,11 +1,9 @@
 #ifndef WM_CDDB_H
 #define WM_CDDB_H
 /*
- * $Id: wm_cddb.h 531626 2006-04-19 17:03:06Z larkang $
- *
  * This file is part of WorkMan, the civilized CD player library
  * Copyright (C) 1991-1997 by Steven Grimm <koreth@midwinter.com>
- * Copyright (C) by Dirk Försterling <milliByte@DeathsDoor.com>
+ * Copyright (C) by Dirk FÃ¶rsterling <milliByte@DeathsDoor.com>
  * Copyright (C) 2004-2006 Alexander Kern <alex.kern@gmx.de>
  *
  * This library is free software; you can redistribute it and/or
@@ -24,6 +22,6 @@
  *
  */
 
-unsigned long cddb_discid(void);
+unsigned long cddb_discid(struct wm_drive *);
 
 #endif /* WM_CDDB_H */

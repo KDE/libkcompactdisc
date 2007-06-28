@@ -1,9 +1,7 @@
 /*
- * $Id: cddb.c 531626 2006-04-19 17:03:06Z larkang $
- *
  * This file is part of WorkMan, the civilized CD player library
  * Copyright (C) 1991-1997 by Steven Grimm (original author)
- * Copyright (C) by Dirk Försterling (current 'author' = maintainer)
+ * Copyright (C) by Dirk FÃ¶rsterling (current 'author' = maintainer)
  * The maintainer can be contacted by his e-mail address:
  * milliByte@DeathsDoor.com
  *
@@ -49,16 +47,10 @@
 #include "include/wm_cddb.h"
 #include "include/wm_cdrom.h"
 
-struct wm_cddb cddb;
-
-/* local prototypes */
-int cddb_sum(int);
-
 /*
  * Subroutine from cddb_discid
  */
-int
-cddb_sum(int n)
+static int cddb_sum(int n)
 {
 	char	buf[12],
 		*p;
@@ -76,17 +68,20 @@ cddb_sum(int n)
 /*
  * Calculate the discid of a CD according to cddb
  */
-unsigned long
-cddb_discid(void)
+unsigned long cddb_discid(struct wm_drive *pdrive)
 {
 	int	i,
 		t,
-		n = 0;
+		n = 0, tracks;
+
+    tracks = wm_cd_getcountoftracks(pdrive);
+	if(!tracks)
+		return (unsigned)-1;
 
 	/* For backward compatibility this algorithm must not change */
-	for (i = 0; i < wm_cd_getref()->ntracks; i++) {
+	for (i = 0; i < tracks; i++) {
 
-		n += cddb_sum(wm_cd_getref()->trk[i].start / 75);
+		n += cddb_sum(wm_cd_gettrackstart(pdrive, i + 1));
 	/*
 	 * Just for demonstration (See below)
 	 *
@@ -106,8 +101,7 @@ cddb_discid(void)
          * fields.
          */
 
-        t = (wm_cd_getref()->trk[wm_cd_getref()->ntracks].start / 75)
-          - (wm_cd_getref()->trk[0].start / 75);
-	return ((n % 0xff) << 24 | t << 8 | wm_cd_getref()->ntracks);
+        t = (wm_cd_gettrackstart(pdrive, tracks + 1)) - (wm_cd_gettrackstart(pdrive, 1));
+	return ((n % 0xff) << 24 | t << 8 | tracks);
 } /* cddb_discid() */
 

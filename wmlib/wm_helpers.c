@@ -1,9 +1,7 @@
 /*
- * $Id: wm_helpers.c 486075 2005-12-06 18:29:02Z thiago $
- *
  * This file is part of WorkMan, the civilized CD player library
  * Copyright (C) 1991-1997 by Steven Grimm <koreth@midwinter.com>
- * Copyright (C) by Dirk Försterling <milliByte@DeathsDoor.com>
+ * Copyright (C) by Dirk FÃ¶rsterling <milliByte@DeathsDoor.com>
  * Copyright (C) 2004-2006 Alexander Kern <alex.kern@gmx.de>
  *
  * This library is free software; you can redistribute it and/or
@@ -38,7 +36,7 @@
 
 #define WM_MSG_CLASS WM_MSG_CLASS_MISC
 
-int wm_lib_verbosity = WM_MSG_LEVEL_NONE;
+int wm_lib_verbosity = WM_MSG_LEVEL_ERROR | WM_MSG_CLASS_ALL;
 
 /*
  * Some seleced functions of version reporting follow...
@@ -166,10 +164,12 @@ wm_strdup( char *s )
  */
 void wm_lib_set_verbosity( int level )
 {
-	if( WM_MSG_LEVEL_NONE <= level && level <= WM_MSG_LEVEL_DEBUG )
+	int l = level & WM_MSG_LEVEL_ALL;
+	int c = level & WM_MSG_CLASS_ALL;
+	if( WM_MSG_LEVEL_NONE <= l && l <= WM_MSG_LEVEL_DEBUG )
 	{
-	 	wm_lib_verbosity = level;
-		wm_lib_message(WM_MSG_CLASS_MISC | WM_MSG_LEVEL_DEBUG, "Verbosity set to %d|%d\n", WM_MSG_LEVEL_DEBUG, level & WM_MSG_CLASS_ALL);
+	 	wm_lib_verbosity = l | c;
+		wm_lib_message(WM_MSG_CLASS_MISC | WM_MSG_LEVEL_DEBUG, "Verbosity set to 0x%x|0x%x\n", l, c);
 	}
 } /* wm_lib_set_verbosity */
 
@@ -195,23 +195,20 @@ int wm_lib_get_verbosity( void )
 void wm_lib_message( unsigned int level, const char *fmt, ... )
 {
 	va_list ap;
+	
+	unsigned int l, c, vl, vc;
 	/* verbosity level */
-	unsigned int vlevel = wm_lib_verbosity & 0xf;
+	vl = wm_lib_verbosity & WM_MSG_LEVEL_ALL;
 	/* allowed classes */
-	unsigned int vclass = (level & WM_MSG_CLASS_ALL) & (wm_lib_verbosity & WM_MSG_CLASS_ALL);
+	vc = wm_lib_verbosity & WM_MSG_CLASS_ALL;
+
+	l = level & WM_MSG_LEVEL_ALL;
+	c = level & WM_MSG_CLASS_ALL;
 
 	/*
-         * just give me the level
-         */
-	level &= 0xf;
-	if(level <= WM_MSG_LEVEL_NONE)
-	{
-		fprintf(stderr, "LibWorkMan warning: A LibWorkMan programmer specified an invalid message level.\n");
-	}
-        /*
-         * print it only if level and class are allowed.
-         */
-	if( (level <= vlevel) && (vclass != 0) )
+     * print it only if level and class are allowed.
+	 */
+	if( (l <= vl) && (vc & c) )
 	{
 		fprintf(stderr, "libWorkMan: ");
 		va_start(ap, fmt);

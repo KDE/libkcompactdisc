@@ -1,11 +1,9 @@
 #ifndef WM_SCSI_H
 #define WM_SCSI_H
 /*
- * $Id: wm_scsi.h 486075 2005-12-06 18:29:02Z thiago $
- *
  * This file is part of WorkMan, the civilized CD player library
  * Copyright (C) 1991-1997 by Steven Grimm <koreth@midwinter.com>
- * Copyright (C) by Dirk Försterling <milliByte@DeathsDoor.com>
+ * Copyright (C) by Dirk FÃ¶rsterling <milliByte@DeathsDoor.com>
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Library General Public
@@ -40,9 +38,9 @@ int	sendscsi( struct wm_drive *d, void *buf,
 		  unsigned char a6, unsigned char a7,
 		  unsigned char a8, unsigned char a9,
 		  unsigned char a10, unsigned char a11 );
- int	wm_scsi_get_drive_type( struct wm_drive *d, char *vendor,
-				char *model, char *rev );
+int	wm_scsi_get_drive_type( struct wm_drive *d);
 int wm_scsi_get_cdtext( struct wm_drive *d,
 	unsigned char **pp_buffer, int *p_buffer_length );
+int wm_scsi_set_speed( struct wm_drive *d, int read_speed );
 
 #endif /* WM_SCSI_H */

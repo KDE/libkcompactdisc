@@ -1,9 +1,7 @@
 /*
- * $Id: scsi.c 587515 2006-09-23 02:48:38Z haeber $
- *
  * This file is part of WorkMan, the civilized CD player library
  * Copyright (C) 1991-1997 by Steven Grimm <koreth@midwinter.com>
- * Copyright (C) by Dirk Försterling <milliByte@DeathsDoor.com>
+ * Copyright (C) by Dirk FÃ¶rsterling <milliByte@DeathsDoor.com>
  * Copyright (C) 2004-2006 Alexander Kern <alex.kern@gmx.de>
  *
  * This library is free software; you can redistribute it and/or
@@ -46,6 +44,7 @@
 #define SCMD_READ_TOC		0x43
 #define SCMD_PLAY_AUDIO_MSF	0x47
 #define SCMD_PAUSE_RESUME	0x4b
+#define SCMD_SET_CD_SPEED       0xbb
 
 #define SUBQ_STATUS_INVALID	0x00
 #define SUBQ_STATUS_PLAY	0x11
@@ -95,17 +94,16 @@ int wm_scsi2_set_volume(struct wm_drive *d, int left, int right);
 /*VARARGS4*/
 int
 sendscsi( struct wm_drive *d, void *buf,
-          unsigned int len, int dir,
-	  unsigned char a0, unsigned char a1,
-          unsigned char a2, unsigned char a3,
-          unsigned char a4, unsigned char a5,
-          unsigned char a6, unsigned char a7,
-          unsigned char a8, unsigned char a9,
-          unsigned char a10, unsigned char a11 )
-
+	unsigned int len, int dir,
+	unsigned char a0, unsigned char a1,
+	unsigned char a2, unsigned char a3,
+	unsigned char a4, unsigned char a5,
+	unsigned char a6, unsigned char a7,
+	unsigned char a8, unsigned char a9,
+	unsigned char a10, unsigned char a11 )
 {
-	int		cdblen = 0;
-	unsigned char	cdb[12];
+	int cdblen = 0;
+	unsigned char cdb[12];
 
 	cdb[0] = a0;
 	cdb[1] = a1;
@@ -126,7 +124,7 @@ sendscsi( struct wm_drive *d, void *buf,
 
 	case 1:
 	case 2:
-	case 6:		/* assume 10-byte vendor-specific codes for now */
+	case 6: /* assume 10-byte vendor-specific codes for now */
 		cdb[6] = a6;
 		cdb[7] = a7;
 		cdb[8] = a8;
@@ -136,7 +134,9 @@ sendscsi( struct wm_drive *d, void *buf,
 		break;
 	}
 
-	return (wm_scsi(d, cdb, cdblen, buf, len, dir));
+	if(d->proto.scsi)
+		return d->proto.scsi(d, cdb, cdblen, buf, len, dir);
+	return -1;
 }
 
 /*
@@ -150,8 +150,8 @@ sendscsi( struct wm_drive *d, void *buf,
 int
 wm_scsi_mode_sense( struct wm_drive *d, unsigned char page, unsigned char *buf )
 {
-	unsigned char	pagebuf[255];
-	int		status, i, len, offset;
+	unsigned char pagebuf[255];
+	int status, i, len, offset;
 
 	status = sendscsi(d, pagebuf, sizeof(pagebuf), 1, SCMD_MODE_SENSE, 0,
 			page, 0, sizeof(pagebuf), 0,0,0,0,0,0,0);
@@ -181,15 +181,15 @@ wm_scsi_mode_sense( struct wm_drive *d, unsigned char page, unsigned char *buf )
 int
 wm_scsi_mode_select( struct wm_drive *d, unsigned char *buf, unsigned char len )
 {
-	unsigned char	pagebuf[255];
-	int		i;
+	unsigned char pagebuf[255];
+	int i;
 
 	pagebuf[0] = pagebuf[1] = pagebuf[2] = pagebuf[3] = 0;
 	for (i = 0; i < (int) len; i++)
 		pagebuf[i + 4] = buf[i];
 
-	return (sendscsi(d, pagebuf, len + 4, 0, SCMD_MODE_SELECT, 0x10, 0,
-			0, len + 4, 0,0,0,0,0,0,0));
+	return sendscsi(d, pagebuf, len + 4, 0, SCMD_MODE_SELECT, 0x10, 0,
+		0, len + 4, 0,0,0,0,0,0,0);
 }
 
 /*
@@ -207,46 +207,48 @@ wm_scsi_mode_select( struct wm_drive *d, unsigned char *buf, unsigned char len )
  * all be stripped off since it's just extra junk to WorkMan.
  */
 int
-wm_scsi_get_drive_type( struct wm_drive *d, char *vendor,
-			 char *model, char *rev )
+wm_scsi_get_drive_type(struct wm_drive *d)
 {
 /* removed   unsigned*/
-	char		*s, *t, buf[36];
-        memset(buf, 0, 36);
+	char *s, *t, buf[36];
+
+	memset(buf, 0, 36);
 
 	wm_lib_message(WM_MSG_CLASS_SCSI | WM_MSG_LEVEL_INFO, "Sending SCSI inquiry command...\n");
-	if (sendscsi(d, buf, 36, 1, SCMD_INQUIRY, 0, 0, 0, 36, 0,0,0,0,0,0,0))
-	  {
-		sprintf( vendor, WM_STR_GENVENDOR);
-		sprintf( model, WM_STR_GENMODEL);
-		sprintf( rev, WM_STR_GENREV);
-		wm_lib_message(WM_MSG_CLASS_SCSI | WM_MSG_LEVEL_ERROR, "SCSI Inquiry command not supported in this context\n");
+	if (sendscsi(d, buf, 36, 1, SCMD_INQUIRY, 0, 0, 0, 36, 0,0,0,0,0,0,0)) {
+		sprintf( d->vendor, WM_STR_GENVENDOR);
+		sprintf( d->model, WM_STR_GENMODEL);
+		sprintf( d->revision, WM_STR_GENREV);
+		wm_lib_message(WM_MSG_CLASS_SCSI | WM_MSG_LEVEL_ERROR,
+			"SCSI Inquiry command not supported in this context\n");
 		return -1;
-	  }
+	}
 
 	wm_lib_message(WM_MSG_CLASS_SCSI | WM_MSG_LEVEL_DEBUG, "sent.\n");
 
-	memcpy(vendor, buf + 8, 8);
-	vendor[8] = '\0';
-	memcpy(model, buf + 16, 16);
-	model[16] = '\0';
-	memcpy(rev, buf + 32, 4);
-	rev[4] = '\0';
-	wm_lib_message(WM_MSG_CLASS_SCSI | WM_MSG_LEVEL_VERB, "SCSI Inquiry result: [%s|%s|%s]\n", vendor, model, rev);
-
+	memcpy(d->vendor, buf + 8, 8);
+	d->vendor[8] = '\0';
+	memcpy(d->model, buf + 16, 16);
+	d->model[16] = '\0';
+	memcpy(d->revision, buf + 32, 4);
+	d->revision[4] = '\0';
+	wm_lib_message(WM_MSG_CLASS_SCSI | WM_MSG_LEVEL_VERB, "SCSI Inquiry result: [%s|%s|%s]\n",
+		d->vendor, d->model, d->revision);
 
 	/* Remove "CD-ROM " from the model. */
-	if (! strncmp(model, "CD-ROM", 6))
-	{
-		s = model + 6;
-		t = model;
+	if (! strncmp(d->model, "CD-ROM", 6)) {
+		s = d->model + 6;
+		t = d->model;
 		while (*s == ' ' || *s == '\t')
 			s++;
 		while( (*t++ = *s++) )
 			;
 	}
-	wm_lib_message(WM_MSG_CLASS_SCSI | WM_MSG_LEVEL_INFO, "scsi: Cooked data: %s %s rev. %s\n", vendor, model,rev);
-	return (0);
+
+	wm_lib_message(WM_MSG_CLASS_SCSI | WM_MSG_LEVEL_INFO, "scsi: Cooked data: %s %s rev. %s\n",
+		d->vendor, d->model,d->revision);
+
+	return 0;
 } /* wm_scsi_get_drive_type() */
 
 /*
@@ -255,8 +257,8 @@ wm_scsi_get_drive_type( struct wm_drive *d, char *vendor,
 int
 wm_scsi2_pause_resume(struct wm_drive *d, int resume)
 {
-	return (sendscsi(d, NULL, 0, 0, SCMD_PAUSE_RESUME, 0, 0, 0, 0, 0, 0,
-			0, resume ? 1 : 0, 0,0,0));
+	return sendscsi(d, NULL, 0, 0, SCMD_PAUSE_RESUME, 0, 0, 0, 0, 0, 0,
+		0, resume ? 1 : 0, 0,0,0);
 }
 
 /*
@@ -266,8 +268,8 @@ wm_scsi2_pause_resume(struct wm_drive *d, int resume)
 int
 wm_scsi2_prevent(struct wm_drive *d, int prevent)
 {
-	return (sendscsi(d, NULL, 0, 0, SCMD_PREVENT, 0, 0, 0, 0, 0, 0,
-			0, prevent ? 1 : 0, 0,0,0));
+	return sendscsi(d, NULL, 0, 0, SCMD_PREVENT, 0, 0, 0, 0, 0, 0,
+		0, prevent ? 1 : 0, 0,0,0);
 }
 
 /*
@@ -277,10 +279,10 @@ wm_scsi2_prevent(struct wm_drive *d, int prevent)
 int
 wm_scsi2_play(struct wm_drive *d, int sframe, int eframe)
 {
-	return (sendscsi(d, NULL, 0, 0, SCMD_PLAY_AUDIO_MSF, 0, 0,
-			sframe / (60 * 75), (sframe / 75) % 60, sframe % 75,
-			eframe / (60 * 75), (eframe / 75) % 60, eframe % 75,
-			0,0,0));
+	return sendscsi(d, NULL, 0, 0, SCMD_PLAY_AUDIO_MSF, 0, 0,
+		sframe / (60 * 75), (sframe / 75) % 60, sframe % 75,
+		eframe / (60 * 75), (eframe / 75) % 60, eframe % 75,
+		0,0,0);
 }
 
 /*
@@ -291,17 +293,17 @@ int
 wm_scsi2_get_trackinfo(struct wm_drive *d, int track,
 	int *data, int *startframe)
 {
-	unsigned char	buf[12];	/* one track's worth of info */
+	unsigned char buf[12]; /* one track's worth of info */
 
 	if (sendscsi(d, buf, sizeof(buf), 1, SCMD_READ_TOC, 2,
-			0, 0, 0, 0, track, sizeof(buf) / 256,
-			sizeof(buf) % 256, 0,0,0))
+		0, 0, 0, 0, track, sizeof(buf) / 256,
+		sizeof(buf) % 256, 0,0,0))
 		return (-1);
 
 	*data = buf[5] & 4 ? 1 : 0;
 	*startframe = buf[9] * 60 * 75 + buf[10] * 75 + buf[11];
 
-	return (0);
+	return 0;
 }
 
 /*
@@ -311,8 +313,8 @@ wm_scsi2_get_trackinfo(struct wm_drive *d, int track,
 int
 wm_scsi2_get_cdlen(struct wm_drive *d, int frames)
 {
-	int		tmp;
-  return (wm_scsi2_get_trackinfo(d, LEADOUT, &tmp, &frames));
+	int tmp;
+	return wm_scsi2_get_trackinfo(d, LEADOUT, &tmp, &frames);
 }
 
 /*
@@ -323,32 +325,20 @@ int
 wm_scsi2_get_drive_status(struct wm_drive *d, int oldmode,
 	int *mode, int *pos, int *track, int *ind)
 {
-	unsigned char	buf[48];
+	unsigned char buf[48];
 
 	/* If we can't get status, the CD is ejected, so default to that. */
 	*mode = WM_CDM_EJECTED;
 
 	/* Is the device open? */
-	if (d->fd < 0)
-	{
-/*
- * stupid somehow, but necessary this time
- */
-		switch( wmcd_open( d ) ) {
-
-		case -1:	/* error */
-			return (-1);
-
-		case 1:		/* retry */
-			return (0);
-		}
-	}
+	if (!d->proto.ok || !d->proto.ok(d))
+		return -1;
 
 	/* If we can't read status, the CD has been ejected. */
 	buf[1] = SUBQ_ILLEGAL;
 	if (sendscsi(d, buf, sizeof(buf), 1, SCMD_READ_SUBCHANNEL, 2, 64, 1,
-			0, 0, 0, sizeof(buf) / 256, sizeof(buf) % 256, 0,0,0))
-		return (0);
+		0, 0, 0, sizeof(buf) / 256, sizeof(buf) % 256, 0,0,0))
+		return 0;
 
         switch (buf[1]) {
         case SUBQ_STATUS_PLAY:
@@ -359,16 +349,14 @@ wm_scsi2_get_drive_status(struct wm_drive *d, int oldmode,
 		break;
 
 	case SUBQ_STATUS_PAUSE:
-		if (oldmode == WM_CDM_PLAYING || oldmode == WM_CDM_PAUSED)
-		{
+		if (oldmode == WM_CDM_PLAYING || oldmode == WM_CDM_PAUSED) {
 			*mode = WM_CDM_PAUSED;
 			*track = buf[6];
 			*ind = buf[7];
 			*pos = buf[9] * 60 * 75 +
 				buf[10] * 75 +
 				buf[11];
-		}
-		else
+		} else
 			*mode = WM_CDM_STOPPED;
 		break;
 
@@ -398,20 +386,15 @@ wm_scsi2_get_drive_status(struct wm_drive *d, int oldmode,
 	case SUBQ_STATUS_ERROR:
 		break;
 
-	case SUBQ_ILLEGAL:	/* call didn't really succeed */
+	case SUBQ_ILLEGAL: /* call didn't really succeed */
 		break;
 
         default:
 		*mode = WM_CDM_UNKNOWN;
-#ifndef NDEBUG
-		if( getenv( "WORKMAN_DEBUG" ) != NULL )
-			printf("wm_scsi2_get_drive_status: status is 0x%x\n",
-				buf[1]);
-#endif
 		break;
         }
 
-	return (0);
+	return 0;
 }
 
 /*
@@ -420,15 +403,15 @@ wm_scsi2_get_drive_status(struct wm_drive *d, int oldmode,
 int
 wm_scsi2_get_trackcount(struct wm_drive *d, int *tracks)
 {
-	unsigned char	buf[4];
+	unsigned char buf[4];
 
 	if (sendscsi(d, buf, sizeof(buf), 1, SCMD_READ_TOC, 0,
-			0, 0, 0, 0, 0, sizeof(buf) / 256,
-			sizeof(buf) % 256, 0,0,0))
-		return (-1);
+		0, 0, 0, 0, 0, sizeof(buf) / 256,
+		sizeof(buf) % 256, 0,0,0))
+		return -1;
 
 	*tracks = buf[3] - buf[2] + 1;
-	return (0);
+	return 0;
 }
 
 /*
@@ -437,7 +420,7 @@ wm_scsi2_get_trackcount(struct wm_drive *d, int *tracks)
 int
 wm_scsi2_pause(struct wm_drive *d)
 {
-	return (wm_scsi2_pause_resume(d, 0));
+	return wm_scsi2_pause_resume(d, 0);
 }
 
 /*
@@ -446,7 +429,7 @@ wm_scsi2_pause(struct wm_drive *d)
 int
 wm_scsi2_resume(struct wm_drive *d)
 {
-	return (wm_scsi2_pause_resume(d, 1));
+	return wm_scsi2_pause_resume(d, 1);
 }
 
 /*
@@ -455,7 +438,7 @@ wm_scsi2_resume(struct wm_drive *d)
 int
 wm_scsi2_stop(struct wm_drive *d)
 {
-	return (sendscsi(d, NULL, 0, 0, SCMD_START_STOP, 0, 0,0,0,0,0,0,0,0,0,0));
+	return sendscsi(d, NULL, 0, 0, SCMD_START_STOP, 0, 0,0,0,0,0,0,0,0,0,0);
 }
 
 /*
@@ -466,9 +449,9 @@ wm_scsi2_eject(struct wm_drive *d)
 {
 	/* Unlock the disc (possibly unnecessary). */
 	if (wm_scsi2_prevent(d, 0))
-		return (-1);
+		return -1;
 	wm_lib_message(WM_MSG_CLASS_SCSI | WM_MSG_LEVEL_VERB, "Issuing START_STOP for ejecting...\n");
-	return (sendscsi(d, NULL, 0, 0, SCMD_START_STOP, 2, 0,0,0,0,0,0,0,0,0,0));
+	return sendscsi(d, NULL, 0, 0, SCMD_START_STOP, 2, 0,0,0,0,0,0,0,0,0,0);
 }
 
 /*
@@ -482,7 +465,7 @@ int
 wm_scsi2_closetray(struct wm_drive *d)
 {
 	wm_lib_message(WM_MSG_CLASS_SCSI | WM_MSG_LEVEL_VERB, "Issuing START_STOP for closing...\n");
-	return (sendscsi(d, NULL, 0,0, SCMD_START_STOP, 2, 0,0,0,0,0,0,0,0,0,0));
+	return sendscsi(d, NULL, 0,0, SCMD_START_STOP, 2, 0,0,0,0,0,0,0,0,0,0);
 }
 
 /*
@@ -491,7 +474,7 @@ wm_scsi2_closetray(struct wm_drive *d)
 int
 wm_scsi2_get_volume(struct wm_drive *d, int *left, int *right)
 {
-	unsigned char	mode[16];
+	unsigned char mode[16];
 
 	*left = *right = -1;
 
@@ -502,7 +485,7 @@ wm_scsi2_get_volume(struct wm_drive *d, int *left, int *right)
 	*left = ((int) mode[9] * 100) / 255;
 	*right = ((int) mode[11] * 100) / 255;
 
-	return (0);
+	return 0;
 }
 
 /*
@@ -511,18 +494,18 @@ wm_scsi2_get_volume(struct wm_drive *d, int *left, int *right)
 int
 wm_scsi2_set_volume(struct wm_drive *d, int left, int right)
 {
-	unsigned char	mode[16];
+	unsigned char mode[16];
 
 	/* Get the current audio parameters first. */
 	if (wm_scsi_mode_sense(d, PAGE_AUDIO, mode))
-		return (-1);
+		return -1;
 
 	/* Tweak the volume part of the parameters. */
 	mode[9] = (left * 255) / 100;
 	mode[11] = (right * 255) / 100;
 
 	/* And send them back to the drive. */
-	return (wm_scsi_mode_select(d, mode, sizeof(mode)));
+	return wm_scsi_mode_select(d, mode, sizeof(mode));
 }
 
 /*------------------------------------------------------------------------*
@@ -536,131 +519,131 @@ wm_scsi2_set_volume(struct wm_drive *d, int left, int right)
 int
 wm_scsi_get_cdtext(struct wm_drive *d, unsigned char **pp_buffer, int *p_buffer_length)
 {
-  int ret;
-  unsigned char temp[8];
-  unsigned char *dynamic_temp;
-  int cdtext_possible;
-  unsigned short cdtext_data_length;
-  unsigned long feature_list_length;
+	int ret;
+	unsigned char temp[8];
+	unsigned char *dynamic_temp;
+	int cdtext_possible;
+	unsigned short cdtext_data_length;
+	unsigned long feature_list_length;
 #define IGNORE_FEATURE_LIST
 #ifndef IGNORE_FEATURE_LIST
-  struct feature_list_header *pHeader;
-  struct feature_descriptor_cdread *pDescriptor;
+	struct feature_list_header *pHeader;
+	struct feature_descriptor_cdread *pDescriptor;
 #endif /* IGNORE_FEATURE_LIST */
 
-  dynamic_temp = NULL;
-  cdtext_possible = 0;
-  wm_lib_message(WM_MSG_LEVEL_DEBUG|WM_MSG_CLASS, "wm_scsi_get_cdtext entered\n");
+	dynamic_temp = NULL;
+	cdtext_possible = 0;
+	wm_lib_message(WM_MSG_LEVEL_DEBUG|WM_MSG_CLASS, "wm_scsi_get_cdtext entered\n");
 
-  wm_lib_message(WM_MSG_LEVEL_INFO|WM_MSG_CLASS, "CDTEXT INFO: use GET_FEATURY_LIST(0x46)...\n");
-  ret = sendscsi(d, temp, 8, 1,
-    0x46, 0x02, 0x00, 0x1E, 0,
-    0, 0, 0, 8, 0, 0, 0);
+	wm_lib_message(WM_MSG_LEVEL_INFO|WM_MSG_CLASS, "CDTEXT INFO: use GET_FEATURY_LIST(0x46)...\n");
+	ret = sendscsi(d, temp, 8, 1, 0x46, 0x02, 0x00, 0x1E, 0, 0, 0, 0, 8, 0, 0, 0);
 
-  if(ret)
-  {
-    wm_lib_message(WM_MSG_LEVEL_INFO|WM_MSG_CLASS, "CDTEXT ERROR: GET_FEATURY_LIST(0x46) not implemented or broken. ret = %i!\n", ret);
+	if(ret) {
+		wm_lib_message(WM_MSG_LEVEL_INFO|WM_MSG_CLASS,
+			"CDTEXT ERROR: GET_FEATURY_LIST(0x46) not implemented or broken. ret = %i!\n", ret);
 #ifndef IGNORE_FEATURE_LIST
-    wm_lib_message(WM_MSG_LEVEL_INFO|WM_MSG_CLASS, "CDTEXT ERROR: Try #define IGNORE_FEATURE_LIST in libwm/scsi.c\n");
+		wm_lib_message(WM_MSG_LEVEL_INFO|WM_MSG_CLASS,
+			"CDTEXT ERROR: Try #define IGNORE_FEATURE_LIST in libwm/scsi.c\n");
 #else
-    cdtext_possible = 1;
-    wm_lib_message(WM_MSG_LEVEL_INFO|WM_MSG_CLASS, "CDTEXT INFO: GET_FEATURY_LIST(0x46) ignored. It's OK, because many CDROMS don't implement this feature\n");
+		cdtext_possible = 1;
+		wm_lib_message(WM_MSG_LEVEL_INFO|WM_MSG_CLASS,
+			"CDTEXT INFO: GET_FEATURY_LIST(0x46) ignored. It's OK, because many CDROMS don't implement this feature\n");
 #endif /* IGNORE_FEATURE_LIST */
-  }
-  else
-  {
-    feature_list_length = temp[0]*0xFFFFFF + temp[1]*0xFFFF + temp[2]*0xFF + temp[3] + 4;
+	} else {
+		feature_list_length = temp[0]*0xFFFFFF + temp[1]*0xFFFF + temp[2]*0xFF + temp[3] + 4;
 
-    dynamic_temp = malloc(feature_list_length);
+		dynamic_temp = malloc(feature_list_length);
 
-    if(!dynamic_temp)
-      return -1;
+		if(!dynamic_temp)
+			return -1;
 
-    memset(dynamic_temp, 0, feature_list_length);
-    ret = sendscsi(d, dynamic_temp, feature_list_length, 1,
-      0x46, 0x02, 0x00, 0x1E, 0, 0,
-      0, (feature_list_length>>8) & 0xFF, feature_list_length & 0xFF, 0, 0, 0);
-
+		memset(dynamic_temp, 0, feature_list_length);
+		ret = sendscsi(d, dynamic_temp, feature_list_length, 1,
+			0x46, 0x02, 0x00, 0x1E, 0, 0, 0, (feature_list_length>>8) & 0xFF,
+			feature_list_length & 0xFF, 0, 0, 0);
 
 #ifndef IGNORE_FEATURE_LIST
-    if(!ret)
-    {
-      pHeader = (struct feature_list_header*)dynamic_temp;
+		if(!ret) {
+			pHeader = (struct feature_list_header*)dynamic_temp;
 /*     printf("length = %i, profile = 0x%02X%02X\n", pHeader->lenght_lsb, pHeader->profile_msb, pHeader->profile_lsb);*/
-      pDescriptor = (struct feature_descriptor_cdread*)(dynamic_temp + sizeof(struct feature_list_header));
+			pDescriptor = (struct feature_descriptor_cdread*)
+				(dynamic_temp + sizeof(struct feature_list_header));
 /*     printf("code = 0x%02X%02X, settings = 0x%02X, add_length = %i, add_settings = 0x%02X \n",
          pDescriptor->feature_code_msb, pDescriptor->feature_code_lsb, pDescriptor->settings,
          pDescriptor->add_lenght, pDescriptor->add_settings);*/
 
-      cdtext_possible = pDescriptor->add_settings & 0x01;
-    }
-    else
-    {
-      cdtext_possible = 0;
-    }
-
+			cdtext_possible = pDescriptor->add_settings & 0x01;
+		} else {
+			cdtext_possible = 0;
+		}
 #else
-    cdtext_possible = 1;
+		cdtext_possible = 1;
 #endif /* IGNORE_FEATURE_LIST */
 
-    free (dynamic_temp);
-    dynamic_temp = 0;
-  }
+		free (dynamic_temp);
+		dynamic_temp = 0;
+	}
 
-  if(!cdtext_possible)
-  {
-    wm_lib_message(WM_MSG_LEVEL_INFO|WM_MSG_CLASS, "CDTEXT INFO: GET_FEATURY_LIST(0x46) says, CDTEXT is not present!\n");
-    return EXIT_SUCCESS;
-  }
+	if(!cdtext_possible) {
+		wm_lib_message(WM_MSG_LEVEL_INFO|WM_MSG_CLASS,
+			"CDTEXT INFO: GET_FEATURY_LIST(0x46) says, CDTEXT is not present!\n");
+		return EXIT_SUCCESS;
+	}
 
-  wm_lib_message(WM_MSG_LEVEL_INFO|WM_MSG_CLASS, "CDTEXT INFO: try to read, how long CDTEXT is?\n");
-  ret = sendscsi(d, temp, 4, 1,
-    SCMD_READ_TOC, 0x00, 0x05, 0, 0, 0,
-    0, 0, 4, 0, 0, 0);
+	wm_lib_message(WM_MSG_LEVEL_INFO|WM_MSG_CLASS, "CDTEXT INFO: try to read, how long CDTEXT is?\n");
+	ret = sendscsi(d, temp, 4, 1, SCMD_READ_TOC, 0x00, 0x05, 0, 0, 0, 0, 0, 4, 0, 0, 0);
 
-  if(ret)
-  {
-    wm_lib_message(WM_MSG_LEVEL_INFO|WM_MSG_CLASS,
-      "CDTEXT ERROR: READ_TOC(0x43) with format code 0x05 not implemented or broken. ret = %i!\n", ret);
-  }
-  else
-  {
-    cdtext_data_length = temp[0]*0xFF + temp[1] + 4 + 1; /* divide by 18 + 4 ? */
+	if(ret) {
+		wm_lib_message(WM_MSG_LEVEL_INFO|WM_MSG_CLASS,
+			"CDTEXT ERROR: READ_TOC(0x43) with format code 0x05 not implemented or broken. ret = %i!\n", ret);
+	} else {
+		cdtext_data_length = temp[0]*0xFF + temp[1] + 4 + 1; /* divide by 18 + 4 ? */
     /* cdtext_data_length%18 == 0;? */
-    wm_lib_message(WM_MSG_LEVEL_INFO|WM_MSG_CLASS, "CDTEXT INFO: CDTEXT is %i byte(s) long\n", cdtext_data_length);
+		wm_lib_message(WM_MSG_LEVEL_INFO|WM_MSG_CLASS,
+			"CDTEXT INFO: CDTEXT is %i byte(s) long\n", cdtext_data_length);
     /* cdc_buffer[2];  cdc_buffer[3]; reserwed */
-    dynamic_temp = malloc(cdtext_data_length);
-    if(!dynamic_temp)
-      return -1;
+		dynamic_temp = malloc(cdtext_data_length);
+		if(!dynamic_temp)
+			return -1;
 
-    memset(dynamic_temp, 0, cdtext_data_length);
-    wm_lib_message(WM_MSG_LEVEL_INFO|WM_MSG_CLASS, "CDTEXT INFO: try to read CDTEXT\n");
-    ret = sendscsi(d, dynamic_temp, cdtext_data_length, 1,
-      SCMD_READ_TOC, 0x00, 0x05, 0, 0, 0,
-      0, (cdtext_data_length>>8) & 0xFF, cdtext_data_length & 0xFF, 0, 0, 0);
+		memset(dynamic_temp, 0, cdtext_data_length);
+		wm_lib_message(WM_MSG_LEVEL_INFO|WM_MSG_CLASS, "CDTEXT INFO: try to read CDTEXT\n");
+		ret = sendscsi(d, dynamic_temp, cdtext_data_length, 1,
+			SCMD_READ_TOC, 0x00, 0x05, 0, 0, 0, 0, (cdtext_data_length>>8) & 0xFF,
+			cdtext_data_length & 0xFF, 0, 0, 0);
 
-    if(ret)
-    {
-      wm_lib_message(WM_MSG_LEVEL_INFO|WM_MSG_CLASS,
-      "CDTEXT ERROR: READ_TOC(0x43) with format code 0x05 not implemented or broken. ret = %i!\n", ret);
-    }
-    else
-    {
-      cdtext_data_length = temp[0]*0xFF + temp[1] + 4 + 1; /* divide by 18 + 4 ? */
-      wm_lib_message(WM_MSG_LEVEL_INFO|WM_MSG_CLASS, "CDTEXT INFO: read %i byte(s) of CDTEXT\n", cdtext_data_length);
+		if(ret) {
+			wm_lib_message(WM_MSG_LEVEL_INFO|WM_MSG_CLASS,
+				"CDTEXT ERROR: READ_TOC(0x43) with format code 0x05 not implemented or broken. ret = %i!\n", ret);
+		} else {
+			cdtext_data_length = temp[0]*0xFF + temp[1] + 4 + 1; /* divide by 18 + 4 ? */
+			wm_lib_message(WM_MSG_LEVEL_INFO|WM_MSG_CLASS,
+				"CDTEXT INFO: read %i byte(s) of CDTEXT\n", cdtext_data_length);
 
-      /* send cdtext only 18 bytes packs * ? */
-      *(p_buffer_length) = cdtext_data_length - 4;
-      *pp_buffer = malloc(*p_buffer_length);
-      if(!(*pp_buffer))
-      {
-        return -1;
-      }
-      memcpy(*pp_buffer, dynamic_temp + 4, *p_buffer_length);
-    }
-    free(dynamic_temp);
-    dynamic_temp = 0;
-  }
+			/* send cdtext only 18 bytes packs * ? */
+			*(p_buffer_length) = cdtext_data_length - 4;
+			*pp_buffer = malloc(*p_buffer_length);
+			if(!(*pp_buffer)) {
+				return -1;
+			}
+			memcpy(*pp_buffer, dynamic_temp + 4, *p_buffer_length);
+		}
+		free(dynamic_temp);
+		dynamic_temp = 0;
+	}
 
-  return ret;
+	return ret;
 } /* wm_scsi_get_cdtext() */
+
+int
+wm_scsi_set_speed(struct wm_drive *d, int read_speed)
+{
+	int ret;
+	
+	ret = sendscsi(d, NULL, 0, 0,
+		SCMD_SET_CD_SPEED, 0x00, (read_speed>>8) & 0xFF, read_speed & 0xFF, 0xFF, 0xFF,
+		0, 0, 0, 0, 0, 0);
+	wm_lib_message(WM_MSG_LEVEL_ERROR|WM_MSG_CLASS,
+		"wm_scsi_set_speed returns %i\n", ret);
+	return ret;
+} /* wm_scsi_set_speed() */

@@ -1,9 +1,7 @@
 /*
- * $Id: plat_aix.c 587515 2006-09-23 02:48:38Z haeber $
- *
  * This file is part of WorkMan, the civilized CD player library
  * Copyright (C) 1991-1997 by Steven Grimm <koreth@midwinter.com>
- * Copyright (C) by Dirk Försterling <milliByte@DeathsDoor.com>
+ * Copyright (C) by Dirk FÃ¶rsterling <milliByte@DeathsDoor.com>
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Library General Public
@@ -28,7 +26,6 @@
  * Taken from the ascd distribution.
  *
  */
-
 
 #if defined(AIXV3) || defined(__AIXV3)
 
@@ -139,9 +136,9 @@ wmcd_reopen( struct wm_drive *d )
  */
 int
 wm_scsi(struct wm_drive *d,
-	uchar_t *cdb, int cdblen,
-	void *retbuf, int retbuflen,
-	int getreply)
+    uchar_t *cdb, int cdblen,
+    void *retbuf, int retbuflen,
+    int getreply)
 {
   return 0;
 } /* wm_scsi() */
@@ -165,11 +162,11 @@ gen_close( struct wm_drive *d )
  */
 int
 gen_get_drive_status(struct wm_drive *d,
-		     int oldmode,
-		     int *mode,
-		     int *pos,
-		     int *track,
-		     int *index)
+    int oldmode,
+    int *mode,
+    int *pos,
+    int *track,
+    int *index)
 {
   struct cd_audio_cmd cmd;
 

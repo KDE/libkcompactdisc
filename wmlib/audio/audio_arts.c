@@ -102,23 +102,13 @@ arts_stop(void)
   return 0;
 }
 
-/*
- * Get the current audio state.
- */
-int
-arts_state(struct cdda_block *blk)
-{
-  return -1; /* not implemented yet for ARTS */
-}
-
 static struct audio_oops arts_oops = {
   .wmaudio_open    = arts_open,
   .wmaudio_close   = arts_close,
   .wmaudio_play    = arts_play,
   .wmaudio_stop    = arts_stop,
-  .wmaudio_state   = arts_state,
-  .wmaudio_balance = NULL,
-  .wmaudio_volume  = NULL
+  .wmaudio_state   = NULL,
+  .wmaudio_balvol  = NULL
 };
 
 struct audio_oops*

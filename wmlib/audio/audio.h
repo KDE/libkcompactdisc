@@ -19,21 +19,19 @@
 #ifndef __AUDIO_H__
 #define __AUDIO_H__
 
-#include "../include/wm_cdda.h"
-
 #ifndef NULL
 #define NULL 0
 #endif
+struct wm_cdda_block;
 
 struct audio_oops {
   int (*wmaudio_open)(void);
   int (*wmaudio_close)(void);
-  int (*wmaudio_play)(struct cdda_block*);
+  int (*wmaudio_play)(struct wm_cdda_block*);
   int (*wmaudio_pause)(void);
   int (*wmaudio_stop)(void);
-  int (*wmaudio_state)(struct cdda_block*);
-  int (*wmaudio_balance)(int);
-  int (*wmaudio_volume)(int);
+  int (*wmaudio_state)(struct wm_cdda_block*);
+  int (*wmaudio_balvol)(int, int *, int *);
 };
 
 #ifdef __cplusplus

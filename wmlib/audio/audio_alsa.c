@@ -34,10 +34,13 @@
 #endif
 #include "audio.h"
 
-char* device = NULL;
-snd_pcm_t *handle;
+#include "../include/wm_struct.h"
+#include "../include/wm_config.h"
 
-snd_pcm_format_t format = SND_PCM_FORMAT_S16;    /* sample format */
+static char *device = NULL;
+static snd_pcm_t *handle;
+
+static snd_pcm_format_t format = SND_PCM_FORMAT_S16;    /* sample format */
 
 #if (SND_LIB_MAJOR < 1)
 int rate = 44100;                                /* stream rate */
@@ -65,8 +68,8 @@ snd_pcm_uframes_t period_size;
 int alsa_open(void);
 int alsa_close(void);
 int alsa_stop(void);
-int alsa_play(struct cdda_block *blk);
-int alsa_state(struct cdda_block *blk);
+int alsa_play(struct wm_cdda_block *blk);
+int alsa_state(struct wm_cdda_block *blk);
 struct audio_oops* setup_alsa(const char *dev, const char *ctl);
 
 static int set_hwparams(snd_pcm_hw_params_t *params,
@@ -255,7 +258,7 @@ int alsa_close( void )
  * Returns 0 on success.
  */
 int
-alsa_play(struct cdda_block *blk)
+alsa_play(struct wm_cdda_block *blk)
 {
   signed short *ptr;
   int err = 0, frames;
@@ -316,25 +319,13 @@ alsa_stop( void )
   return err;
 }
 
-/*
- * Get the current audio state.
- */
-int
-alsa_state(struct cdda_block *blk)
-{
-  DEBUGLOG("alsa_state\n");
-
-  return -1; /* not implemented yet for ALSA */
-}
-
 static struct audio_oops alsa_oops = {
   .wmaudio_open    = alsa_open,
   .wmaudio_close   = alsa_close,
   .wmaudio_play    = alsa_play,
   .wmaudio_stop    = alsa_stop,
-  .wmaudio_state   = alsa_state,
-  .wmaudio_balance = NULL,
-  .wmaudio_volume  = NULL
+  .wmaudio_state   = NULL,
+  .wmaudio_balvol  = NULL
 };
 
 struct audio_oops*

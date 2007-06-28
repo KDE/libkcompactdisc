@@ -1,11 +1,9 @@
 #ifndef WM_CDDA_H
 #define WM_CDDA_H
 /*
- * $Id: wm_cdda.h 608127 2006-11-26 20:39:13Z kernalex $
- *
  * This file is part of WorkMan, the civilized CD player library
  * Copyright (C) 1991-1997 by Steven Grimm <koreth@midwinter.com>
- * Copyright (C) by Dirk Försterling <milliByte@DeathsDoor.com>
+ * Copyright (C) by Dirk FÃ¶rsterling <milliByte@DeathsDoor.com>
  * Copyright (C) 2004-2006 Alexander Kern <alex.kern@gmx.de>
  *
  * This library is free software; you can redistribute it and/or
@@ -25,46 +23,6 @@
  */
 
 #include <config.h>
-
-/*
- * Information about a particular block of CDDA data.
- */
-struct cdda_block {
-    unsigned char status;
-    unsigned char track;
-    unsigned char index;
-    unsigned char reserved;
-
-    int   frame;
-    char *buf;
-    long  buflen;
-};
-
-struct cdda_device {
-    int        fd;
-    const char *devname;
-
-    unsigned char status;
-    unsigned char track;
-    unsigned char index;
-    unsigned char command;
-
-    int frame;
-    int frames_at_once;
-
-    /* Average volume levels, for level meters */
-    unsigned char lev_chan0;
-    unsigned char lev_chan1;
-
-    /* Current volume setting (0-255) */
-    unsigned char volume;
-
-    /* Current balance setting (0-255, 128 = balanced) */
-    unsigned char balance;
-
-    struct cdda_block *blocks;
-    int numblocks;
-};
 
 #include "wm_cdrom.h"
 #include "wm_config.h"
@@ -143,34 +101,46 @@ struct cdda_device {
 #endif
 
 /*
- * The following code support us by optimize cdda operations
+ * Information about a particular block of CDDA data.
  */
-#define CDDARETURN(x) if(x && x->cdda == 1) return
-#define IFCDDA(x) if(x && x->cdda == 1)
-int cdda_get_drive_status(struct wm_drive *d, int oldmode,
-	int *mode, int *pos, int *track, int *ind);
-int cdda_play(struct wm_drive *d, int start, int end, int realstart);
-int cdda_pause(struct wm_drive *d);
-int cdda_stop(struct wm_drive *d);
-int cdda_eject(struct wm_drive *d);
-int cdda_set_volume(struct wm_drive *d, int left, int right);
-int cdda_get_volume(struct wm_drive *d, int *left, int *right);
-void cdda_kill(struct wm_drive *d);
-void cdda_save(struct wm_drive *d, char *filename);
-int cdda_get_ack(int);
-int gen_cdda_init(struct wm_drive *d );
+struct cdda_block {
+    unsigned char status;
+    unsigned char track;
+    unsigned char index;
+    unsigned char reserved;
 
-void cdda_set_direction(struct wm_drive *d, int newdir);
-void cdda_set_speed(struct wm_drive *d, int speed);
-void cdda_set_loudness(struct wm_drive *d, int loud);
+    int   frame;
+    char *buf;
+    long  buflen;
+};
 
+struct cdda_device {
+    int        fd;
+    int        cdda_slave;
+    const char *devname;
 
-int wmcdda_init(struct cdda_device*);
-int wmcdda_open(const char*);
-int wmcdda_close(struct cdda_device*);
-int wmcdda_setup(int start, int end, int realstart);
-long wmcdda_read(struct cdda_device*, struct cdda_block *block);
-void wmcdda_speed(int speed);
-void wmcdda_direction(int newdir);
+    unsigned char status;
+    unsigned char track;
+    unsigned char index;
+    unsigned char command;
+
+    int frame;
+    int frames_at_once;
+
+    /* Average volume levels, for level meters */
+    unsigned char lev_chan0;
+    unsigned char lev_chan1;
+
+    /* Current volume setting (0-255) */
+    unsigned char volume;
+
+    /* Current balance setting (0-255, 128 = balanced) */
+    unsigned char balance;
+
+    struct cdda_block *blocks;
+    int numblocks;
+
+    struct cdda_proto *proto;
+};
 
 #endif /* WM_CDDA_H */

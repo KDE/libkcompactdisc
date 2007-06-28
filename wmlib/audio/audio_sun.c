@@ -1,7 +1,7 @@
 /*  This file is part of the KDE project
 
     Copyright (C) 1991-1997 by Steven Grimm <koreth@midwinter.com>
-    Copyright (C) by Dirk Försterling <milliByte@DeathsDoor.com>
+    Copyright (C) by Dirk FÃ¶rsterling <milliByte@DeathsDoor.com>
     Copyright (C) 2006 Alexander Kern <alex.kern@gmx.de>
 
     This library is free software; you can redistribute it and/or
@@ -225,40 +225,31 @@ sun_audio_close( void )
 }
 
 /*
- * Set the volume level.
+ * Set/get the balance and volume level.
  */
 int
-sun_audio_volume(int level)
+sun_audio_balvol(int setget, unsigned char *balance, unsigned char *volume)
 {
-	audio_info_t		info;
+    audio_info_t info;
+    AUDIO_INITINFO(&info);
+    if (ioctl(aucfd, AUDIO_GETINFO, &info) < 0) {
+        perror("AUDIO_GETINFO");
+        return -1;
+    }
 
-	AUDIO_INITINFO(&info);
-	if (ioctl(aucfd, AUDIO_GETINFO, &info) < 0) perror("AUDIO_GETINFO");
-	info.play.gain = level;
-	if (ioctl(aucfd, AUDIO_SETINFO, &info) < 0) {
-    perror("AUDIO_SETINFO");
-    return -1;
-  }
-  return 0;
-}
-
-/*
- * Set the balance level.
- */
-int
-sun_audio_balance(int level)
-{
-	audio_info_t		info;
-
-	AUDIO_INITINFO(&info);
-	if (ioctl(aucfd, AUDIO_GETINFO, &info) < 0) perror("AUDIO_GETINFO");
-	level *= AUDIO_RIGHT_BALANCE;
-	info.play.balance = level / 255;
-	if (ioctl(aucfd, AUDIO_SETINFO, &info) < 0) {
-    perror("AUDIO_SETINFO");
-    return -1;
-  }
-  return 0;
+    if(setget) {
+        balance *= AUDIO_RIGHT_BALANCE;
+        info.play.balance = *balance / 255;
+        info.play.gain = *volume;
+        if (ioctl(aucfd, AUDIO_SETINFO, &info) < 0) {
+            perror("AUDIO_SETINFO");
+            return -1;
+        }
+    } else {
+        *volume = info.play.gain;
+        *balance = (info.play.balance * 255) / AUDIO_RIGHT_BALANCE;
+    }
+    return 0;
 }
 
 /*
@@ -376,22 +367,6 @@ sun_audio_play(unsigned char *rawbuf, long buflen, struct cdda_block *blk)
 }
 
 /*
- * Get the current audio state.
- */
-int
-sun_audio_state(struct cdda_block *blk)
-{
-	audio_info_t		info;
-	int			balance;
-
-	if (ioctl(aucfd, AUDIO_GETINFO, &info) < 0)
-		perror("AUDIO_GETINFO");
-	blk->volume = info.play.gain;
-	blk->balance = (info.play.balance * 255) / AUDIO_RIGHT_BALANCE;
-	return 0;
-}
-
-/*
 ** This routine converts from linear to ulaw.
 **
 ** Craig Reese: IDA/Supercomputing Research Center
@@ -498,9 +473,8 @@ static struct audio_oops sun_audio_oops = {
   .wmaudio_close   = sun_audio_close,
   .wmaudio_play    = sun_audio_play,
   .wmaudio_stop    = sun_audio_stop,
-  .wmaudio_state   = sun_audio_state,
-  .wmaudio_balance = sun_audio_balance,
-  .wmaudio_volume  = sun_audio_volume
+  .wmaudio_state   = NULL,
+  .wmaudio_balvol = sun_audio_balvol
 };
 
 struct audio_oops*

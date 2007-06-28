@@ -101,6 +101,6 @@ struct feature_descriptor_cdread {
 
 #endif /* IGNORE_FEATURE_LIST */
 
-struct cdtext_info* wm_cd_get_cdtext( void );
+struct cdtext_info* wm_cd_get_cdtext(void *p);
 
 #endif /* WM_CDTEXT_H */

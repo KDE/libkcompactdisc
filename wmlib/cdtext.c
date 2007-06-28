@@ -31,6 +31,7 @@
 #include "include/wm_platform.h"
 #include "include/wm_helpers.h"
 #include "include/wm_cdtext.h"
+#include "include/wm_scsi.h"
 
 #define WM_MSG_CLASS WM_MSG_CLASS_MISC
 
@@ -40,10 +41,9 @@ int free_cdtext_info(struct cdtext_info* cdtextinfo);
 struct cdtext_info_block* malloc_cdtext_info_block(int count_of_tracks);
 void get_data_from_cdtext_pack(
   const struct cdtext_pack_data_header *pack,
-  const struct cdtext_pack_data_header *pack_previous,
   cdtext_string *p_componente);
 
-struct cdtext_info wm_cdtext_info = { 0, 0, 0, 0 };
+struct cdtext_info wm_cdtext_info;
 
 int free_cdtext_info_block(struct cdtext_info_block* cdtextinfoblock)
 {
@@ -151,7 +151,6 @@ bail_out:
 
 void get_data_from_cdtext_pack(
   const struct cdtext_pack_data_header *pack,
-  const struct cdtext_pack_data_header *pack_previous,
   cdtext_string *p_componente)
 {
 
@@ -211,8 +210,7 @@ void get_data_from_cdtext_pack(
 #endif
 }
 
-struct cdtext_info*
-get_glob_cdtext(struct wm_drive *d, int redo)
+struct cdtext_info *get_glob_cdtext(struct wm_drive *d, int redo)
 {
   /* alloc cdtext_info */
 
@@ -223,26 +221,23 @@ get_glob_cdtext(struct wm_drive *d, int redo)
   struct cdtext_pack_data_header *pack, *pack_previous;
   cdtext_string *p_componente;
   struct cdtext_info_block *lp_block;
-  if(!d->proto || d->proto->gen_get_cdtext == NULL || d->proto->gen_get_trackcount == NULL) {
-    return NULL;
-  }
 
   if(!redo && wm_cdtext_info.valid) {
     wm_lib_message(WM_MSG_LEVEL_DEBUG | WM_MSG_CLASS, "CDTEXT DEBUG: recycle cdtext\n");
     return &wm_cdtext_info;
-  } else
+  } else {
     free_cdtext_info(&wm_cdtext_info);
+  }
 
   lp_block = 0;
   p_componente = 0;
   buffer = 0;
   buffer_length = 0;
 
-  ret = (d->proto->gen_get_cdtext)(d, &buffer, &buffer_length);
+  ret = wm_scsi_get_cdtext(d, &buffer, &buffer_length);
   if(!ret)
   {
-    (d->proto->gen_get_trackcount)(d, &(wm_cdtext_info.count_of_entries));
-    if( wm_cdtext_info.count_of_entries < 0 )
+    if(!d->proto.get_trackcount || d->proto.get_trackcount(d, &wm_cdtext_info.count_of_entries) < 0)
       wm_cdtext_info.count_of_entries = 1;
     else
       wm_cdtext_info.count_of_entries++;
@@ -334,27 +329,27 @@ get_glob_cdtext(struct wm_drive *d, int redo)
       {
         case 0x80:
           p_componente = (lp_block->name);
-          get_data_from_cdtext_pack(pack, pack_previous, p_componente);
+          get_data_from_cdtext_pack(pack, p_componente);
           break;
         case 0x81:
           p_componente = (lp_block->performer);
-          get_data_from_cdtext_pack(pack, pack_previous, p_componente);
+          get_data_from_cdtext_pack(pack, p_componente);
           break;
         case 0x82:
           p_componente = (lp_block->songwriter);
-          get_data_from_cdtext_pack(pack, pack_previous, p_componente);
+          get_data_from_cdtext_pack(pack, p_componente);
           break;
         case 0x83:
           p_componente = (lp_block->composer);
-          get_data_from_cdtext_pack(pack, pack_previous, p_componente);
+          get_data_from_cdtext_pack(pack, p_componente);
           break;
         case 0x84:
           p_componente = (lp_block->arranger);
-          get_data_from_cdtext_pack(pack, pack_previous, p_componente);
+          get_data_from_cdtext_pack(pack, p_componente);
           break;
         case 0x85:
           p_componente = (lp_block->message);
-          get_data_from_cdtext_pack(pack, pack_previous, p_componente);
+          get_data_from_cdtext_pack(pack, p_componente);
           break;
         case 0x86:
           memcpy((char*)(lp_block->binary_disc_identification_info),
@@ -384,7 +379,7 @@ get_glob_cdtext(struct wm_drive *d, int redo)
           break;
         case 0x8E:
           p_componente = (lp_block->UPC_EAN_ISRC_code);
-          get_data_from_cdtext_pack(pack, pack_previous, p_componente);
+          get_data_from_cdtext_pack(pack, p_componente);
           break;
         case 0x8F:
           memcpy((char*)(lp_block->binary_size_information),

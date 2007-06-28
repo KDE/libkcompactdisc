@@ -1,9 +1,7 @@
 /*
- * $Id: plat_sun_cdda.c 608128 2006-11-26 20:40:07Z kernalex $
- *
  * This file is part of WorkMan, the civilized CD player library
  * Copyright (C) 1991-1997 by Steven Grimm <koreth@midwinter.com>
- * Copyright (C) by Dirk Försterling <milliByte@DeathsDoor.com>
+ * Copyright (C) by Dirk FÃ¶rsterling <milliByte@DeathsDoor.com>
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Library General Public
@@ -161,17 +159,16 @@ wmcdda_close(struct cdda_device* pdev)
  * couple variables so we'll know what to do when we're called.
  */
 int
-wmcdda_setup(int start, int end, int realstart)
+wmcdda_setup(int start, int end)
 {
 	current_position = start - 150;
 	ending_position = end - 150;
-	starting_position = realstart - 150;
 
 	/*
 	 * Special case: don't start at the "end" of a track if we're
 	 * playing backwards!
 	 */
-	if (direction == -1 && start == realstart)
+	if (direction == -1)
 		current_position = ending_position - numblocks;
   return 0;
 }

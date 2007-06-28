@@ -1,9 +1,7 @@
 /*
- * $Id: plat_linux.c 608128 2006-11-26 20:40:07Z kernalex $
- *
  * This file is part of WorkMan, the civilized CD player library
  * Copyright (C) 1991-1997 by Steven Grimm <koreth@midwinter.com>
- * Copyright (C) by Dirk Försterling <milliByte@DeathsDoor.com>
+ * Copyright (C) by Dirk FÃ¶rsterling <milliByte@DeathsDoor.com>
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Library General Public
@@ -104,15 +102,15 @@ typedef unsigned long long __u64;
 # define SCSI_IOCTL_SEND_COMMAND 1
 #endif
 
-int gen_cdda_init( struct wm_drive *d );
-
-int	min_volume = 0;
-int	max_volume = 255;
-
 #ifdef OSS_SUPPORT
 int mixer;
 char mixer_dev_name[20] = "/dev/mixer";
 #endif
+
+static struct platform_data
+{
+	int cdrom_fd;
+} data = { -1 };
 
 /*-------------------------------------------------------*
  *
@@ -122,584 +120,361 @@ char mixer_dev_name[20] = "/dev/mixer";
  *
  *-------------------------------------------------------*/
 
-/*--------------------------------------------------------*
- * Initialize the drive.  A no-op for the generic driver.
- *--------------------------------------------------------*/
-int
-gen_init( struct wm_drive *d )
+static int filedescriptor(struct wm_drive *d)
 {
-  return (0);
-} /* gen_init() */
-
-/*---------------------------------------------------------------------------*
- * Open the CD device and figure out what kind of drive is attached.
- *---------------------------------------------------------------------------*/
-int
-wmcd_open( struct wm_drive *d )
-{
-  int fd;
-  char vendor[32], model[32], rev[32];
-
-  if (d->cd_device == NULL)
-    d->cd_device = DEFAULT_CD_DEVICE;
-
-
-  if (d->fd >= 0) { /* Device already open? */
-/*      wm_lib_message(WM_MSG_LEVEL_DEBUG|WM_MSG_CLASS, "wmcd_open(): [device is open (fd=%d)]\n", d->fd);*/
-      return (0);
-  }
-
-  fd = open(d->cd_device, O_RDONLY | O_NONBLOCK);
-  wm_lib_message(WM_MSG_LEVEL_DEBUG|WM_MSG_CLASS, "wmcd_open(): device=%s fd=%d\n", d->cd_device, fd);
-
-  if (fd < 0)
-    return -errno;
-
-  /* Now fill in the relevant parts of the wm_drive structure. */
-  d->fd = fd;
-
-  /*
-   * See if we can do digital audio.
-   */
-  if(d->cdda && gen_cdda_init(d)) {
-    wm_lib_message(WM_MSG_LEVEL_DEBUG|WM_MSG_CLASS, "wmcd_open(): failed in gen_cdda_init\n");
-    gen_close(d);
-    return -1;
-  }
-
-  /* Can we figure out the drive type? */
-  if (wm_scsi_get_drive_type(d, vendor, model, rev)) {
-    wm_lib_message(WM_MSG_LEVEL_DEBUG|WM_MSG_CLASS, "wmcd_open(): inquiry failed\n");
-    strcpy(vendor, "Generic");
-    strcpy(model, "drive type");
-    strcpy(rev, "");
-  }
-
-  if(find_drive_struct(vendor, model, rev) < 0) {
-    gen_close(d);
-    return -1;
-  }
-
-  if(d->proto->gen_init)
-    return (d->proto->gen_init)(d);
-
-  return 0;
-} /* wmcd_open() */
-
-/*
- * Re-Open the device if it is open.
- */
-int
-wmcd_reopen( struct wm_drive *d )
-{
-  int status;
-  int tries = 0;
-
-  do {
-    wm_lib_message(WM_MSG_LEVEL_DEBUG|WM_MSG_CLASS, "wmcd_reopen\n");
-    gen_close(d);
-    wm_susleep( 1000 );
-    wm_lib_message(WM_MSG_LEVEL_DEBUG|WM_MSG_CLASS, "calls wmcd_open()\n");
-    status = wmcd_open( d ); /* open it as usual */
-    wm_susleep( 1000 );
-    tries++;
-  } while ( (status != 0) && (tries < 10)  );
-  return status;
-} /* wmcd_reopen() */
-
-/*---------------------------------------------*
- * Send an arbitrary SCSI command to a device.
- *---------------------------------------------*/
-int
-wm_scsi( struct wm_drive *d, unsigned char *cdb, int cdblen,
-	 void *retbuf, int retbuflen, int getreply )
-{
-#ifdef LINUX_SCSI_PASSTHROUGH
-
-  char *cmd;
-  int cmdsize;
-
-  cmdsize = 2 * sizeof(int);
-  if (retbuf)
-    {
-      if (getreply) cmdsize += max(cdblen, retbuflen);
-      else cmdsize += (cdblen + retbuflen);
-    }
-  else cmdsize += cdblen;
-
-  cmd = malloc(cmdsize);
-  if (cmd == NULL)
-    return (-1);
-
-  ((int*)cmd)[0] = cdblen + ((retbuf && !getreply) ? retbuflen : 0);
-  ((int*)cmd)[1] = ((retbuf && getreply) ? retbuflen : 0);
-
-  memcpy(cmd + 2*sizeof(int), cdb, cdblen);
-  if (retbuf && !getreply)
-    memcpy(cmd + 2*sizeof(int) + cdblen, retbuf, retbuflen);
-
-  if (ioctl(d->fd, SCSI_IOCTL_SEND_COMMAND, cmd))
-    {
-      wm_lib_message(WM_MSG_LEVEL_DEBUG|WM_MSG_CLASS, "%s: ioctl() failure\n", __FILE__);
-      wm_lib_message(WM_MSG_LEVEL_DEBUG|WM_MSG_CLASS, "command buffer is:\n");
-      wm_lib_message(WM_MSG_LEVEL_DEBUG|WM_MSG_CLASS, "%02x %02x %02x %02x %02x %02x\n",
-        cmd[0],  cmd[1],  cmd[2],  cmd[3],  cmd[4],  cmd[5]);
-      free(cmd);
-      return (-1);
-    }
-
-  if (retbuf && getreply)
-    memcpy(retbuf, cmd + 2*sizeof(int), retbuflen);
-
-  free(cmd);
-  return 0;
-
-#else /* Linux SCSI passthrough*/
-/*----------------------------------------*
- * send packet over cdrom interface
- * kernel >= 2.2.16
- *----------------------------------------*/
-#if (LINUX_VERSION_CODE > KERNEL_VERSION(2,2,15))
-
-  struct cdrom_generic_command cdc;
-  struct request_sense sense;
-  int capability;
-
-  wm_lib_message(WM_MSG_LEVEL_DEBUG|WM_MSG_CLASS, "wm_scsi over CDROM_SEND_PACKET entered\n");
-
-  capability = ioctl(d->fd, CDROM_GET_CAPABILITY);
-
-  if(!(capability & CDC_GENERIC_PACKET))
-  {
-    wm_lib_message(WM_MSG_LEVEL_DEBUG|WM_MSG_CLASS, "your CDROM or/and kernel don't support CDC_GENERIC_PACKET ...\n");
-    return -1;
-  }
-
-  memset(&cdc, 0, sizeof(struct cdrom_generic_command));
-  memset(&sense, 0, sizeof(struct request_sense));
-
-  memcpy(cdc.cmd, cdb, cdblen);
-
-  cdc.buffer = retbuf;
-  cdc.buflen = retbuflen;
-  cdc.stat = 0;
-  cdc.sense = &sense;
-  cdc.data_direction = getreply?CGC_DATA_READ:CGC_DATA_WRITE;
-
-  /* sendpacket_over_cdrom_interface() */
-  return ioctl(d->fd, CDROM_SEND_PACKET, &cdc);
-#endif /* CDROM_SEND_PACKET */
-  printf("ERROR: this binary was compiled without CDROM GENERIC PACKET SUPPORT. kernel version < 2.2.16?\n");
-  printf("ERROR: if you have a SCSI CDROM, rebuild it with a #define LINUX_SCSI_PASSTHROUGH\n");
-  return (-1);
-#endif
-} /* wm_scsi */
-
-int
-gen_close( struct wm_drive *d )
-{
-  if(d->fd != -1) {
-    wm_lib_message(WM_MSG_LEVEL_DEBUG|WM_MSG_CLASS, "closing the device\n");
-    close(d->fd);
-    d->fd = -1;
-  }
-  return 0;
+	struct platform_data *data;
+	if(!d || !d->daux)
+		return -1;
+	
+	data = (struct platform_data *)d->daux;
+	return data->cdrom_fd;
 }
 
-/*--------------------------------*
- * Keep the CD open all the time.
- * disabled, analogous to 1.4b3
- *--------------------------------*
-void
-keep_cd_open( void )
+static int set_filedescriptor(struct wm_drive *d, int fd)
 {
-	int	fd;
-	struct flock	fl;
-	extern	end;
+	if(!d)
+		return -1;
 
+	data.cdrom_fd = fd;
+    d->daux = &data;
 
-	for (fd = 0; fd < 256; fd++)
-		close(fd);
-
-	if (fork())
-		exit(0);
-
-#if defined(O_NOFOLLOW)
-	if ((fd = open("/tmp/cd.lock", O_RDWR | O_CREAT | O_NOFOLLOW, 0666)) < 0)
-#else
-	if ((fd = open("/tmp/cd.lock", O_RDWR | O_CREAT, 0666)) < 0)
-#endif
-		exit(0);
-	fl.l_type = F_WRLCK;
-	fl.l_whence = 0;
-	fl.l_start = 0;
-	fl.l_len = 0;
-	if (fcntl(fd, F_SETLK, &fl) < 0)
-		exit(0);
-
-	if (open(cd_device, 0) >= 0)
-	{
-		brk(&end);
-		pause();
-	}
-
-	exit(0);
+	return 0;
 }
-*/
+
+static int release_filedescriptor(struct wm_drive *d)
+{
+	if(!d)
+		return -1;
+
+	data.cdrom_fd = -1;
+    d->daux = NULL;
+
+	return 0;
+}
+
+static int linux_ok(struct wm_drive *d)
+{
+	return (filedescriptor(d) < 0) ? 0 : 1;
+} /* linux_ok() */
+
+static int linux_close(struct wm_drive *d)
+{
+	wm_lib_message(WM_MSG_LEVEL_DEBUG|WM_MSG_CLASS, "linux_close(): closing the device\n");
+
+	close(filedescriptor(d));
+	release_filedescriptor(d);
+
+	return 0;
+} /* linux_close() */
 
 /*--------------------------------------------------------------------------*
  * Get the current status of the drive: the current play mode, the absolute
  * position from start of disc (in frames), and the current track and index
  * numbers if the CD is playing or paused.
  *--------------------------------------------------------------------------*/
-int
-gen_get_drive_status( struct wm_drive *d, int oldmode,
-  int *mode, int *pos, int *track, int *ind )
+static int linux_status(struct wm_drive *d, int oldmode, int *mode, int *pos, int *track, int *ind)
 {
-  struct cdrom_subchnl sc;
-  int ret;
+	struct cdrom_subchnl sc;
+	int ret;
 
 #ifdef SBPCD_HACK
-  static int prevpos = 0;
+	static int prevpos = 0;
 #endif
 
+	/* Is the device open? */
+	if (!linux_ok(d)) {
+		ret = plat_open(d);
+		if(ret < 0) /* error */
+			return ret;
+	
+		if(ret == 1) {
+			/* retry */
+			*mode = WM_CDM_UNKNOWN;
+			return 0;
+		}
+	}
 
-  /* Is the device open? */
-  if (d->fd < 0) {
-    ret = wmcd_open(d);
-    if(ret < 0) /* error */
-      return ret;
-
-    if(ret == 1) {
-      /* retry */
-      *mode = WM_CDM_UNKNOWN;
-      return 0;
-    }
-  }
-
-  /* Try to get rid of the door locking    */
-  /* Don't care about return value. If it  */
-  /* works - fine. If not - ...            */
-  ioctl(d->fd, CDROM_LOCKDOOR, 0);
-
-  *mode = WM_CDM_UNKNOWN;
-
-  sc.cdsc_format = CDROM_MSF;
-
-  IFCDDA(d) {
-    if(!cdda_get_drive_status(d, oldmode, mode, pos, track, ind)) {
-      if(*mode == WM_CDM_STOPPED)
-        *mode = WM_CDM_UNKNOWN; /* don't believe */
-    }
-  } else if(!ioctl(d->fd, CDROMSUBCHNL, &sc)) {
-    switch (sc.cdsc_audiostatus) {
-    case CDROM_AUDIO_PLAY:
-      *mode = WM_CDM_PLAYING;
-      *track = sc.cdsc_trk;
-      *ind = sc.cdsc_ind;
-      *pos = sc.cdsc_absaddr.msf.minute * 60 * 75 +
-        sc.cdsc_absaddr.msf.second * 75 +
-        sc.cdsc_absaddr.msf.frame;
+	/* Try to get rid of the door locking    */
+	/* Don't care about return value. If it  */
+	/* works - fine. If not - ...            */
+	ioctl(filedescriptor(d), CDROM_LOCKDOOR, 0);
+	
+	*mode = WM_CDM_UNKNOWN;
+	
+	sc.cdsc_format = CDROM_MSF;
+	
+	if(!ioctl(filedescriptor(d), CDROMSUBCHNL, &sc)) {
+		switch (sc.cdsc_audiostatus) {
+		case CDROM_AUDIO_PLAY:
+			*mode = WM_CDM_PLAYING;
+			*track = sc.cdsc_trk;
+			*ind = sc.cdsc_ind;
+			*pos = sc.cdsc_absaddr.msf.minute * 60 * 75 +
+			sc.cdsc_absaddr.msf.second * 75 +
+			sc.cdsc_absaddr.msf.frame;
 #ifdef SBPCD_HACK
-      if( *pos < prevpos ) {
-        if( (prevpos - *pos) < 75 ) {
-          *mode = WM_CDM_TRACK_DONE;
-        }
-      }
+			if( *pos < prevpos ) {
+				if( (prevpos - *pos) < 75 ) {
+					*mode = WM_CDM_TRACK_DONE;
+				}
+			}
 
-      prevpos = *pos;
+			prevpos = *pos;
 #endif
-      break;
+			break;
 
-    case CDROM_AUDIO_PAUSED:
-      if (oldmode == WM_CDM_PLAYING || oldmode == WM_CDM_PAUSED) {
-        *mode = WM_CDM_PAUSED;
-        *track = sc.cdsc_trk;
-        *ind = sc.cdsc_ind;
-        *pos = sc.cdsc_absaddr.msf.minute * 60 * 75 +
-          sc.cdsc_absaddr.msf.second * 75 +
-          sc.cdsc_absaddr.msf.frame;
-      } else
-        *mode = WM_CDM_STOPPED;
-      break;
+		case CDROM_AUDIO_PAUSED:
+			if (oldmode == WM_CDM_PLAYING || oldmode == WM_CDM_PAUSED) {
+				*mode = WM_CDM_PAUSED;
+				*track = sc.cdsc_trk;
+				*ind = sc.cdsc_ind;
+				*pos = sc.cdsc_absaddr.msf.minute * 60 * 75 +
+				sc.cdsc_absaddr.msf.second * 75 +
+				sc.cdsc_absaddr.msf.frame;
+			} else
+				*mode = WM_CDM_STOPPED;
+			break;
+		
+		case CDROM_AUDIO_NO_STATUS:
+			*mode = WM_CDM_STOPPED;
+			break;
+		
+		case CDROM_AUDIO_COMPLETED:
+			*mode = WM_CDM_TRACK_DONE; /* waiting for next track. */
+			break;
+		
+		case CDROM_AUDIO_INVALID: /**/
+		default:
+			*mode = WM_CDM_UNKNOWN;
+			break;
+		}
+	}
 
-    case CDROM_AUDIO_NO_STATUS:
-        *mode = WM_CDM_STOPPED;
-      break;
+	if(WM_CDS_NO_DISC(*mode)) {
+		/* verify status of drive */
+		ret = ioctl(filedescriptor(d), CDROM_DRIVE_STATUS, 0/* slot */);
+		if(ret == CDS_DISC_OK)
+			ret = ioctl(filedescriptor(d), CDROM_DISC_STATUS, 0);
 
-    case CDROM_AUDIO_COMPLETED:
-      *mode = WM_CDM_TRACK_DONE; /* waiting for next track. */
-      break;
+		switch(ret) {
+		case CDS_NO_DISC:
+			*mode = WM_CDM_NO_DISC;
+			break;
+		case CDS_TRAY_OPEN:
+			*mode = WM_CDM_EJECTED;
+			break;
+		case CDS_AUDIO:
+		case CDS_MIXED:
+			*mode = WM_CDM_STOPPED;
+			break;
+		case CDS_DRIVE_NOT_READY:
+		case CDS_NO_INFO:
+		case CDS_DATA_1:
+		case CDS_DATA_2:
+		case CDS_XA_2_1:
+		case CDS_XA_2_2:
+		default:
+			*mode = WM_CDM_UNKNOWN;
+		}
+	}
 
-    case CDROM_AUDIO_INVALID: /**/
-    default:
-      *mode = WM_CDM_UNKNOWN;
-      break;
-    }
-  }
-
-  if(WM_CDS_NO_DISC(*mode)) {
-    /* verify status of drive */
-    ret = ioctl(d->fd, CDROM_DRIVE_STATUS, 0/* slot */);
-    if(ret == CDS_DISC_OK)
-      ret = ioctl(d->fd, CDROM_DISC_STATUS, 0);
-    switch(ret) {
-    case CDS_NO_DISC:
-      *mode = WM_CDM_NO_DISC;
-      break;
-    case CDS_TRAY_OPEN:
-      *mode = WM_CDM_EJECTED;
-      break;
-    case CDS_AUDIO:
-    case CDS_MIXED:
-      *mode = WM_CDM_STOPPED;
-      break;
-    case CDS_DRIVE_NOT_READY:
-    case CDS_NO_INFO:
-    case CDS_DATA_1:
-    case CDS_DATA_2:
-    case CDS_XA_2_1:
-    case CDS_XA_2_2:
-    default:
-      *mode = WM_CDM_UNKNOWN;
-    }
-  }
-
-  return (0);
-} /* gen_get_drive_status */
+	return 0;
+} /* linux_status */
 
 /*-------------------------------------*
  * Get the number of tracks on the CD.
  *-------------------------------------*/
-int
-gen_get_trackcount(struct wm_drive *d, int *tracks)
+static int linux_trackcount(struct wm_drive *d, int *tracks)
 {
-  struct cdrom_tochdr	hdr;
+	struct cdrom_tochdr hdr;
 
-  if (ioctl(d->fd, CDROMREADTOCHDR, &hdr))
-    return (-1);
+	if (ioctl(filedescriptor(d), CDROMREADTOCHDR, &hdr))
+		return -1;
 
-  *tracks = hdr.cdth_trk1;
-  return (0);
-} /* gen_get_trackcount() */
+	*tracks = hdr.cdth_trk1;
+	return 0;
+} /* linux_trackcount() */
 
 /*---------------------------------------------------------*
  * Get the start time and mode (data or audio) of a track.
  *---------------------------------------------------------*/
-int
-gen_get_trackinfo(struct wm_drive *d, int track, int *data, int *startframe)
+static int linux_trackinfo(struct wm_drive *d, int track, int *data, int *startframe)
 {
-  struct cdrom_tocentry	entry;
+	struct cdrom_tocentry entry;
 
-  entry.cdte_track = track;
-  entry.cdte_format = CDROM_MSF;
+	entry.cdte_track = track;
+	entry.cdte_format = CDROM_MSF;
 
-  if (ioctl(d->fd, CDROMREADTOCENTRY, &entry))
-    return (-1);
+	if (ioctl(filedescriptor(d), CDROMREADTOCENTRY, &entry))
+		return -1;
 
-  *startframe =	entry.cdte_addr.msf.minute * 60 * 75 +
-    entry.cdte_addr.msf.second * 75 +
-    entry.cdte_addr.msf.frame;
-  *data = entry.cdte_ctrl & CDROM_DATA_TRACK ? 1 : 0;
+	*startframe = entry.cdte_addr.msf.minute * 60 * 75 +
+		entry.cdte_addr.msf.second * 75 +
+		entry.cdte_addr.msf.frame;
+	*data = entry.cdte_ctrl & CDROM_DATA_TRACK ? 1 : 0;
 
-  return (0);
+	return 0;
 }
 
 /*-------------------------------------*
  * Get the number of frames on the CD.
  *-------------------------------------*/
-int
-gen_get_cdlen(struct wm_drive *d, int *frames)
+static int linux_cdlen(struct wm_drive *d, int *frames)
 {
-  int tmp;
+	int tmp;
 
-  return gen_get_trackinfo( d, CDROM_LEADOUT, &tmp, frames);
-} /* gen_get_cdlen() */
-
+	return d->proto.get_trackinfo(d, CDROM_LEADOUT, &tmp, frames);
+} /* linux_total_frames() */
 
 /*------------------------------------------------------------*
  * Play the CD from one position to another (both in frames.)
  *------------------------------------------------------------*/
-int
-gen_play(struct wm_drive *d, int start, int end, int realstart)
+static int linux_play(struct wm_drive *d, int start, int end)
 {
-  struct cdrom_msf msf;
+	struct cdrom_msf msf;
 
-  CDDARETURN(d) cdda_play(d, start, end, realstart);
+	msf.cdmsf_min0 = start / (60*75);
+	msf.cdmsf_sec0 = (start % (60*75)) / 75;
+	msf.cdmsf_frame0 = start % 75;
+	msf.cdmsf_min1 = end / (60*75);
+	msf.cdmsf_sec1 = (end % (60*75)) / 75;
+	msf.cdmsf_frame1 = end % 75;
 
-  msf.cdmsf_min0 = start / (60*75);
-  msf.cdmsf_sec0 = (start % (60*75)) / 75;
-  msf.cdmsf_frame0 = start % 75;
-  msf.cdmsf_min1 = end / (60*75);
-  msf.cdmsf_sec1 = (end % (60*75)) / 75;
-  msf.cdmsf_frame1 = end % 75;
+	if (ioctl(filedescriptor(d), CDROMPLAYMSF, &msf)) {
+		if (ioctl(filedescriptor(d), CDROMSTART))
+			return -1;
+		if (ioctl(filedescriptor(d), CDROMPLAYMSF, &msf))
+			return -2;
+	}
 
-  if (ioctl(d->fd, CDROMPLAYMSF, &msf)) {
-    if (ioctl(d->fd, CDROMSTART))
-      return (-1);
-    if (ioctl(d->fd, CDROMPLAYMSF, &msf))
-      return (-2);
-  }
-
-  /*
-   * I hope no drive gets really confused after CDROMSTART
-   * If so, I need to make this run-time configurable.
-   *
-#ifndef FAST_IDE
-  if (ioctl( d->fd, CDROMSTART))
-      return (-1);
-#endif
-  if (ioctl( d->fd, CDROMPLAYMSF, &msf ))
-      return (-2);
-    */
-
-  return (0);
-} /* gen_play() */
+	return 0;
+} /* linux_play() */
 
 /*---------------*
  * Pause the CD.
  *---------------*/
-int
-gen_pause(struct wm_drive *d)
+static int linux_pause(struct wm_drive *d)
 {
-  CDDARETURN(d) cdda_pause(d);
-  return (ioctl(d->fd, CDROMPAUSE));
+	return ioctl(filedescriptor(d), CDROMPAUSE);
 }
 
 /*-------------------------------------------------*
  * Resume playing the CD (assuming it was paused.)
  *-------------------------------------------------*/
-int
-gen_resume(struct wm_drive *d)
+static int linux_resume(struct wm_drive *d)
 {
-  CDDARETURN(d) cdda_pause(d);
-  return (ioctl(d->fd, CDROMRESUME));
+	return ioctl(filedescriptor(d), CDROMRESUME);
 }
 
 /*--------------*
  * Stop the CD.
  *--------------*/
-int
-gen_stop(struct wm_drive *d)
+static int linux_stop(struct wm_drive *d)
 {
-  CDDARETURN(d) cdda_stop(d);
-  return (ioctl(d->fd, CDROMSTOP));
+	return ioctl(filedescriptor(d), CDROMSTOP);
 }
-
 
 /*----------------------------------------*
  * Eject the current CD, if there is one.
  *----------------------------------------*/
-int
-gen_eject(struct wm_drive *d)
+static int linux_eject(struct wm_drive *d)
 {
-  struct stat	stbuf;
+	struct stat stbuf;
 #if !defined(BSD_MOUNTTEST)
-  struct ustat	ust;
+	struct ustat ust;
 #else
-  struct mntent *mnt;
-  FILE *fp;
+	struct mntent *mnt;
+	FILE *fp;
 #endif
 
-  wm_lib_message(WM_MSG_LEVEL_DEBUG|WM_MSG_CLASS, "ejecting?\n");
-
-  if (fstat(d->fd, &stbuf) != 0) {
-      wm_lib_message(WM_MSG_LEVEL_DEBUG|WM_MSG_CLASS, "that weird fstat() thingy\n");
-      return (-2);
-  }
+	wm_lib_message(WM_MSG_LEVEL_DEBUG|WM_MSG_CLASS, "ejecting?\n");
+	
+	if (fstat(filedescriptor(d), &stbuf) != 0) {
+		wm_lib_message(WM_MSG_LEVEL_ERROR|WM_MSG_CLASS, "that weird fstat() thingy\n");
+		return -2;
+	}
 
   /* Is this a mounted filesystem? */
 #if !defined(BSD_MOUNTTEST)
-  if (ustat(stbuf.st_rdev, &ust) == 0)
-    return (-3);
+	if (ustat(stbuf.st_rdev, &ust) == 0)
+		return -3;
 #else
-  /*
-   * This is the same test as in the WorkBone interface.
-   * I should eliminate it there, because there is no need
-   * for it in the UI
-   */
-  /* check if drive is mounted (from Mark Buckaway's cdplayer code) */
-  /* Changed it again (look at XPLAYCD from ????                    */
-  /* It's better to check the device name rather than one device is */
-  /* mounted as iso9660. That prevents "no playing" if you have more*/
-  /* than one CD-ROM, and one of them is mounted, but it's not the  */
-  /* audio CD                                              -dirk    */
-  if ((fp = setmntent (MOUNTED, "r")) == NULL)
-    {
-      wm_lib_message(WM_MSG_LEVEL_ERROR|WM_MSG_CLASS, "Could not open %s: %s\n", MOUNTED, strerror (errno));
-      return(-3);
-    }
-  while ((mnt = getmntent (fp)) != NULL)
-    {
-      if (strcmp (mnt->mnt_fsname, d->cd_device) == 0)
-	{
-	  wm_lib_message(WM_MSG_LEVEL_ERROR|WM_MSG_CLASS, "CDROM already mounted (according to mtab). Operation aborted.\n");
-	  endmntent (fp);
-	  return(-3);
+	/*
+	* This is the same test as in the WorkBone interface.
+	* I should eliminate it there, because there is no need
+	* for it in the UI
+	*/
+	/* check if drive is mounted (from Mark Buckaway's cdplayer code) */
+	/* Changed it again (look at XPLAYCD from ????                    */
+	/* It's better to check the device name rather than one device is */
+	/* mounted as iso9660. That prevents "no playing" if you have more*/
+	/* than one CD-ROM, and one of them is mounted, but it's not the  */
+	/* audio CD                                              -dirk    */
+	if ((fp = setmntent (MOUNTED, "r")) == NULL) {
+		wm_lib_message(WM_MSG_LEVEL_ERROR|WM_MSG_CLASS, "Could not open %s: %s\n",
+			MOUNTED, strerror (errno));
+		return -3;
 	}
-    }
-  endmntent (fp);
+
+	while ((mnt = getmntent (fp)) != NULL) {
+		if (strcmp (mnt->mnt_fsname, d->cd_device) == 0) {
+			wm_lib_message(WM_MSG_LEVEL_ERROR|WM_MSG_CLASS,
+				"CDROM already mounted (according to mtab). Operation aborted.\n");
+			endmntent (fp);
+			return -3;
+		}
+	}
+	endmntent (fp);
 #endif /* BSD_MOUNTTEST */
 
-  IFCDDA(d) {
-    cdda_eject(d);
-  }
+	ioctl(filedescriptor(d), CDROM_LOCKDOOR, 0);
 
-  ioctl( d->fd, CDROM_LOCKDOOR, 0 );
+	if (ioctl(filedescriptor(d), CDROMEJECT)) {
+		wm_lib_message(WM_MSG_LEVEL_ERROR|WM_MSG_CLASS, "eject failed (%s).\n", strerror(errno));
+		return -1;
+	}
 
-  if (ioctl(d->fd, CDROMEJECT))
-    {
-      wm_lib_message(WM_MSG_LEVEL_DEBUG|WM_MSG_CLASS, "eject failed (%s).\n", strerror(errno));
-      return (-1);
-    }
-
-  /*------------------
-   * Things in "foobar_one" are left over from 1.4b3
-   * I put them here for further observation. In 1.4b3, however,
-   * that workaround didn't help at least for /dev/sbpcd
-   * (The tray closed just after ejecting because re-opening the
-   * device causes the tray to close)
-   *------------------*/
+	/*------------------
+	* Things in "foobar_one" are left over from 1.4b3
+	* I put them here for further observation. In 1.4b3, however,
+	* that workaround didn't help at least for /dev/sbpcd
+	* (The tray closed just after ejecting because re-opening the
+	* device causes the tray to close)
+	*------------------*/
 #ifdef foobar_one
-  extern int intermittent_dev
-    /*
-     * Some drives (drivers?) won't recognize a new CD if we leave the
-     * device open.
-     */
-    if (intermittent_dev)
-      gen_close(d);
+	extern int intermittent_dev
+	/*
+	* Some drives (drivers?) won't recognize a new CD if we leave the
+	* device open.
+	*/
+	if (intermittent_dev)
+		d->proto.close(d);
 #endif
 
-  return (0);
-} /* gen_eject() */
+	return 0;
+} /* linux_eject() */
 
-/*----------------------------------------*
- * Close the CD tray
- *----------------------------------------*/
-
-int
-gen_closetray(struct wm_drive *d)
+static int linux_closetray(struct wm_drive *d)
 {
 #ifdef CAN_CLOSE
 #ifdef CDROMCLOSETRAY
-  wm_lib_message(WM_MSG_LEVEL_DEBUG|WM_MSG_CLASS, "CDROMCLOSETRAY closing tray...\n");
-  if (ioctl(d->fd, CDROMCLOSETRAY))
-    return (-1);
+	wm_lib_message(WM_MSG_LEVEL_ERROR|WM_MSG_CLASS, "CDROMCLOSETRAY closing tray...\n");
+	if (ioctl(filedescriptor(d), CDROMCLOSETRAY))
+		return -1;
 #else
-  wm_lib_message(WM_MSG_LEVEL_DEBUG|WM_MSG_CLASS, "wmcd_reopen() closing tray...\n");
-  if(!gen_close(d))
-    {
-      return(wmcd_reopen(d));
-    } else {
-      return(-1);
-    }
+	wm_lib_message(WM_MSG_LEVEL_DEBUG|WM_MSG_CLASS, "wmcd_reopen() closing tray...\n");
+	if(!d->fops.close(d)) {
+		return linux_reopen(d);
+	} else {
+		return -1;
+	}
 #endif /* CDROMCLOSETRAY */
 #endif /* CAN_CLOSE */
-  /* Always succeed if the drive can't close. */
-  return(0);
-} /* gen_closetray() */
+	/* Always succeed if the drive can't close. */
+	return 0;
+} /* linux_tray_close() */
 
-
+static int min_volume = 0, max_volume = 255;
 /*------------------------------------------------------------------------*
  * scale_volume(vol, max)
  *
@@ -708,26 +483,24 @@ gen_closetray(struct wm_drive *d)
  * This is not used if sound card support is enabled.
  *
  *------------------------------------------------------------------------*/
-static int
-scale_volume( int vol, int max )
+static int scale_volume(int vol, int max)
 {
 #ifdef CURVED_VOLUME
-  return ((max * max - (max - vol) * (max - vol)) *
-    (max_volume - min_volume) / (max * max) + min_volume);
+	return ((max * max - (max - vol) * (max - vol)) *
+	track_info_status(max_volume - min_volume) / (max * max) + min_volume);
 #else
-  return ((vol * (max_volume - min_volume)) / max + min_volume);
+	return ((vol * (max_volume - min_volume)) / max + min_volume);
 #endif
 } /* scale_volume() */
 
-static int
-unscale_volume( int vol, int max )
+static int unscale_volume(int vol, int max)
 {
 #ifdef CURVED_VOLUME
-  /* FIXME do it simpler */
-  int tmp = (((max_volume - min_volume - vol) * max * max) - (vol + min_volume));
-  return max - sqrt((tmp/(max_volume - min_volume)));
+	/* FIXME do it simpler */
+	int tmp = (((max_volume - min_volume - vol) * max * max) - (vol + min_volume));
+	return max - sqrt((tmp/(max_volume - min_volume)));
 #else
-  return (((vol - min_volume) * max) / (max_volume - min_volume));
+	return (((vol - min_volume) * max) / (max_volume - min_volume));
 #endif
 } /* unscale_volume() */
 
@@ -735,60 +508,342 @@ unscale_volume( int vol, int max )
  * Set the volume level for the left and right channels.  Their values
  * range from 0 to 100.
  *---------------------------------------------------------------------*/
-int
-gen_set_volume( struct wm_drive *d, int left, int right )
+int linux_set_volume(struct wm_drive *d, int left, int right)
 {
-  struct cdrom_volctrl v;
+	struct cdrom_volctrl v;
+	
+	v.channel0 = v.channel2 = left < 0 ? 0 : left > 255 ? 255 : left;
+	v.channel1 = v.channel3 = right < 0 ? 0 : right > 255 ? 255 : right;
 
-  CDDARETURN(d) cdda_set_volume(d, left, right);
-
-  /* Adjust the volume to make up for the CD-ROM drive's weirdness. */
-  left = scale_volume(left, 100);
-  right = scale_volume(right, 100);
-
-  v.channel0 = v.channel2 = left < 0 ? 0 : left > 255 ? 255 : left;
-  v.channel1 = v.channel3 = right < 0 ? 0 : right > 255 ? 255 : right;
-
-  return (ioctl(d->fd, CDROMVOLCTRL, &v));
-} /* gen_set_volume() */
+	return (ioctl(filedescriptor(d), CDROMVOLCTRL, &v));
+} /* linux_set_volume() */
 
 /*---------------------------------------------------------------------*
  * Read the volume from the drive, if available.  Each channel
  * ranges from 0 to 100, with -1 indicating data not available.
  *---------------------------------------------------------------------*/
-int
-gen_get_volume( struct wm_drive *d, int *left, int *right )
+int linux_get_volume(struct wm_drive *d, int *left, int *right)
 {
-  struct cdrom_volctrl v;
-
-  CDDARETURN(d) cdda_get_volume(d, left, right);
+	struct cdrom_volctrl v;
 
 #if defined(CDROMVOLREAD)
-  if(!ioctl(d->fd, CDROMVOLREAD, &v)) {
-    *left = unscale_volume((v.channel0 + v.channel2)/2, 100);
-    *right = unscale_volume((v.channel1 + v.channel3)/2, 100);
-  } else
+	if(!ioctl(filedescriptor(d), CDROMVOLREAD, &v)) {
+		*left = (v.channel0 + v.channel2)/2;
+		*right = (v.channel1 + v.channel3)/2;
+	} else
 #endif
-    /* Suns, HPs, Linux, NEWS can't read the volume; oh well */
-    *left = *right = -1;
+		/* Suns, HPs, Linux, NEWS can't read the volume; oh well */
+		*left = *right = -1;
 
-  return 0;
-} /* gen_get_volume() */
+	return 0;
+} /* linux_get_volume() */
 
-/*------------------------------------------------------------------------*
- * gen_get_cdtext(drive, buffer, length)
- *
- * Return a buffer with cdtext-stream. buffer will be allocated and filled
- *
- * needs send packet interface -> for IDE, linux at 2.2.16
- * depends on scsi.c which depends on wm_scsi defined in here
- * (which also takes care of IDE drives)
- *------------------------------------------------------------------------*/
-
-int
-gen_get_cdtext(struct wm_drive *d, unsigned char **pp_buffer, int *p_buffer_lenght)
+int linux_scale_volume(int *left, int *right)
 {
-  return wm_scsi_get_cdtext(d, pp_buffer, p_buffer_lenght);
-} /* gen_get_cdtext() */
+	/* Adjust the volume to make up for the CD-ROM drive's weirdness. */
+	*left = scale_volume(*left, 100);
+	*right = scale_volume(*right, 100);
+
+	return 0;
+}
+
+int linux_unscale_volume(int *left, int *right)
+{
+	*left = unscale_volume(*left, 100);
+	*right = unscale_volume(*right, 100);
+
+	return 0;
+}
+
+/*---------------------------------------------*
+ * Send an arbitrary SCSI command to a device.
+ *---------------------------------------------*/
+static int linux_scsi(struct wm_drive *d, unsigned char *cdb, int cdblen,
+	void *retbuf, int retbuflen, int getreply)
+{
+	int ret;
+#ifdef LINUX_SCSI_PASSTHROUGH
+
+	char *cmd;
+	int cmdsize;
+
+	cmdsize = 2 * sizeof(int);
+	if (retbuf) {
+		if (getreply)
+			cmdsize += max(cdblen, retbuflen);
+		else
+			cmdsize += (cdblen + retbuflen);
+	} else {
+		cmdsize += cdblen;
+	}
+
+	cmd = malloc(cmdsize);
+	if (cmd == NULL) {
+		return -ENOMEM;
+	}
+	((int*)cmd)[0] = cdblen + ((retbuf && !getreply) ? retbuflen : 0);
+	((int*)cmd)[1] = ((retbuf && getreply) ? retbuflen : 0);
+
+	memcpy(cmd + 2*sizeof(int), cdb, cdblen);
+	if (retbuf && !getreply)
+		memcpy(cmd + 2*sizeof(int) + cdblen, retbuf, retbuflen);
+
+	if (ioctl(filedescriptor(d), SCSI_IOCTL_SEND_COMMAND, cmd)) {
+		wm_lib_message(WM_MSG_LEVEL_DEBUG|WM_MSG_CLASS, "%s: ioctl(SCSI_IOCTL_SEND_COMMAND) failure\n", __FILE__);
+		wm_lib_message(WM_MSG_LEVEL_DEBUG|WM_MSG_CLASS, "command buffer is:\n");
+		wm_lib_message(WM_MSG_LEVEL_DEBUG|WM_MSG_CLASS, "%02x %02x %02x %02x %02x %02x\n",
+		cmd[0],  cmd[1],  cmd[2],  cmd[3],  cmd[4],  cmd[5]);
+		free(cmd);
+		return -1;
+	}
+
+	if (retbuf && getreply)
+		memcpy(retbuf, cmd + 2*sizeof(int), retbuflen);
+
+	free(cmd);
+	return 0;
+
+#else /* Linux SCSI passthrough*/
+/*----------------------------------------*
+ * send packet over cdrom interface
+ * kernel >= 2.2.16
+ *----------------------------------------*/
+#if (LINUX_VERSION_CODE > KERNEL_VERSION(2,2,15))
+
+	struct cdrom_generic_command cdc;
+	struct request_sense sense;
+	int capability;
+
+	wm_lib_message(WM_MSG_LEVEL_DEBUG|WM_MSG_CLASS, "wm_scsi over CDROM_SEND_PACKET entered\n");
+	
+	capability = ioctl(filedescriptor(d), CDROM_GET_CAPABILITY);
+	
+	if(!(capability & CDC_GENERIC_PACKET)) {
+		wm_lib_message(WM_MSG_LEVEL_DEBUG|WM_MSG_CLASS,
+			"your CDROM or/and kernel don't support CDC_GENERIC_PACKET ...\n");
+		return -1;
+	}
+
+	memset(&cdc, 0, sizeof(struct cdrom_generic_command));
+	memset(&sense, 0, sizeof(struct request_sense));
+	
+	memcpy(cdc.cmd, cdb, cdblen);
+	
+	cdc.buffer = retbuf;
+	cdc.buflen = retbuflen;
+	cdc.stat = 0;
+	cdc.sense = &sense;
+	cdc.data_direction = getreply?CGC_DATA_READ:CGC_DATA_WRITE;
+	
+	/* sendpacket_over_cdrom_interface() */
+	if((ret = ioctl(filedescriptor(d), CDROM_SEND_PACKET, &cdc)))
+		wm_lib_message(WM_MSG_LEVEL_ERROR|WM_MSG_CLASS,
+			"ERROR: CDROM_SEND_PACKET %s\n", strerror(errno));
+	return ret;
+#endif /* CDROM_SEND_PACKET */
+	wm_lib_message(WM_MSG_LEVEL_ERROR|WM_MSG_CLASS,
+		"ERROR: this binary was compiled without CDROM GENERIC PACKET SUPPORT. kernel version < 2.2.16?\n");
+	wm_lib_message(WM_MSG_LEVEL_ERROR|WM_MSG_CLASS,
+		"ERROR: if you have a SCSI CDROM, rebuild it with a #define LINUX_SCSI_PASSTHROUGH\n");
+	return -1;
+#endif
+} /* linux_scsi */
+
+int plat_open(struct wm_drive *d)
+{
+	if (!d->cd_device)
+		d->cd_device = DEFAULT_CD_DEVICE;
+
+	if (linux_ok(d)) {
+		wm_lib_message(WM_MSG_LEVEL_DEBUG|WM_MSG_CLASS, "wmcd_open(): [device is open (fd=%d)]\n",
+			filedescriptor(d));
+		return 0;
+	}
+
+	set_filedescriptor(d, open(d->cd_device, O_RDONLY | O_NONBLOCK));
+	wm_lib_message(WM_MSG_LEVEL_DEBUG|WM_MSG_CLASS, "plat_open(): device=%s fd=%d\n",
+		d->cd_device, filedescriptor(d));
+
+	if (!linux_ok(d))
+		return -errno;
+
+	d->proto.ok = linux_ok;
+	d->proto.close = linux_close;
+	d->proto.get_trackcount = linux_trackcount;
+	d->proto.get_cdlen = linux_cdlen;
+	d->proto.get_trackinfo = linux_trackinfo;
+	d->proto.get_drive_status = linux_status;
+	d->proto.pause = linux_pause;
+	d->proto.resume = linux_resume;
+	d->proto.stop = linux_stop;
+	d->proto.play = linux_play;
+	d->proto.eject = linux_eject;
+	d->proto.closetray = linux_closetray;
+	d->proto.scsi = linux_scsi;
+	d->proto.set_volume = linux_set_volume;
+	d->proto.get_volume = linux_get_volume;
+	d->proto.scale_volume = linux_scale_volume;
+	d->proto.unscale_volume = linux_unscale_volume;
+
+	return 0;
+} /* plat_open() */
+
+#if 0
+#define CDROM_LBA         0x01   /* "logical block": first frame is #0 */
+#define CDROMREADAUDIO    0x530e /* (struct cdrom_read_audio) */
+#define CD_MSF_OFFSET     150    /* MSF numbering offset of first frame */
+
+/* This struct is used by the CDROMREADAUDIO ioctl */
+struct cdrom_read_audio
+{
+	union {
+		struct {
+			unsigned char minute;
+			unsigned char second;
+			unsigned char frame;
+		} msf;
+		signed int			lba;
+	} addr; /* frame address */
+	unsigned char addr_format;      /* CDROM_LBA or CDROM_MSF */
+	signed int nframes;           /* number of 2352-byte-frames to read at once */
+	unsigned char *buf;      /* frame buffer (size: nframes*2352 bytes) */
+};
+
+#define CDDABLKSIZE 2352
+
+#endif
+
+/* Address of next/last block to read. */
+static int current_position,  ending_position;
+
+/*
+ * Set up for playing the CD.  Actually this doesn't play a thing, just sets a
+ * couple variables so we'll know what to do when we're called.
+ */
+static int linux_cdda_play(struct wm_drive *d, int start, int end)
+{
+	if (!linux_ok(d))
+		return -1;
+	
+	current_position = start;
+	ending_position = end;
+
+	return 0;
+}
+
+/*
+ * Read some blocks from the CD.  Stop if we hit the end of the current region.
+ *
+ * Returns number of bytes read, -1 on error, 0 if stopped for a benign reason.
+ */
+static int linux_cdda_read(struct wm_drive *d, struct wm_cdda_block *block)
+{
+	struct cdrom_read_audio cdda;
+
+	if (!linux_ok(d))
+		return -1;
+
+	/* Hit the end of the CD, probably. */
+	if (current_position >= ending_position) {
+		block->status = WM_CDM_TRACK_DONE;
+		return 0;
+	}
+
+	cdda.addr_format = CDROM_LBA;
+	cdda.addr.lba = current_position - CD_MSF_OFFSET;
+	if (ending_position && current_position + d->frames_at_once > ending_position)
+		cdda.nframes = ending_position - current_position;
+	else
+		cdda.nframes = d->frames_at_once;
+
+	cdda.buf = (unsigned char*)block->buf;
+
+	if (ioctl(filedescriptor(d), CDROMREADAUDIO, &cdda) < 0) {
+		if (errno == ENXIO) {
+			/* CD ejected! */
+			block->status = WM_CDM_EJECTED;
+			return 0;
+		} else {
+			/* Sometimes it fails once, dunno why */
+			block->status = WM_CDM_CDDAERROR;
+			return 0;
+		}
+	}
+
+	block->track =  -1;
+	block->index =  0;
+	block->frame  = current_position;
+	block->status = WM_CDM_PLAYING;
+	block->buflen = cdda.nframes * CD_FRAMESIZE_RAW;
+
+	current_position = current_position + cdda.nframes;
+
+	return block->buflen;
+}
+
+/*
+ * Close the CD-ROM device in preparation for exiting.
+ */
+static int linux_cdda_close(struct wm_drive *d)
+{
+	int i;
+
+	if (!linux_ok(d))
+		return -1;
+
+	for (i = 0; i < d->numblocks; i++) {
+		free(d->blocks[i].buf);
+		d->blocks[i].buf = 0;
+		d->blocks[i].buflen = 0;
+	}
+
+	return 0;
+}
+
+/*
+ * Initialize the CDDA data buffer and open the appropriate device.
+ *
+ */
+int plat_cdda_open(struct wm_drive *d)
+{
+	int i;
+	struct cdrom_read_audio cdda;
+
+	if (!linux_ok(d))
+		return -1;
+
+	for (i = 0; i < d->numblocks; i++) {
+		d->blocks[i].buflen = d->frames_at_once * CD_FRAMESIZE_RAW;
+		d->blocks[i].buf = malloc(d->blocks[i].buflen);
+		if (!d->blocks[i].buf) {
+			ERRORLOG("plat_cdda_open: ENOMEM\n");
+			return -ENOMEM;
+		}
+	}
+
+	cdda.addr_format = CDROM_LBA;
+	cdda.addr.lba = 200;
+	cdda.nframes = 1;
+	cdda.buf = (unsigned char*)d->blocks[0].buf;
+	
+	d->status = WM_CDM_STOPPED;
+	if((ioctl(filedescriptor(d), CDROMREADAUDIO, &cdda) < 0)) {
+		if (errno == ENXIO) {
+			/* CD ejected! */
+			d->status = WM_CDM_EJECTED;
+		} else {
+			/* Sometimes it fails once, dunno why */
+			d->status = WM_CDM_CDDAERROR;
+		}
+	} else {
+		d->status = WM_CDM_UNKNOWN;
+	}
+
+	d->proto_cdda.cdda_play = linux_cdda_play;
+	d->proto_cdda.cdda_read = linux_cdda_read;
+	d->proto_cdda.cdda_close = linux_cdda_close;
+
+	return 0;
+}
 
 #endif /* __linux__ */

@@ -1,11 +1,9 @@
 #ifndef WM_HELPERS_H
 #define WM_HELPERS_H
 /*
- * $Id: wm_helpers.h 486075 2005-12-06 18:29:02Z thiago $
- *
  * This file is part of WorkMan, the civilized CD player library
  * Copyright (C) 1991-1997 by Steven Grimm <koreth@midwinter.com>
- * Copyright (C) by Dirk Försterling <milliByte@DeathsDoor.com>
+ * Copyright (C) by Dirk FÃ¶rsterling <milliByte@DeathsDoor.com>
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Library General Public
@@ -43,6 +41,7 @@
 #define WM_MSG_LEVEL_EIGHT	8
 #define WM_MSG_LEVEL_DEBUG	9	/**/
 
+#define WM_MSG_LEVEL_ALL	0xf	/**/
 /*
  * Message classes. This is somehow a definition of
  * the message's source.
@@ -55,8 +54,6 @@
 #define WM_MSG_CLASS_MISC	0x100
 
 #define WM_MSG_CLASS_ALL	0xff0
-
-extern int wm_lib_verbosity;
 
 /*
  * I did not know any better place...
@@ -89,6 +86,7 @@ char *		wm_libver_string( void ); 	/* returns string: "<name> <number>" */
 char *		wm_libver_date( void );		/* returns string: date of compilation */
 void 		wm_lib_set_verbosity( int level ); /* set verbosity level */
 int 		wm_lib_get_verbosity( void );      /* get verbosity level */
+
 void 		wm_lib_message( unsigned int level, const char *format, ... )
 #ifdef __GNUC__
     __attribute__ ((format(printf,2,3)))

@@ -1,9 +1,7 @@
 /*
- * $Id: drv_sony.c 486075 2005-12-06 18:29:02Z thiago $
- *
  * This file is part of WorkMan, the civilized CD player library
  * Copyright (C) 1991-1997 by Steven Grimm (original author)
- * Copyright (C) by Dirk Försterling (current 'author' = maintainer)
+ * Copyright (C) by Dirk FÃ¶rsterling (current 'author' = maintainer)
  * The maintainer can be contacted by his e-mail address:
  * milliByte@DeathsDoor.com
  *
@@ -31,47 +29,9 @@
 #include "include/wm_struct.h"
 #include "include/wm_scsi.h"
 
-#define PAGE_AUDIO		0x0e
+#define PAGE_AUDIO 0x0e
 
-/* local prototypes */
-static int	sony_init( struct wm_drive *d );
-static int	sony_set_volume(struct wm_drive *d, int left, int right );
-static int	sony_get_volume( struct wm_drive *d, int *left, int *right );
-
-
-extern int	min_volume, max_volume;
-
-struct wm_drive_proto sony_proto = {
-	sony_init,		/* functions... */
-	gen_close,
-	gen_get_trackcount,
-	gen_get_cdlen,
-	gen_get_trackinfo,
-	gen_get_drive_status,
-	sony_get_volume,
-	sony_set_volume,
-	gen_pause,
-	gen_resume,
-	gen_stop,
-	gen_play,
-	gen_eject,
-	gen_closetray,
-	NULL /* gen_get_cdtext */
-};
-
-/*
- * Initialize the driver.
- */
-static int sony_init( struct wm_drive *d ) {
-
-/* Sun use Sony drives as well */
-#if defined(SYSV) && defined(CODEC)
-        codec_init();
-#endif
-	min_volume = 128;
-	max_volume = 255;
-	return( 0 );
-} /* sony_init() */
+static int max_volume = 255;
 
 /*
  * On the Sony CDU-8012 drive, the amount of sound coming out the jack
@@ -89,9 +49,7 @@ static int sony_init( struct wm_drive *d ) {
  *
  * Where "max" is the maximum value of the volume scale, usually 100.
  */
-static int
-scale_volume(vol, max)
-	int	vol, max;
+static int scale_volume(int vol, int max)
 {
 	vol = (max*max - (max - vol) * (max - vol)) / max;
 	return ((vol + max) / 2);
@@ -104,63 +62,76 @@ scale_volume(vol, max)
  * Rather than perform floating-point calculations to reverse the above
  * formula, we simply do a binary search of scale_volume()'s return values.
  */
-static int
-unscale_volume(cd_vol, max)
-	int	cd_vol, max;
+static int unscale_volume(int vol, int max)
 {
-	int	vol = 0, top = max, bot = 0, scaled = 0;
+	int ret_vol = 0, top = max, bot = 0, scaled = 0;
 
-	cd_vol = (cd_vol * 100 + (max_volume - 1)) / max_volume;
+	vol = (vol * 100 + (max_volume - 1)) / max_volume;
 
 	while (bot <= top)
 	{
-		vol = (top + bot) / 2;
-		scaled = scale_volume(vol, max);
-		if (cd_vol <= scaled)
-			top = vol - 1;
+		ret_vol = (top + bot) / 2;
+		scaled = scale_volume(ret_vol, max);
+		if (vol <= scaled)
+			top = ret_vol - 1;
 		else
-			bot = vol + 1;
+			bot = ret_vol + 1;
 	}
 
 	/* Might have looked down too far for repeated scaled values */
-	if (cd_vol < scaled)
-		vol++;
+	if (vol < scaled)
+		ret_vol++;
 
-	if (vol < 0)
-		vol = 0;
-	else if (vol > max)
-		vol = max;
+	if (ret_vol < 0)
+		ret_vol = 0;
+	else if (ret_vol > max)
+		ret_vol = max;
 
-	return (vol);
-}
-
-/*
- * Get the volume.  Sun's CD-ROM driver doesn't support this operation, even
- * though their drive does.  Dumb.
- */
-static int
-sony_get_volume( struct wm_drive *d, int *left, int *right )
-{
-	unsigned char	mode[16];
-
-	/* Get the current audio parameters first. */
-	if (wm_scsi_mode_sense(d, PAGE_AUDIO, mode))
-		return (-1);
-
-	*left = unscale_volume(mode[9], 100);
-	*right = unscale_volume(mode[11], 100);
-
-	return (0);
+	return ret_vol;
 }
 
 /*
  * Set the volume using the wacky scale outlined above.  The Sony drive
  * responds to the standard set-volume command.
+ *
+ * Get the volume.  Sun's CD-ROM driver doesn't support this operation, even
+ * though their drive does.  Dumb.
  */
-static int
-sony_set_volume(struct wm_drive *d, int left, int right )
+static int sony_get_volume( struct wm_drive *d, int *left, int *right )
 {
-	left = scale_volume(left, 100);
-	right = scale_volume(right, 100);
-	return (gen_set_volume(d, left, right));
+	unsigned char mode[16];
+
+	/* Get the current audio parameters first. */
+	if (wm_scsi_mode_sense(d, PAGE_AUDIO, mode))
+		return -1;
+
+	*left = mode[9];
+	*right = mode[11];
+
+	return 0;
+}
+
+static int sony_scale_volume(int *left, int *right)
+{
+	*left = scale_volume(*left, 100);
+	*right = scale_volume(*right, 100);
+
+	return 0;
+}
+
+static int sony_unscale_volume(int *left, int *right)
+{
+	*left = unscale_volume(*left, 100);
+	*right = unscale_volume(*right, 100);
+
+	return 0;
+}
+
+int sony_fixup(struct wm_drive *d)
+{
+	d->proto.get_volume = sony_get_volume;
+	d->proto.scale_volume = sony_scale_volume;
+	d->proto.unscale_volume = sony_unscale_volume;
+
+	return 0;
 }

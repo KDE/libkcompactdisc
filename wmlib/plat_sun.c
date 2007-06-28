@@ -1,9 +1,7 @@
 /*
- * $Id: plat_sun.c 608128 2006-11-26 20:40:07Z kernalex $
- *
  * This file is part of WorkMan, the civilized CD player library
  * Copyright (C) 1991-1997 by Steven Grimm <koreth@midwinter.com>
- * Copyright (C) by Dirk Försterling <milliByte@DeathsDoor.com>
+ * Copyright (C) by Dirk FÃ¶rsterling <milliByte@DeathsDoor.com>
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Library General Public
@@ -22,8 +20,6 @@
  *
  * Sun-specific drive control routines.
  */
-
-static char plat_sun_id[] = "$Id: plat_sun.c 608128 2006-11-26 20:40:07Z kernalex $";
 
 #if defined(sun) || defined(__sun)
 
@@ -622,7 +618,6 @@ gen_eject( struct wm_drive *d )
       if (d->cdda_slave > -1)
 	{
 	  write(d->cdda_slave, "E", 1);
-	  cdda_get_ack(d->cdda_slave);
 	}
     }
 
@@ -734,13 +729,6 @@ gen_cdda_init( struct wm_drive *d )
 
   close(slavefds[1]);
   d->cdda_slave = slavefds[0];
-
-  if (!cdda_get_ack(d->cdda_slave))
-    {
-      d->cdda_slave = -1;
-      codec_start();
-      return (-3);
-    }
 
   return (0);
 }

@@ -1,9 +1,7 @@
 /*
- * $Id: plat_news.c 587515 2006-09-23 02:48:38Z haeber $
- *
  * This file is part of WorkMan, the civilized CD player library
  * Copyright (C) 1991-1997 by Steven Grimm <koreth@midwinter.com>
- * Copyright (C) by Dirk Försterling <milliByte@DeathsDoor.com>
+ * Copyright (C) by Dirk FÃ¶rsterling <milliByte@DeathsDoor.com>
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Library General Public
@@ -22,8 +20,6 @@
  *
  * Sony NEWS-specific drive control routines.
  */
-
-static char plat_news_id[] = "$Id: plat_news.c 587515 2006-09-23 02:48:38Z haeber $";
 
 #if defined( __sony_news) || defined(sony_news)
 
@@ -308,15 +304,18 @@ gen_play( struct wm_drive *d, int start, int end )
 
   if (CD_Play(d->fd, &msf))
     {
-      printf("wm_cd_play_chunk(%d,%d)\n",start,end);
-      printf("msf = %d:%d:%d %d:%d:%d\n",
+      wm_lib_message(WM_MSG_LEVEL_ERROR|WM_MSG_CLASS,
+		"wm_cd_play_chunk(%d,%d)\n",start,end);
+      wm_lib_message(WM_MSG_LEVEL_ERROR|WM_MSG_CLASS,
+		"msf = %d:%d:%d %d:%d:%d\n",
 	     msf.addr.msf.startmsf.min,
 	     msf.addr.msf.startmsf.sec,
 	     msf.addr.msf.startmsf.frame,
 	     msf.addr.msf.endmsf.min,
 	     msf.addr.msf.endmsf.sec,
 	     msf.addr.msf.endmsf.frame);
-      perror("CD_Play");
+      wm_lib_message(WM_MSG_LEVEL_ERROR|WM_MSG_CLASS,
+		"CD_Play");
       return (-1);
     }
 

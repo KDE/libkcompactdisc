@@ -1,9 +1,7 @@
 /*
- * $Id: plat_bsd386.c 587515 2006-09-23 02:48:38Z haeber $
- *
  * This file is part of WorkMan, the civilized CD player library
  * Copyright (C) 1991-1997 by Steven Grimm <koreth@midwinter.com>
- * Copyright (C) by Dirk Försterling <milliByte@DeathsDoor.com>
+ * Copyright (C) by Dirk FÃ¶rsterling <milliByte@DeathsDoor.com>
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Library General Public
@@ -22,8 +20,6 @@
  *
  * BSD/386-specific drive control routines.
  */
-
-static char plat_bsd386_id[] = "$Id: plat_bsd386.c 587515 2006-09-23 02:48:38Z haeber $";
 
 #if defined(__bsdi__) || defined(__bsdi)
 
