@@ -116,16 +116,16 @@ struct wm_drive
 	char *soundsystem;
 	char *sounddevice;
 	char *ctldevice;
-	
+
 	char  vendor[9];      /* Vendor name */
 	char  model[17];      /* Drive model */
 	char  revision[5];    /* Revision of the drive */
 	void  *aux;           /* Pointer to optional platform-specific info */
-	
+
 	void  *daux;          /* Pointer to optional drive-specific info, file descriptor etc. */
 	struct wm_drive_proto proto;
 
-	/* cdda section */    
+	/* cdda section */
     unsigned char status;
     unsigned char track;
     unsigned char index;
@@ -154,12 +154,9 @@ extern "C" {
 #endif
 int toshiba_fixup(struct wm_drive *d);
 int sony_fixup(struct wm_drive *d);
-int fixup_drive_struct(struct wm_drive *d);
-
 
 struct cdtext_info* get_glob_cdtext(struct wm_drive*, int);
 void free_cdtext(void);
-const char* gen_status(int);
 
 int plat_open(struct wm_drive *d);
 int plat_cdda_open(struct wm_drive *d);

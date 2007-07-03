@@ -48,7 +48,9 @@
 #endif
 
 /* local prototypes */
-int read_toc(struct wm_drive *);
+static int fixup_drive_struct(struct wm_drive *);
+static int read_toc(struct wm_drive *);
+static const char* gen_status(int);
 
 #define WM_MSG_CLASS WM_MSG_CLASS_CDROM
 
@@ -60,7 +62,7 @@ int read_toc(struct wm_drive *);
  * The first match in the list is used, and substring matches are done (so
  * put long names before their shorter prefixes.)
  */
-struct drivelist {
+static struct drivelist {
   const char *vendor;
   const char *model;
   const char *revision;
@@ -168,7 +170,7 @@ int wm_cd_destroy(void *p)
 		int (*tmp)(struct wm_drive *);
 		tmp = pdrive->proto.close;
 		memset(&pdrive->proto, 0, sizeof(pdrive->proto));
-		
+
 		tmp(pdrive);
 	}
 
@@ -216,7 +218,7 @@ unsigned long wm_cddb_discid(void *p)
  * Figure out which prototype drive structure we should be using based
  * on the vendor, model, and revision of the current pdrive->
  */
-int fixup_drive_struct(struct wm_drive *d)
+static int fixup_drive_struct(struct wm_drive *d)
 {
 	struct drivelist *driver;
 
@@ -246,7 +248,7 @@ fail:
  *
  * XXX allocates one trackinfo too many.
  */
-int read_toc(struct wm_drive *pdrive)
+static int read_toc(struct wm_drive *pdrive)
 {
 	int    i;
 	int    pos;
@@ -275,7 +277,7 @@ int read_toc(struct wm_drive *pdrive)
 			&pdrive->thiscd.trk[i].start) < 0) {
 			return -1;
 		}
-	
+
 		pdrive->thiscd.trk[i].length = pdrive->thiscd.trk[i].start / 75;
 
 		pdrive->thiscd.trk[i].track = i + 1;
@@ -478,7 +480,7 @@ int wm_cd_play(void *p, int start, int pos, int end)
 	struct wm_drive *pdrive = (struct wm_drive *)p;
 	int real_start, real_end, status;
 	int play_start, play_end;
-	
+
 	status = wm_cd_status(pdrive);
 	if(WM_CDS_NO_DISC(status) || pdrive->thiscd.ntracks < 1)
 		return -1;
@@ -519,7 +521,7 @@ int wm_cd_play(void *p, int start, int pos, int end)
 	play_start = pdrive->thiscd.trk[CARRAY(start)].start + pos * 75;
 	play_end = (end == pdrive->thiscd.ntracks) ? pdrive->thiscd.length * 75 :
 		pdrive->thiscd.trk[CARRAY(end)].start - 1;
-	
+
 	--play_end;
 
 	if (play_start >= play_end)
@@ -529,7 +531,7 @@ int wm_cd_play(void *p, int start, int pos, int end)
 		pdrive->proto.play(pdrive, play_start, play_end);
 	else
 		return -1;
-		
+
 		/* So we don't update the display with the old frame number */
 	wm_cd_status(pdrive);
 
@@ -575,7 +577,7 @@ int wm_cd_stop(void *p)
 {
 	struct wm_drive *pdrive = (struct wm_drive *)p;
 	int status;
-	
+
 	status = wm_cd_status(pdrive);
 	if(WM_CDS_NO_DISC(status))
 		return -1;
@@ -620,7 +622,7 @@ int wm_cd_closetray(void *p)
 {
 	struct wm_drive *pdrive = (struct wm_drive *)p;
 	int status, err = -1;
-	
+
 	status = wm_cd_status(pdrive);
 	if (status == WM_CDM_UNKNOWN || status == WM_CDM_NO_DISC)
 		return -1;
@@ -637,7 +639,7 @@ struct cdtext_info* wm_cd_get_cdtext(void *p)
 	int status;
 
 	status = wm_cd_status(pdrive);
-	
+
 	if(WM_CDS_NO_DISC(status))
 		return NULL;
 
@@ -679,7 +681,7 @@ int wm_cd_volume(void *p, int vol, int bal)
 	right = vol + (bal * bal1);
 
 	wm_lib_message(WM_MSG_LEVEL_DEBUG|WM_MSG_CLASS, "calculate volume left %i, right %i\n", left, right);
-	
+
 	if (left > WM_VOLUME_MAXIMAL)
 		left = WM_VOLUME_MAXIMAL;
 	if (right > WM_VOLUME_MAXIMAL)
@@ -698,7 +700,7 @@ int wm_cd_getvolume(void *p)
 {
 	struct wm_drive *pdrive = (struct wm_drive *)p;
 	int left, right;
-	
+
 	if(!pdrive->proto.get_volume ||
 		pdrive->proto.get_volume(pdrive, &left, &right) < 0 || left == -1)
 		return -1;
@@ -748,7 +750,7 @@ int wm_cd_getbalance(void *p)
 	return pdrive->thiscd.cd_cur_balance;
 }
 
-const char *gen_status(int status)
+static const char *gen_status(int status)
 {
 	static char tmp[250];
 
