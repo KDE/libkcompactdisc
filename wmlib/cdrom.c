@@ -130,16 +130,36 @@ int wm_cd_init(const char *cd_device, const char *soundsystem,
 
 	pdrive->cdda = (soundsystem && strcasecmp(soundsystem, "cdin"));
 
-	pdrive->cd_device = cd_device ? strdup(cd_device) : NULL;
+	pdrive->cd_device = cd_device ? strdup(cd_device) : strdup(DEFAULT_CD_DEVICE);
 	pdrive->soundsystem = soundsystem ? strdup(soundsystem): NULL;
 	pdrive->sounddevice = sounddevice ? strdup(sounddevice) : NULL;
 	pdrive->ctldevice = ctldevice ? strdup(ctldevice) : NULL;
 
-	if ((err = plat_open(pdrive)) < 0) {
-		wm_cd_destroy(pdrive);
-		free(pdrive);
-		return err;
-	}
+	pdrive->fd = -1;
+
+	pdrive->proto.open = gen_open;
+	pdrive->proto.close = gen_close;
+	pdrive->proto.get_trackcount = gen_get_trackcount;
+	pdrive->proto.get_cdlen = gen_get_cdlen;
+	pdrive->proto.get_trackinfo = gen_get_trackinfo;
+	pdrive->proto.get_drive_status = gen_get_drive_status;
+	pdrive->proto.pause = gen_pause;
+	pdrive->proto.resume = gen_resume;
+	pdrive->proto.stop = gen_stop;
+	pdrive->proto.play = gen_play;
+	pdrive->proto.eject = gen_eject;
+	pdrive->proto.closetray = gen_closetray;
+	pdrive->proto.scsi = gen_scsi;
+	pdrive->proto.set_volume = gen_set_volume;
+	pdrive->proto.get_volume = gen_get_volume;
+	pdrive->proto.scale_volume = gen_scale_volume;
+	pdrive->proto.unscale_volume = gen_unscale_volume;
+
+	if((err = gen_init(pdrive)) < 0)
+		goto init_failed;
+
+	if ((err = pdrive->proto.open(pdrive)) < 0)
+		goto open_failed;
 
 	/* Can we figure out the drive type? */
 	if (wm_scsi_get_drive_type(pdrive)) {
@@ -148,14 +168,23 @@ int wm_cd_init(const char *cd_device, const char *soundsystem,
 
 	/* let it override some functions */
 	fixup_drive_struct(pdrive);
-
-	if(pdrive->cdda && (err = wm_cdda_init(pdrive))) {
-		wm_cd_destroy(pdrive);
-		free(pdrive);
-		return err;
-	}
-
+#ifdef WMLIB_CDDA_BUILD
+	if(pdrive->cdda && (err = wm_cdda_init(pdrive)))
+		goto open_failed;
+#endif
 	return wm_cd_status(pdrive);
+
+open_failed:
+	wm_cd_destroy(pdrive);
+
+init_failed:
+	free(pdrive->cd_device);
+	free(pdrive->soundsystem);
+	free(pdrive->sounddevice);
+	free(pdrive->ctldevice);
+	free(pdrive);
+
+	return err;
 }
 
 int wm_cd_destroy(void *p)
@@ -166,19 +195,7 @@ int wm_cd_destroy(void *p)
 	if(pdrive->cdda)
 		wm_cdda_destroy(pdrive);
 
-	if(pdrive->proto.close) {
-		int (*tmp)(struct wm_drive *);
-		tmp = pdrive->proto.close;
-		memset(&pdrive->proto, 0, sizeof(pdrive->proto));
-
-		tmp(pdrive);
-	}
-
-	free(pdrive->cd_device);
-	free(pdrive->soundsystem);
-	free(pdrive->sounddevice);
-	free(pdrive->ctldevice);
-	free(p);
+	pdrive->proto.close(pdrive);
 
 	return 0;
 }
@@ -627,8 +644,21 @@ int wm_cd_closetray(void *p)
 	if (status == WM_CDM_UNKNOWN || status == WM_CDM_NO_DISC)
 		return -1;
 
-	if(pdrive->proto.closetray)
-		err = pdrive->proto.closetray(pdrive);
+#ifdef CAN_CLOSE
+	err = pdrive->proto.closetray(pdrive);
+
+	if(err) {
+		/* do close/open */
+		if(!pdrive->proto.close(pdrive)) {
+			wm_susleep( 1000 );
+      		err = pdrive->proto.open(pdrive);
+			wm_susleep( 1000 );
+		}
+	}
+
+#else
+	err = 0;
+#endif
 
 	return (err ? 0 : ((wm_cd_status(pdrive) == 2) ? 1 : 0));
 } /* wm_cd_closetray() */

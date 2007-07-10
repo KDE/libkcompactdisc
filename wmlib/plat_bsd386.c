@@ -89,21 +89,21 @@ void *malloc();
 int
 gen_init(struct wm_drive *d)
 {
-  return (0);
+  return 0;
 } /* gen_init() */
 
 /*-----------------------------------------------------------------------*
  * Open the CD device.  We can't determine the drive type under BSD/386.
  *-----------------------------------------------------------------------*/
 int
-wmcd_open(struct wm_drvie *d)
+gen_open(struct wm_drvie *d)
 {
   void	*aux = NULL, *daux = NULL;
   int fd = -1;
 
   if (d->aux)	/* Device already open? */
     {
-      wm_lib_message(WM_MSG_LEVEL_DEBUG|WM_MSG_CLASS, "wmcd_open(): [device is open (aux=%d)]\n", d->aux);
+      wm_lib_message(WM_MSG_LEVEL_DEBUG|WM_MSG_CLASS, "gen_open(): [device is open (aux=%d)]\n", d->aux);
       return (0);
     }
 
@@ -120,51 +120,25 @@ wmcd_open(struct wm_drvie *d)
   fd = open("/dev/mixer", O_RDWR, 0);
 #endif
 
-  /* Now fill in the relevant parts of the wm_drive structure. */
-  find_drive_struct("", "", "");
   d->aux = aux;
   d->daux = daux;
   d->fd = fd;
   PAUSE_FRAME = 0;
   END_FRAME = 0;
 
-  (d->init)(d);
-
   return (0);
-} /* wmcd_open() */
-
-/*
- * Re-Open the device if it is open.
- */
-int
-wmcd_reopen( struct wm_drive *d )
-{
-  int status;
-  int tries = 0;
-
-  do {
-    wm_lib_message(WM_MSG_LEVEL_DEBUG|WM_MSG_CLASS, "wmcd_reopen\n");
-    status = gen_close( d );
-    wm_susleep( 1000 );
-    wm_lib_message(WM_MSG_LEVEL_DEBUG|WM_MSG_CLASS, "calling wmcd_open()\n");
-    status = wmcd_open( d ); /* open it as usual */
-    wm_susleep( 1000 );
-    tries++;
-  } while ( (status != 0) && (tries < 10) );
-  return status;
-} /* wmcd_reopen() */
-
+}
 
 /*---------------------------------------------*
  * Send an arbitrary SCSI command to a device.
  *---------------------------------------------*/
 int
-wm_scsi(struct wm_drive *d, unsigned char *cdb, int cdblen,
+gen_scsi(struct wm_drive *d, unsigned char *cdb, int cdblen,
         void *retbuf, int retbuflen, int getreply)
 {
 	/* Don't know how to do SCSI passthrough... */
 	return (-1);
-} /* wm_scsi() */
+} /* gen_scsi() */
 
 int
 gen_close( struct wm_drive *d )
@@ -204,7 +178,7 @@ gen_get_drive_status(struct wm_drive *d, int oldmode,
   /* Is the device open? */
   if (d->aux == NULL)
     {
-      switch (wmcd_open(d))
+      switch (d->proto.open(d))
 	{
 	case -1:	/* error */
 	  return (-1);
@@ -386,14 +360,9 @@ gen_eject(struct wm_drive *d)
 int
 gen_closetray(struct wm_drive *d)
 {
-#ifdef CAN_CLOSE
   if (!cdload(d->aux))
-      return(0);
-   return(-1);
-#else
-  /* Always succeed if the drive can't close */
-  return(0);
-#endif /* CAN_CLOSE */
+      return 0;
+   return -1;
 } /* gen_closetray() */
 
 
@@ -489,16 +458,5 @@ gen_get_volume(struct wm_drive *d, int *left, int *right)
     }
   return (0);
 }
-
-/*------------------------------------------------------------------------*
- * gen_get_cdtext(drive, buffer, length)
- *------------------------------------------------------------------------*/
-
-int
-gen_get_cdtext(struct wm_drive *d, unsigned char **pp_buffer, int *p_buffer_lenght)
-{
-  return -1; /* no SCSI, no CDTEXT */
-} /* gen_get_cdtext() */
-
 
 #endif /* __bsdi__ */

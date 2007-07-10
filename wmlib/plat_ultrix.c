@@ -190,7 +190,7 @@ find_cdrom()
 int
 gen_init( struct wm_drive *d )
 {
-	return (0);
+  return 0;
 } /* gen_init() */
 
 
@@ -198,19 +198,16 @@ gen_init( struct wm_drive *d )
  * Open the CD device and figure out what kind of drive is attached.
  */
 int
-wmcd_open( struct wm_drive *d )
+gen_open( struct wm_drive *d )
 {
   int		fd;
   static int	warned = 0;
 
   if (d->fd >= 0)		/* Device already open? */
     {
-      wm_lib_message(WM_MSG_LEVEL_DEBUG|WM_MSG_CLASS, "wmcd_open(): [device is open (fd=%d)]\n", d->fd);
+      wm_lib_message(WM_MSG_LEVEL_DEBUG|WM_MSG_CLASS, "gen_open(): [device is open (fd=%d)]\n", d->fd);
       return (0);
     }
-
-  if (d->cd_device == NULL)
-    d->cd_device = find_cdrom();
 
   d->fd = open(d->cd_device, 0);
   if (d->fd < 0)
@@ -228,44 +225,19 @@ wmcd_open( struct wm_drive *d )
       return (1);
     }
 
-  /* Now fill in the relevant parts of the wm_drive structure. */
-  find_drive_struct("", "", "");
-  d->fd = fd;
-
-  (d->init)(d);
-
   return (0);
-} /* wmcd_open() */
-
-/*
- * Re-Open the device if it is open.
- */
-int
-wmcd_reopen( struct wm_drive *d )
-{
-  int status;
-
-  do {
-    wm_lib_message(WM_MSG_LEVEL_DEBUG|WM_MSG_CLASS, "wmcd_reopen\n");
-    status = gen_close( d );
-    wm_susleep( 1000 );
-    wm_lib_message(WM_MSG_LEVEL_DEBUG|WM_MSG_CLASS, "calling wmcd_open()\n");
-    status = wmcd_open( d ); /* open it as usual */
-    wm_susleep( 1000 );
-  } while ( status != 0 );
-  return status;
-} /* wmcd_reopen() */
+} /* gen_open() */
 
 /*
  * Send an arbitrary SCSI command to a device.
  */
 int
-wm_scsi( struct wm_drive *d, unsigned char *cdb, int cdblen,
+gen_scsi( struct wm_drive *d, unsigned char *cdb, int cdblen,
 	 void *retbuf, int retbuflen, int getreply )
 {
 	/* ULTRIX doesn't have a SCSI passthrough interface, does it? */
-	return (-1);
-} /* wm_scsi() */
+	return -1;
+} /* gen_scsi() */
 
 int
 gen_close( struct wm_drive *d )
@@ -302,7 +274,7 @@ gen_get_drive_status( struct wm_drive *d, int oldmode,
   /* Is the device open? */
   if (d->fd < 0)
     {
-      switch (wmcd_open(d))
+      switch (d->proto.open(d))
 	{
 	case -1:	/* error */
 	  return (-1);
@@ -490,18 +462,7 @@ gen_eject(struct wm_drive *d)
 int
 gen_closetray(struct wm_drive *d)
 {
-#ifdef CAN_CLOSE
-  if(!close(d->fd))
-    {
-      d->fd=-1;
-      return(wmcd_reopen(d));
-    } else {
-      return(-1);
-    }
-#else
-  /* Always succeed if the drive can't close */
-  return(0);
-#endif /* CAN_CLOSE */
+  return -1;
 } /* gen_closetray() */
 
 
@@ -641,16 +602,5 @@ gen_get_volume(struct wm_drive *d, int *left, int *right)
 
   return (0);
 } /* gen_get_volume() */
-
-/*------------------------------------------------------------------------*
- * gen_get_cdtext(drive, buffer, length)
- *------------------------------------------------------------------------*/
-
-int
-gen_get_cdtext(struct wm_drive *d, unsigned char **pp_buffer, int *p_buffer_lenght)
-{
-  return -1; /* No SCSI, no CDTEXT */
-} /* gen_get_cdtext() */
-
 
 #endif

@@ -191,6 +191,7 @@
  */
 #define DEFAULT_CD_DEVICE	"/dev/cdrom"
 
+#define WMLIB_CDDA_BUILD 1
 /*
  * Uncomment the following if you use the sbpcd or mcdx device driver.
  * It shouldn't hurt if you use it on other devices. It'll be nice to
@@ -283,7 +284,8 @@
 
 #define SYSV 1
 #define CODEC 1
-#define DEFAULT_CD_DEVICE "/vol/dev/aliases/cdrom0"
+#define DEFAULT_CD_DEVICE find_cdrom()
+#define WMLIB_CDDA_BUILD 1
 
 /*
  * set the following to "SUNW,CS4231" for Sun and to "SUNW,sb16"
@@ -321,6 +323,8 @@
  ****    ***      ***  ****  **  **      **  **  ******************
  ******************************************************************/
 #if defined(ultrix) || defined(__ultrix)
+
+#define DEFAULT_CD_DEVICE	find_cdrom()
 
 #endif
 

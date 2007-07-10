@@ -178,21 +178,16 @@ gen_init( struct wm_drive *d )
  * Open the CD device and figure out what kind of drive is attached.
  */
 int
-wmcd_open( struct wm_drive *d )
+gen_open( struct wm_drive *d )
 {
   static int	warned = 0;
-  char	vendor[32] = WM_STR_GENVENDOR;
-  char	 model[32] = WM_STR_GENMODEL;
-  char	   rev[32] = WM_STR_GENREV;
 
   if (d->fd >= 0)		/* Device already open? */
     {
-      wm_lib_message(WM_MSG_LEVEL_DEBUG|WM_MSG_CLASS, "wmcd_open(): [device is open (fd=%d)]\n", d->fd);
+      wm_lib_message(WM_MSG_LEVEL_DEBUG|WM_MSG_CLASS, "gen_open(): [device is open (fd=%d)]\n", d->fd);
       return (0);
     }
 
-  if (d->cd_device == NULL)
-    d->cd_device = find_cdrom();
 
   d->fd = open(d->cd_device, 0);
   if (d->fd < 0)
@@ -234,69 +229,27 @@ wmcd_open( struct wm_drive *d )
       /* WARNING: Old GUI call. How could this survive? */
       enable_cdda_controls(1);
     else {
-      wm_lib_message(WM_MSG_LEVEL_DEBUG|WM_MSG_CLASS, "wmcd_open(): failed in gen_cdda_init\n");
+      wm_lib_message(WM_MSG_LEVEL_DEBUG|WM_MSG_CLASS, "gen_open(): failed in gen_cdda_init\n");
       gen_close(d);
       return -1;
     }
 
-  /* Can we figure out the drive type? */
-  if (wm_scsi_get_drive_type(d, vendor, model, rev))
-    {
-      if (errno == EPERM)
-	{
-	  /*
-	   * Solaris 2.4 seems to refuse to do USCSICMD ioctls
-	   * when not running as root.  SunOS 4.x allows it
-	   * as an unprivileged user, though.
-	   */
-	  fprintf(stderr, "Warning: WorkMan can't adapt itself to your drive unless it runs as root.\n");
-	} else {
-	  fprintf(stderr, "Warning: WorkMan couldn't determine drive type\n");
-	}
-      strcpy(vendor, "Generic");
-      strcpy(model, "drive type");
-      strcpy(rev, "");
-    }
-
-  find_drive_struct(vendor, model, rev);
-
-  (d->proto->gen_init)(d);
   thecd = d;
 
   return (0);
-} /* wmcd_open() */
+}
 
-/*
- * Re-Open the device if it is open.
- */
-int
-wmcd_reopen( struct wm_drive *d )
-{
-  int status;
-
-  do {
-    wm_lib_message(WM_MSG_LEVEL_DEBUG|WM_MSG_CLASS, "wmcd_reopen\n");
-    gen_close(d);
-    wm_susleep( 1000 );
-    wm_lib_message(WM_MSG_LEVEL_DEBUG|WM_MSG_CLASS, "calling wmcd_open()\n");
-    status = wmcd_open( d ); /* open it as usual */
-    wm_susleep( 1000 );
-  } while ( status != 0 );
-  return status;
-} /* wmcd_reopen() */
-
-
-#ifndef solbourne
 /*
  * Send an arbitrary SCSI command out the bus and optionally wait for
  * a reply if "retbuf" isn't NULL.
  */
 int
-wm_scsi( struct wm_drive *d,
+gen_scsi( struct wm_drive *d,
 	 unsigned char *cdb,
 	 int cdblen, void *retbuf,
 	 int retbuflen, int getreply )
 {
+#ifndef solbourne
   char			x;
   struct uscsi_cmd	cmd;
 
@@ -316,10 +269,10 @@ wm_scsi( struct wm_drive *d,
     return (-1);
 
   return (0);
-}
 #else
-int wm_scsi() { return (-1); }
+  return -1;
 #endif
+}
 
 int
 gen_close( struct wm_drive *d )
@@ -354,20 +307,14 @@ gen_get_drive_status( struct wm_drive *d,
   *mode = WM_CDM_EJECTED;
 
   /* Is the device open? */
-  if (d->fd < 0)
-    {
-      switch (wmcd_open(d))
-	{
+  if (d->fd < 0) {
+    switch (d->proto.open(d)) {
 	case -1:	/* error */
 	  return (-1);
 
 	case 1:		/* retry */
 	  return (0);
 	}
-    }
-
-  if (oldmode == WM_CDM_PAUSED || oldmode == WM_CDM_PLAYING || oldmode == WM_CDM_STOPPED) {
-       CDDARETURN(d) cdda_get_drive_status(d, oldmode, mode, pos, track, index);
   }
 
   /*
@@ -376,54 +323,49 @@ gen_get_drive_status( struct wm_drive *d,
    * takes an unreasonable amount of time.  The signal handler and
    * timer are restored immediately to avoid interfering with XView.
    */
-  if (intermittent_dev)
-    {
-      /*
-       * First clear out the timer so XView's signal doesn't happen
-       * while we're diddling with the signal handler.
-       */
-      timerclear(&new_timer.it_interval);
-      timerclear(&new_timer.it_value);
-      setitimer(ITIMER_REAL, &new_timer, &old_timer);
+  if (intermittent_dev) {
+	/*
+	* First clear out the timer so XView's signal doesn't happen
+	* while we're diddling with the signal handler.
+	*/
+	timerclear(&new_timer.it_interval);
+	timerclear(&new_timer.it_value);
+	setitimer(ITIMER_REAL, &new_timer, &old_timer);
 
-      /*
-       * Now install the no-op signal handler.
-       */
-      new_sig.sa_handler = do_nothing;
-      memset(&new_sig.sa_mask, 0, sizeof(new_sig.sa_mask));
-      new_sig.sa_flags = 0;
-      if (sigaction(SIGALRM, &new_sig, &old_sig))
-	perror("sigaction");
+	/*
+	* Now install the no-op signal handler.
+	*/
+	new_sig.sa_handler = do_nothing;
+	memset(&new_sig.sa_mask, 0, sizeof(new_sig.sa_mask));
+	new_sig.sa_flags = 0;
+	if (sigaction(SIGALRM, &new_sig, &old_sig))
+      perror("sigaction");
 
-      /*
-       * And finally, set the timer.
-       */
-      new_timer.it_value.tv_sec = 2;
-      setitimer(ITIMER_REAL, &new_timer, NULL);
-    }
+	/*
+	* And finally, set the timer.
+	*/
+	new_timer.it_value.tv_sec = 2;
+	setitimer(ITIMER_REAL, &new_timer, NULL);
+  }
 
   sc.cdsc_format = CDROM_MSF;
 
-  if (ioctl(d->fd, CDROMSUBCHNL, &sc))
-    {
-      if (intermittent_dev)
-	{
+  if (ioctl(d->fd, CDROMSUBCHNL, &sc)) {
+    if (intermittent_dev) {
 	  sigaction(SIGALRM, &old_sig, NULL);
 	  setitimer(ITIMER_REAL, &old_timer, NULL);
 
 	  /* If the device can disappear, let it do so. */
-	  close(d->fd);
-	  d->fd = -1;
+	  d->proto.close(d);
 	}
 
-      return (0);
-    }
+    return 0;
+  }
 
-  if (intermittent_dev)
-    {
-      sigaction(SIGALRM, &old_sig, NULL);
-      setitimer(ITIMER_REAL, &old_timer, NULL);
-    }
+  if (intermittent_dev) {
+    sigaction(SIGALRM, &old_sig, NULL);
+    setitimer(ITIMER_REAL, &old_timer, NULL);
+  }
 
   switch (sc.cdsc_audiostatus) {
   case CDROM_AUDIO_PLAY:
@@ -464,7 +406,7 @@ gen_get_drive_status( struct wm_drive *d,
     break;
   }
 
-  return (0);
+  return 0;
 } /* gen_get_drive_status() */
 
 /*
@@ -479,7 +421,7 @@ gen_get_trackcount( struct wm_drive *d, int *tracks )
     return (-1);
 
   *tracks = hdr.cdth_trk1;
-  return (0);
+  return 0;
 } /* gen_get_trackcount() */
 
 /*
@@ -494,14 +436,14 @@ gen_get_trackinfo( struct wm_drive *d, int track, int *data, int *startframe)
   entry.cdte_format = CDROM_MSF;
 
   if (ioctl(d->fd, CDROMREADTOCENTRY, &entry))
-    return (-1);
+    return -1;
 
   *startframe =	entry.cdte_addr.msf.minute * 60 * 75 +
     entry.cdte_addr.msf.second * 75 +
     entry.cdte_addr.msf.frame;
   *data = entry.cdte_ctrl & CDROM_DATA_TRACK ? 1 : 0;
 
-  return (0);
+  return 0;
 } /* gen_get_trackinfo() */
 
 /*
@@ -521,17 +463,14 @@ gen_get_cdlen(struct wm_drive *d, int *frames )
  *	d		Drive structure.
  *	start		Frame to start playing at.
  *	end		End of this chunk.
- *	realstart	Beginning of this chunk (<= start)
  */
 int
-gen_play( struct wm_drive *d, int start, int end, int realstart)
+gen_play( struct wm_drive *d, int start, int end)
 {
   struct cdrom_msf		msf;
   unsigned char			cmdbuf[10];
 
   current_end = end;
-
-  CDDARETURN(d) cdda_play(d, start, end, realstart);
 
   msf.cdmsf_min0 = start / (60*75);
   msf.cdmsf_sec0 = (start % (60*75)) / 75;
@@ -542,11 +481,11 @@ gen_play( struct wm_drive *d, int start, int end, int realstart)
 
   codec_start();
   if (ioctl(d->fd, CDROMSTART))
-    return (-1);
+    return -1;
   if (ioctl(d->fd, CDROMPLAYMSF, &msf))
-    return (-2);
+    return -2;
 
-  return (0);
+  return 0;
 } /* gen_play() */
 
 /*
@@ -555,8 +494,6 @@ gen_play( struct wm_drive *d, int start, int end, int realstart)
 int
 gen_pause( struct wm_drive *d )
 {
-  CDDARETURN(d) cdda_pause(d);
-
   codec_stop();
   return (ioctl(d->fd, CDROMPAUSE));
 } /* gen_pause() */
@@ -567,8 +504,6 @@ gen_pause( struct wm_drive *d )
 int
 gen_resume( struct wm_drive *d )
 {
-  CDDARETURN(d) cdda_pause(d);
-
   codec_start();
   return (ioctl(d->fd, CDROMRESUME));
 } /* gen_resume() */
@@ -579,8 +514,6 @@ gen_resume( struct wm_drive *d )
 int
 gen_stop( struct wm_drive *d )
 {
-  CDDARETURN(d) cdda_stop(d);
-
   codec_stop();
   return (ioctl(d->fd, CDROMSTOP));
 } /* gen_stop() */
@@ -589,39 +522,32 @@ gen_stop( struct wm_drive *d )
  * Eject the current CD, if there is one.
  */
 int
-gen_eject( struct wm_drive *d )
+gen_eject( struct wm_drive *d )cddax
 {
   struct stat	stbuf;
   struct ustat	ust;
 
   if (fstat(d->fd, &stbuf) != 0)
-    return (-2);
+    return -2;
 
   /* Is this a mounted filesystem? */
   if (ustat(stbuf.st_rdev, &ust) == 0)
-    return (-3);
-
-  IFCDDA(d) {
-    cdda_eject(d);
-  }
+    return -3;
 
   if (ioctl(d->fd, CDROMEJECT))
-    return (-1);
+    return -1;
 
   /* Close the device if it needs to vanish. */
-  if (intermittent_dev)
-    {
-      close(d->fd);
-      d->fd = -1;
-      /* Also remember to tell the cddaslave since volume
-	 manager switches links around on us */
-      if (d->cdda_slave > -1)
-	{
+  if (intermittent_dev) {
+	d->proto.close(d);
+	/* Also remember to tell the cddaslave since volume
+	manager switches links around on us */
+	if (d->cdda_slave > -1) {
 	  write(d->cdda_slave, "E", 1);
 	}
-    }
+  }
 
-  return (0);
+  return 0;
 } /* gen_eject() */
 
 /*----------------------------------------*
@@ -634,18 +560,7 @@ gen_eject( struct wm_drive *d )
 int
 gen_closetray(struct wm_drive *d)
 {
-#ifdef CAN_CLOSE
-  if(!close(d->fd))
-    {
-      d->fd=-1;
-      return(wmcd_reopen(d));
-    } else {
-      return(-1);
-    }
-#else
-  /* Always succeed if the drive can't close */
-  return(0);
-#endif /* CAN_CLOSE */
+	return -1;
 } /* gen_closetray() */
 
 /*
@@ -694,43 +609,41 @@ gen_get_volume( struct wm_drive *d, int *left, int *right )
 int
 gen_cdda_init( struct wm_drive *d )
 {
-  int	slavefds[2];
+  int slavefds[2];
 
   if (d->cdda_slave > -1)
-    return (0);
+    return 0;
 
-  if (socketpair(AF_UNIX, SOCK_STREAM, 0, slavefds))
-    {
+  if (socketpair(AF_UNIX, SOCK_STREAM, 0, slavefds)) {
       perror("socketpair");
-      return (-1);
-    }
+      return -1;
+  }
 
-  switch (fork())
-    {
-    case 0:
-      close(slavefds[0]);
-      dup2(slavefds[1], 1);
-      dup2(slavefds[1], 0);
-      close(slavefds[1]);
-      close(d->fd);
-      /* Try the default path first. */
-      execl(cddaslave_path, cddaslave_path, d->cd_device, (void *)0);
-      /* Search $PATH if that didn't work. */
-      execlp("cddaslave", "cddaslave", d->cd_device, (void *)0);
-      perror(cddaslave_path);
-      exit(1);
+  switch (fork()) {
+  case 0:
+	close(slavefds[0]);
+	dup2(slavefds[1], 1);
+	dup2(slavefds[1], 0);
+	close(slavefds[1]);
+	close(d->fd);
+	/* Try the default path first. */
+	execl(cddaslave_path, cddaslave_path, d->cd_device, (void *)0);
+	/* Search $PATH if that didn't work. */
+	execlp("cddaslave", "cddaslave", d->cd_device, (void *)0);
+	perror(cddaslave_path);
+	exit(1);
 
-    case -1:
-      close(slavefds[0]);
-      close(slavefds[1]);
-      perror("fork");
-      return (-2);
-    }
+  case -1:
+	close(slavefds[0]);
+	close(slavefds[1]);
+	perror("fork");
+	return -2;
+  }
 
   close(slavefds[1]);
   d->cdda_slave = slavefds[0];
 
-  return (0);
+  return 0;
 }
 
 /*
@@ -934,16 +847,5 @@ codec_start( void )
 codec_stop( void ) { return 0; }
 
 #endif /* CODEC } */
-
-/*------------------------------------------------------------------------*
- * gen_get_cdtext(drive, buffer, length)
- *------------------------------------------------------------------------*/
-
-int
-gen_get_cdtext(struct wm_drive *d, unsigned char **pp_buffer, int *p_buffer_lenght)
-{
-  /* This needs to be tested */
-  return wm_scsi_get_cdtext(d, pp_buffer, p_buffer_lenght);
-} /* gen_get_cdtext() */
 
 #endif /* sun */

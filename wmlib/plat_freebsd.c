@@ -91,74 +91,32 @@ gen_init(struct wm_drive *d)
  * Open the CD device and figure out what kind of drive is attached.
  *-------------------------------------------------------------------*/
 int
-wmcd_open( struct wm_drive *d )
+gen_open( struct wm_drive *d )
 {
-  int		fd;
-  static int	warned = 0;
-  char vendor[32] = WM_STR_GENVENDOR;
-  char  model[32] = WM_STR_GENMODEL;
-  char    rev[32] = WM_STR_GENREV;
-
-  if (d->fd >= 0)		/* Device already open? */
-    {
-      wm_lib_message(WM_MSG_LEVEL_DEBUG|WM_MSG_CLASS, "wmcd_open(): [device is open (fd=%d)]\n", d->fd);
-      return (0);
-    }
-
-  if (d->cd_device == NULL)
-    d->cd_device = DEFAULT_CD_DEVICE;
+  if (d->fd >= 0) {
+    wm_lib_message(WM_MSG_LEVEL_DEBUG|WM_MSG_CLASS, "gen_open(): [device is open (fd=%d)]\n", d->fd);
+    return 0;
+  }
 
   d->fd = open(d->cd_device, 0);
-  if (d->fd < 0)
-    {
-      if (errno == EACCES)
-	{
-          return -EACCES;
+  if (d->fd < 0) {
+    if (errno == EACCES) {
+      return -EACCES;
 	}
 
-      /* No CD in drive. */
-      return (1);
-    }
+    /* No CD in drive. */
+    return 1;
+  }
 
-  /* Now fill in the relevant parts of the wm_drive structure. */
-  fd = d->fd;
-
-  find_drive_struct(vendor, model, rev);
-
-  /*(d->init)(d); */
-
-  d->fd = fd;
-
-  return (0);
-} /* wmcd_open() */
-
-/*
- * Re-Open the device if it is open.
- */
-int
-wmcd_reopen( struct wm_drive *d )
-{
-  int status;
-
-  do {
-    wm_lib_message(WM_MSG_LEVEL_DEBUG|WM_MSG_CLASS, "wmcd_reopen\n");
-    status = gen_close( d );
-    wm_susleep( 1000 );
-    wm_lib_message(WM_MSG_LEVEL_DEBUG|WM_MSG_CLASS, "calling wmcd_open()\n");
-    status = wmcd_open( d ); /* open it as usual */
-    wm_susleep( 1000 );
-    if(status == -EACCES || status == 1)
-        return status;
-  } while ( status != 0 );
-  return status;
-} /* wmcd_reopen() */
+  return 0;
+} /* gen_open() */
 
 /*---------------------------------------------*
  * Send an arbitrary SCSI command to a device.
  *
  *---------------------------------------------*/
 int
-wm_scsi(struct wm_drive *d, unsigned char *cdb, int cdblen,
+gen_scsi(struct wm_drive *d, unsigned char *cdb, int cdblen,
 	void *retbuf, int retbuflen, int getreply)
 {
   return (-1);
@@ -199,7 +157,7 @@ gen_get_drive_status(struct wm_drive *d, int oldmode,
   /* Is the device open? */
   if (d->fd < 0)
     {
-      switch (wmcd_open(d))
+      switch (d->proto.open(d))
 	{
 	case -1:	/* error */
 	  return (-1);
@@ -219,8 +177,7 @@ gen_get_drive_status(struct wm_drive *d, int oldmode,
        */
       /* we need to release the device so the kernel will notice
 	 reloaded media */
-      (void) close(d->fd);
-      d->fd = -1;
+      d->proto.close(d);
       /*
        * #endif
        */
@@ -327,7 +284,7 @@ gen_get_cdlen(struct wm_drive *d, int *frames)
  * Play the CD from one position to another (both in frames.)
  *------------------------------------------------------------*/
 int
-gen_play(struct wm_drive *d, int start, int end, int realstart)
+gen_play(struct wm_drive *d, int start, int end)
 {
   struct ioc_play_msf	msf;
 
@@ -400,7 +357,7 @@ gen_eject( struct wm_drive *d )
   if (rval == 0)
     rval = ioctl(d->fd, CDIOCPREVENT);
 
-  (void) close(d->fd);
+  d->proto.close(d);
 
   return rval;
 } /* gen_eject() */
@@ -413,10 +370,8 @@ int
 gen_closetray(struct wm_drive *d)
 {
 #ifdef CAN_CLOSE
-  if(!close(d->fd))
-    {
-      d->fd=-1;
-      return(wmcd_reopen(d));
+	if(!d->proto.close(d)) {
+      return(d->proto.open(d));
     } else {
       return(-1);
     }
@@ -502,8 +457,6 @@ gen_set_volume(struct wm_drive *d, int left, int right)
     left = 0;
   if (right < 0)
     right = 0;
-  left = scale_volume(left, 100);
-  right = scale_volume(right, 100);
 
   bzero((char *)&vol, sizeof(vol));
 
@@ -533,8 +486,8 @@ gen_get_volume( struct wm_drive *d, int *left, int *right )
 	*left = *right = -1;
       else
 	{
-	  *left = unscale_volume(vol.vol[LEFT_PORT], 100);
-	  *right = unscale_volume(vol.vol[RIGHT_PORT], 100);
+	  *left = vol.vol[LEFT_PORT];
+	  *right = vol.vol[RIGHT_PORT];
 	}
     } else {
       *left = *right = -1;
@@ -542,15 +495,21 @@ gen_get_volume( struct wm_drive *d, int *left, int *right )
   return (0);
 } /* gen_get_volume() */
 
-/*------------------------------------------------------------------------*
- * gen_get_cdtext(drive, buffer, length)
- *------------------------------------------------------------------------*/
-
-int
-gen_get_cdtext(struct wm_drive *d, unsigned char **pp_buffer, int *p_buffer_lenght)
+int gen_scale_volume(int *left, int *right)
 {
-  return -1; /* no SCSI, no CDTEXT */
-} /* gen_get_cdtext() */
+	/* Adjust the volume to make up for the CD-ROM drive's weirdness. */
+	*left = scale_volume(*left, 100);
+	*right = scale_volume(*right, 100);
 
+	return 0;
+}
+
+int gen_unscale_volume(int *left, int *right)
+{
+	*left = unscale_volume(*left, 100);
+	*right = unscale_volume(*right, 100);
+
+	return 0;
+}
 
 #endif

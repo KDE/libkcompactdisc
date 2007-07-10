@@ -215,10 +215,10 @@ wm_scsi_get_drive_type(struct wm_drive *d)
 	memset(buf, 0, 36);
 
 	wm_lib_message(WM_MSG_CLASS_SCSI | WM_MSG_LEVEL_INFO, "Sending SCSI inquiry command...\n");
-	if (sendscsi(d, buf, 36, 1, SCMD_INQUIRY, 0, 0, 0, 36, 0,0,0,0,0,0,0)) {
-		sprintf( d->vendor, WM_STR_GENVENDOR);
-		sprintf( d->model, WM_STR_GENMODEL);
-		sprintf( d->revision, WM_STR_GENREV);
+	if(sendscsi(d, buf, 36, 1, SCMD_INQUIRY, 0, 0, 0, 36, 0,0,0,0,0,0,0)) {
+		sprintf(d->vendor, WM_STR_GENVENDOR);
+		sprintf(d->model, WM_STR_GENMODEL);
+		sprintf(d->revision, WM_STR_GENREV);
 		wm_lib_message(WM_MSG_CLASS_SCSI | WM_MSG_LEVEL_ERROR,
 			"SCSI Inquiry command not supported in this context\n");
 		return -1;
@@ -329,10 +329,6 @@ wm_scsi2_get_drive_status(struct wm_drive *d, int oldmode,
 
 	/* If we can't get status, the CD is ejected, so default to that. */
 	*mode = WM_CDM_EJECTED;
-
-	/* Is the device open? */
-	if (!d->proto.ok || !d->proto.ok(d))
-		return -1;
 
 	/* If we can't read status, the CD has been ejected. */
 	buf[1] = SUBQ_ILLEGAL;
