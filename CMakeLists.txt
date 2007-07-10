@@ -35,7 +35,6 @@ set(wmlib_SRCS
 
 set(kcompactdisc_LIB_SRCS kcompactdisc.cpp kcompactdisc_p.cpp phonon_interface.cpp wmlib_interface.cpp ${wmlib_SRCS} ${wmlib_audio_SRCS})
 
-kde4_automoc(${kcompactdisc_LIB_SRCS})
 
 kde4_add_library(kcompactdisc SHARED ${kcompactdisc_LIB_SRCS})
 
