@@ -282,6 +282,10 @@ void KPhononCompactDiscPrivate::tick(qint64 t)
 		m_track = track;
 		m_discLength = trackLength(m_track);
 		emit q->playoutTrackChanged(m_track);
+
+		/* phonon gives us Matadata only per Track */
+		if(m_autoMetadata)
+			queryMetadata();
 	}
 
 	m_trackPosition = MS2SEC(t);

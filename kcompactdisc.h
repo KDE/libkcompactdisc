@@ -447,6 +447,10 @@ public Q_SLOTS:
      */
 	void doCommand(KCompactDisc::DiscCommand);
 
+
+	void metadataLookup();
+
+
 Q_SIGNALS:
     /**
      * A new position in a track. This signal is delivered at

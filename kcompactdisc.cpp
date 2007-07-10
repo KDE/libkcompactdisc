@@ -468,6 +468,12 @@ void KCompactDisc::doCommand(KCompactDisc::DiscCommand cmd)
 	}
 }
 
+void KCompactDisc::metadataLookup()
+{
+	Q_D(KCompactDisc);
+	d->queryMetadata();
+}
+
 void KCompactDisc::setRandomPlaylist(bool random)
 {
 	Q_D(KCompactDisc);
@@ -488,7 +494,7 @@ void KCompactDisc::setAutoMetadataLookup(bool autoMetadata)
 	Q_D(KCompactDisc);
 	d->m_autoMetadata = autoMetadata;
 	if(d->m_autoMetadata)
-		d->queryMetadata();
+		metadataLookup();
 }
 
 bool KCompactDisc::setDevice(const QString &deviceName, unsigned volume,
