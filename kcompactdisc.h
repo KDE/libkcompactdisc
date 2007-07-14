@@ -22,8 +22,8 @@
 #ifndef KCOMPACTDISC_H
 #define KCOMPACTDISC_H
 
-#include <QObject>
-#include <QTimer>
+#include <QtCore/QObject>
+#include <QtCore/QTimer>
 #include <QtCore/QStringList>
 
 #include <kdemacros.h>
