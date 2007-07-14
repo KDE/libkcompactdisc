@@ -27,7 +27,7 @@
 #include <QtCore/QStringList>
 
 #include <kdemacros.h>
-
+#include <kurl.h>
 
 #if defined Q_OS_WIN
 
