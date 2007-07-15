@@ -468,7 +468,7 @@ int wm_cd_gettrackstart(void *p, int track)
 {
 	struct wm_drive *pdrive = (struct wm_drive *)p;
 	if (track < 1 ||
-		track > pdrive->thiscd.ntracks ||
+		track > (pdrive->thiscd.ntracks+1) ||
 		pdrive->thiscd.trk == NULL)
 		return 0;
 
