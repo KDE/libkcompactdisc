@@ -63,7 +63,7 @@ int	max_volume = 255;
 int
 gen_init( struct wm_drive *d )
 {
-  return (0);
+  return 0;
 } /* gen_init() */
 
 
@@ -73,55 +73,39 @@ gen_init( struct wm_drive *d )
 int
 gen_open( struct wm_drive *d )
 {
-  int		fd, flag = 1;
-  static int	warned = 0;
-  /* unsigned ? */
-  char		vendor[32], model[32], rev[32];
+	int flag = 1;
 
-  if (d->fd >= 0)		/* Device already open? */
-    {
-      wm_lib_message(WM_MSG_LEVEL_DEBUG|WM_MSG_CLASS, "gen_open(): [device is open (fd=%d)]\n", d->fd);
-      return (0);
+	if (d->fd >= 0) {	/* Device already open? */
+		wm_lib_message(WM_MSG_LEVEL_DEBUG|WM_MSG_CLASS, "gen_open(): [device is open (fd=%d)]\n", d->fd);
+		return 0;
     }
 
-  if (d->cd_device == NULL)
-    d->cd_device = DEFAULT_CD_DEVICE;
 
-  d->fd = open(d->cd_device, O_RDWR);
-  if (d->fd < 0)
-    {
-      if (errno == EACCES)
-	{
-          return -EACCES;
-	}
-      else if (errno != EINTR)
-	{
-          return (-6);
-	}
+  	d->fd = open(d->cd_device, O_RDWR);
+  	if (d->fd < 0) {
+		if (errno == EACCES) {
+          	return -EACCES;
+		} else if (errno != EINTR) {
+          	return -6;
+		}
 
-      /* No CD in drive. */
-      return (1);
+      	/* No CD in drive. */
+      	return 1;
     }
 
-  /* Prepare the device to receive raw SCSI commands. */
-  if (ioctl(d->fd, SIOC_CMD_MODE, &flag) < 0)
-    {
+  	/* Prepare the device to receive raw SCSI commands. */
+  	if (ioctl(d->fd, SIOC_CMD_MODE, &flag) < 0) {
       fprintf(stderr, "%s: SIOC_CMD_MODE: true: %s\n",
 	      d->cd_device, strerror(errno));
       /*exit(1);*/
     }
-
-  /* Now fill in the relevant parts of the wm_drive structure. */
-  fd = d->fd;
 
   /* Default drive is the HP one, which might not respond to INQUIRY */
   strcpy(d->vendor, "TOSHIBA");
   strcpy(d->model, "XM-3301");
   d->rev[0] = '\0';
 
-  d->fd = fd;
-
-  return (0);
+  return 0;
 } /* gen_open() */
 
 /*----------------------------------*
@@ -132,54 +116,51 @@ gen_scsi( struct wm_drive *d, unsigned char *cdb, int cdblen,
 	 void *retbuf, int retbuflen, int getreply )
 {
 #ifdef SIOC_IO
-  struct sctl_io		cmd;
+	struct sctl_io cmd;
 
-  memset(&cmd, 0, sizeof(cmd));
-  cmd.cdb_length = cdblen;
-  cmd.data = retbuf;
-  cmd.data_length = retbuflen;
-  cmd.max_msecs = 1000;
-  cmd.flags = getreply ? SCTL_READ : 0;
-  memcpy(cmd.cdb, cdb, cdblen);
+	memset(&cmd, 0, sizeof(cmd));
+	cmd.cdb_length = cdblen;
+	cmd.data = retbuf;
+	cmd.data_length = retbuflen;
+	cmd.max_msecs = 1000;
+	cmd.flags = getreply ? SCTL_READ : 0;
+	memcpy(cmd.cdb, cdb, cdblen);
 
-  return (ioctl(d->fd, SIOC_IO, &cmd));
+	return ioctl(d->fd, SIOC_IO, &cmd);
 #else
-  /* this code, for pre-9.0, is BROKEN!  ugh. */
-  char			reply_buf[12];
-  struct scsi_cmd_parms	cmd;
+	/* this code, for pre-9.0, is BROKEN!  ugh. */
+	char reply_buf[12];
+	struct scsi_cmd_parms cmd;
 
-  memset(&cmd, 0, sizeof(cmd));
-  cmd.clock_ticks = 500;
-  cmd.cmd_mode = 1;
-  cmd.cmd_type = cdblen;
-  memcpy(cmd.command, cdb, cdblen);
-  if (ioctl(d->fd, SIOC_SET_CMD, &cmd) < 0)
-    return (-1);
+	memset(&cmd, 0, sizeof(cmd));
+	cmd.clock_ticks = 500;
+	cmd.cmd_mode = 1;
+	cmd.cmd_type = cdblen;
+	memcpy(cmd.command, cdb, cdblen);
+	if (ioctl(d->fd, SIOC_SET_CMD, &cmd) < 0)
+		return -1;
 
-  if (! retbuf || ! retbuflen)
-    (void) read(d->fd, reply_buf, sizeof(reply_buf));
-  else if (getreply)
-    {
-      if (read(d->fd, retbuf, retbuflen) < 0)
-	return (-1);
-    }
-  else
-    if (write(d->fd, retbuf, retbuflen) < 0)
-      return (-1);
+	if (! retbuf || ! retbuflen)
+    	read(d->fd, reply_buf, sizeof(reply_buf));
+  	else if (getreply) {
+		if (read(d->fd, retbuf, retbuflen) < 0)
+			return -1;
+    } else if (write(d->fd, retbuf, retbuflen) < 0)
+		return -1;
 
-  return (0);
+	return 0;
 #endif
 } /* gen_scsi() */
 
 int
 gen_close( struct wm_drive *d )
 {
-  if(d->fd != -1) {
-    wm_lib_message(WM_MSG_LEVEL_DEBUG|WM_MSG_CLASS, "closing the device\n");
-    close(d->fd);
-    d->fd = -1;
-  }
-  return 0;
+	if(d->fd != -1) {
+		wm_lib_message(WM_MSG_LEVEL_DEBUG|WM_MSG_CLASS, "closing the device\n");
+		close(d->fd);
+		d->fd = -1;
+	}
+	return 0;
 }
 
 /*--------------------------------------------------------------------------*
@@ -191,7 +172,7 @@ int
 gen_get_drive_status( struct wm_drive *d, int oldmode, int *mode,
                       int *pos, int *track, int *index )
 {
-  return (wm_scsi2_get_drive_status(d, oldmode, mode, pos, track, index));
+	return wm_scsi2_get_drive_status(d, oldmode, mode, pos, track, index);
 } /* gen_get_drive_status() */
 
 /*-------------------------------------*
@@ -200,7 +181,7 @@ gen_get_drive_status( struct wm_drive *d, int oldmode, int *mode,
 int
 gen_get_trackcount(struct wm_drive *d, int *tracks )
 {
-  return (wm_scsi2_get_trackcount(d, tracks));
+	return wm_scsi2_get_trackcount(d, tracks);
 } /* gen_get_trackcount() */
 
 /*---------------------------------------------------------*
@@ -209,16 +190,15 @@ gen_get_trackcount(struct wm_drive *d, int *tracks )
 int
 gen_get_trackinfo( struct wm_drive *d, int *track, int *data, int *startframe)
 {
-  return (wm_scsi2_get_trackinfo(d, track, data, startframe));
+	return wm_scsi2_get_trackinfo(d, track, data, startframe);
 } /* gen_get_trackinfo() */
 
 /*-------------------------------------*
  * Get the number of frames on the CD.
  *-------------------------------------*/
-int
-gen_get_cdlen(struct wm_drive *d, int *frames)
+int gen_get_cdlen(struct wm_drive *d, int *frames)
 {
-  return (wm_scsi2_get_cdlen(d, frames));
+	return wm_scsi2_get_cdlen(d, frames);
 } /* gen_get_cdlen() */
 
 /*------------------------------------------------------------*
@@ -227,7 +207,7 @@ gen_get_cdlen(struct wm_drive *d, int *frames)
 int
 gen_play( struct wm_drive *d, int start, int end )
 {
-  return (wm_scsi2_play(d, start, end));
+	return wm_scsi2_play(d, start, end);
 } /* gen_play() */
 
 /*---------------*
@@ -236,7 +216,7 @@ gen_play( struct wm_drive *d, int start, int end )
 int
 gen_pause( struct wm_drive *d )
 {
-  return (wm_scsi2_pause(d));
+	return wm_scsi2_pause(d);
 } /* gen_pause() */
 
 /*-------------------------------------------------*
@@ -245,7 +225,7 @@ gen_pause( struct wm_drive *d )
 int
 gen_resume( struct wm_drive *d )
 {
-  return (wm_scsi2_resume(d));
+	return wm_scsi2_resume(d);
 } /* gen_resume() */
 
 /*--------------*
@@ -254,7 +234,7 @@ gen_resume( struct wm_drive *d )
 int
 gen_stop( struct wm_drive *d )
 {
-  return (wm_scsi2_stop(d));
+	return wm_scsi2_stop(d);
 } /* gen_stop() */
 
 
@@ -264,17 +244,17 @@ gen_stop( struct wm_drive *d )
 int
 gen_eject( struct wm_drive *d )
 {
-  struct stat	stbuf;
-  struct ustat	ust;
+	struct stat stbuf;
+	struct ustat ust;
 
-  if (fstat(d->fd, &stbuf) != 0)
-    return (-2);
+	if (fstat(d->fd, &stbuf) != 0)
+    	return -2;
 
-  /* Is this a mounted filesystem? */
-  if (ustat(stbuf.st_rdev, &ust) == 0)
-    return (-3);
+	/* Is this a mounted filesystem? */
+	if (ustat(stbuf.st_rdev, &ust) == 0)
+		return -3;
 
-  return (wm_scsi2_eject(d));
+	return wm_scsi2_eject(d);
 } /* gen_eject() */
 
 /*----------------------------------------*
@@ -283,7 +263,7 @@ gen_eject( struct wm_drive *d )
 int
 gen_closetray(struct wm_drive *d)
 {
-  return (wm_scsi2_closetray(d));
+	return wm_scsi2_closetray(d);
 } /* gen_closetray() */
 
 
@@ -294,7 +274,7 @@ gen_closetray(struct wm_drive *d)
 int
 gen_set_volume( struct wm_drive *d, int left, int right )
 {
-  return (wm_scsi2_set_volume(d, left, right));
+	return wm_scsi2_set_volume(d, left, right);
 } /* gen_set_volume() */
 
 /*---------------------------------------------------------------------*
@@ -304,7 +284,7 @@ gen_set_volume( struct wm_drive *d, int left, int right )
 int
 gen_get_volume( struct wm_drive *d, int *left, int *right )
 {
-  return (wm_scsi2_get_volume(d, left, right));
+	return wm_scsi2_get_volume(d, left, right);
 } /* gen_get_volume() */
 
 #endif

@@ -128,7 +128,7 @@ create_cdrom_node(char *dev_name)
  * Initialize the drive.  A no-op for the generic driver.
  */
 int
-gen_init( struct wm_drive *d )
+gen_init(struct wm_drive *d)
 {
   return (0);
 } /* gen_init() */
@@ -137,53 +137,26 @@ gen_init( struct wm_drive *d )
  * Open the CD and figure out which kind of drive is attached.
  */
 int
-gen_open( struct wm_drive *d)
+gen_open(struct wm_drive *d)
 {
-  int		fd;
-  static int	warned = 0;
-
-  if (d->fd >= 0)		/* Device already open? */
-    {
-      wm_lib_message(WM_MSG_LEVEL_DEBUG|WM_MSG_CLASS, "gen_open(): [device is open (fd=%d)]\n", d->fd);
-      return (0);
+	if (d->fd > -1) {		/* Device already open? */
+		wm_lib_message(WM_MSG_LEVEL_DEBUG|WM_MSG_CLASS, "gen_open(): [device is open (fd=%d)]\n", d->fd);
+		return 0;
     }
 
-  if (d->cd_device == NULL)
-    {
-      fprintf(stderr,"cd_device string empty\n");
-      return (-1);
-    }
+	d->fd = create_cdrom_node(d->cd_device); /* this will do open */
+	if (d->fd < 0) {
+      	if (errno == EACCES) {
+		} else if (errno != EINTR) {
+			perror(d->cd_device);
+        	return -6;
+		}
 
-
-  d->fd = create_cdrom_node(d->cd_device); /* this will do open */
-
-  if (d->fd < 0)
-    {
-      if (errno == EACCES)
-	{
-	  if (! warned)
-	    {
-	      fprintf(stderr,"Cannot access %s\n",d->cd_device);
-	      warned++;
-	    }
-	}
-      else if (errno != EINTR)
-	{
-	  perror(d->cd_device);
-          return( -6 );
+		/* cannot access CDROM device */
+		return -1;
 	}
 
-      /* cannot access CDROM device */
-      return (-1);
-    }
-
-  if (warned)
-    {
-      warned = 0;
-      fprintf(stderr, "Thank you.\n");
-    }
-
-  return (0);
+	return 0;
 } /* gen_open */
 
 /*

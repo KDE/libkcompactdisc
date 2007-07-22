@@ -307,6 +307,13 @@ public:
     KCompactDisc::DiscStatus discStatus();
 
     /**
+     * Status as string.
+     *
+     * @return Status as QString.
+     */
+    QString discStatusString(KCompactDisc::DiscStatus status);
+
+    /**
      * Artist of current track.
      *
      * @return Track artist or null string.
@@ -502,7 +509,7 @@ Q_SIGNALS:
      * A Disc status changed
      *
      */
-    void discStatusChanged(KCompactDisc::DiscStatus status, QString statusText = QString());
+    void discStatusChanged(KCompactDisc::DiscStatus status);
 
 
 public Q_SLOTS:

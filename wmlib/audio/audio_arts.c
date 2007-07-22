@@ -18,13 +18,11 @@
     Linux digital audio functions.
  */
 
-#include <config.h>
-
 #ifdef USE_ARTS
 
-#include <artsc.h>
-
 #include "audio.h"
+
+#include <artsc.h>
 
 arts_stream_t arts_stream = NULL;
 

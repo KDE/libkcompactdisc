@@ -83,7 +83,7 @@ int	max_volume = 255;
 int
 gen_init(struct wm_drive *d)
 {
-	return (0);
+	return 0;
 } /* gen_init() */
 
 
@@ -91,24 +91,23 @@ gen_init(struct wm_drive *d)
  * Open the CD device and figure out what kind of drive is attached.
  *-------------------------------------------------------------------*/
 int
-gen_open( struct wm_drive *d )
+gen_open(struct wm_drive *d)
 {
-  if (d->fd >= 0) {
-    wm_lib_message(WM_MSG_LEVEL_DEBUG|WM_MSG_CLASS, "gen_open(): [device is open (fd=%d)]\n", d->fd);
-    return 0;
-  }
+	if (d->fd > -1) {
+    	wm_lib_message(WM_MSG_LEVEL_DEBUG|WM_MSG_CLASS, "gen_open(): [device is open (fd=%d)]\n", d->fd);
+    	return 0;
+  	}
 
-  d->fd = open(d->cd_device, 0);
-  if (d->fd < 0) {
-    if (errno == EACCES) {
-      return -EACCES;
+  	d->fd = open(d->cd_device, 0);
+  	if (d->fd < 0) {
+    	if (errno == EACCES)
+      		return -EACCES;
+
+		/* No CD in drive. */
+		return 1;
 	}
 
-    /* No CD in drive. */
-    return 1;
-  }
-
-  return 0;
+	return 0;
 } /* gen_open() */
 
 /*---------------------------------------------*
@@ -119,18 +118,18 @@ int
 gen_scsi(struct wm_drive *d, unsigned char *cdb, int cdblen,
 	void *retbuf, int retbuflen, int getreply)
 {
-  return (-1);
+	return -1;
 } /* wm_scsi() */
 
 int
 gen_close( struct wm_drive *d )
 {
-  if(d->fd != -1) {
-    wm_lib_message(WM_MSG_LEVEL_DEBUG|WM_MSG_CLASS, "closing the device\n");
-    close(d->fd);
-    d->fd = -1;
-  }
-  return 0;
+	if(d->fd > -1) {
+		wm_lib_message(WM_MSG_LEVEL_DEBUG|WM_MSG_CLASS, "closing the device\n");
+		close(d->fd);
+		d->fd = -1;
+	}
+	return 0;
 }
 
 /*--------------------------------------------------------------------------*
@@ -142,81 +141,79 @@ int
 gen_get_drive_status(struct wm_drive *d, int oldmode,
                      int *mode, int *pos, int *track, int *index)
 {
-  struct ioc_read_subchannel	sc;
-  struct cd_sub_channel_info	scd;
+	struct ioc_read_subchannel sc;
+	struct cd_sub_channel_info scd;
 
-  /* If we can't get status, the CD is ejected, so default to that. */
-  *mode = WM_CDM_EJECTED;
+	/* If we can't get status, the CD is ejected, so default to that. */
+	*mode = WM_CDM_EJECTED;
 
-  sc.address_format	= CD_MSF_FORMAT;
-  sc.data_format		= CD_CURRENT_POSITION;
-  sc.track		= 0;
-  sc.data_len		= sizeof(scd);
-  sc.data			= (struct cd_sub_channel_info *)&scd;
+	sc.address_format	= CD_MSF_FORMAT;
+	sc.data_format		= CD_CURRENT_POSITION;
+	sc.track		= 0;
+	sc.data_len		= sizeof(scd);
+	sc.data			= (struct cd_sub_channel_info *)&scd;
 
-  /* Is the device open? */
-  if (d->fd < 0)
-    {
-      switch (d->proto.open(d))
-	{
-	case -1:	/* error */
-	  return (-1);
+	/* Is the device open? */
+	if (d->fd < 0) {
+		switch (d->proto.open(d)) {
+		case -1: /* error */
+			return -1;
 
-	case 1:		/* retry */
-	  return (0);
+		case 1: /* retry */
+			return 0;
+		}
 	}
-    }
 
-  if (ioctl(d->fd, CDIOCREADSUBCHANNEL, &sc))
-    {
-      /*
-       * #ifdef __NetBSD__
-       *
-       * Denis Bourez <denis@rsn.fdn.fr> told me, that closing the
-       * device is mandatory for FreeBSD, too.
-       */
-      /* we need to release the device so the kernel will notice
-	 reloaded media */
-      d->proto.close(d);
-      /*
-       * #endif
-       */
-      return (0);	/* ejected */
-    }
+	if (ioctl(d->fd, CDIOCREADSUBCHANNEL, &sc)) {
+		/*
+		* #ifdef __NetBSD__
+		*
+		* Denis Bourez <denis@rsn.fdn.fr> told me, that closing the
+		* device is mandatory for FreeBSD, too.
+		*/
+		/* we need to release the device so the kernel will notice
+		reloaded media */
+		d->proto.close(d);
+		/*
+		* #endif
+		*/
+		return 0;	/* ejected */
+	}
 
-  switch (scd.header.audio_status)
-    {
+	switch (scd.header.audio_status) {
     case CD_AS_PLAY_IN_PROGRESS:
-      *mode = WM_CDM_PLAYING;
-    dopos:
-	*pos = scd.what.position.absaddr.msf.minute * 60 * 75 +
-	scd.what.position.absaddr.msf.second * 75 +
-	scd.what.position.absaddr.msf.frame;
-	*track = scd.what.position.track_number;
-	*index = scd.what.position.index_number;
-      break;
+		*mode = WM_CDM_PLAYING;
+      	break;
 
     case CD_AS_PLAY_PAUSED:
-      if (oldmode == WM_CDM_PLAYING || oldmode == WM_CDM_PAUSED)
-	{
-	  *mode = WM_CDM_PAUSED;
-	  goto dopos;
-	}
-      else
-	*mode = WM_CDM_STOPPED;
-      break;
+		if (oldmode == WM_CDM_PLAYING || oldmode == WM_CDM_PAUSED)
+			*mode = WM_CDM_PAUSED;
+		else
+			*mode = WM_CDM_STOPPED;
+		break;
 
     case CD_AS_PLAY_COMPLETED:
-      *mode = WM_CDM_TRACK_DONE; /* waiting for next track. */
-      break;
+		*mode = WM_CDM_TRACK_DONE; /* waiting for next track. */
+		break;
 
     case CD_AS_NO_STATUS:
     case 0:
-      *mode = WM_CDM_STOPPED;
-      break;
+		*mode = WM_CDM_STOPPED;
+		break;
     }
 
-  return (0);
+	switch(*mode) {
+	case WM_CDM_PLAYING:
+	case WM_CDM_PAUSED;
+		*pos = scd.what.position.absaddr.msf.minute * 60 * 75 +
+			scd.what.position.absaddr.msf.second * 75 +
+			scd.what.position.absaddr.msf.frame;
+		*track = scd.what.position.track_number;
+		*index = scd.what.position.index_number;
+		break;		
+	}
+
+	return 0;
 } /* gen_get_drive_status() */
 
 
@@ -226,14 +223,14 @@ gen_get_drive_status(struct wm_drive *d, int oldmode,
 int
 gen_get_trackcount(struct wm_drive *d, int *tracks)
 {
-  struct ioc_toc_header	hdr;
+	struct ioc_toc_header hdr;
 
-  if (ioctl(d->fd, CDIOREADTOCHEADER, &hdr) == -1)
-    return (-1);
+	if (ioctl(d->fd, CDIOREADTOCHEADER, &hdr) == -1)
+    	return -1;
 
-  *tracks = hdr.ending_track - hdr.starting_track + 1;
+  	*tracks = hdr.ending_track - hdr.starting_track + 1;
 
-  return (0);
+  	return 0;
 } /* gen_get_trackcount() */
 
 /*-----------------------------------------------------------------------*
@@ -244,25 +241,25 @@ gen_get_trackcount(struct wm_drive *d, int *tracks)
 int
 gen_get_trackinfo(struct wm_drive *d, int track, int *data, int *startframe)
 {
-  struct ioc_read_toc_entry	toc;
-  struct cd_toc_entry		toc_buffer;
+	struct ioc_read_toc_entry toc;
+	struct cd_toc_entry	toc_buffer;
 
-  bzero((char *)&toc_buffer, sizeof(toc_buffer));
-  toc.address_format = CD_MSF_FORMAT;
-  toc.starting_track = track;
-  toc.data_len = sizeof(toc_buffer);
-  toc.data = &toc_buffer;
+  	bzero((char *)&toc_buffer, sizeof(toc_buffer));
+	toc.address_format = CD_MSF_FORMAT;
+	toc.starting_track = track;
+	toc.data_len = sizeof(toc_buffer);
+	toc.data = &toc_buffer;
 
-  if (ioctl(d->fd, CDIOREADTOCENTRYS, &toc))
-    return (-1);
+	if (ioctl(d->fd, CDIOREADTOCENTRYS, &toc))
+		return -1;
 
-  *data = ((toc_buffer.control & 0x4) != 0);
+	*data = ((toc_buffer.control & 0x4) != 0);
 
-  *startframe = toc_buffer.addr.msf.minute*60*75 +
-    toc_buffer.addr.msf.second * 75 +
-    toc_buffer.addr.msf.frame;
+	*startframe = toc_buffer.addr.msf.minute*60*75 +
+		toc_buffer.addr.msf.second * 75 +
+		toc_buffer.addr.msf.frame;
 
-  return (0);
+	return 0;
 } /* gen_get_trackinfo() */
 
 /*-------------------------------------*
@@ -271,12 +268,12 @@ gen_get_trackinfo(struct wm_drive *d, int track, int *data, int *startframe)
 int
 gen_get_cdlen(struct wm_drive *d, int *frames)
 {
-  int		tmp;
-  struct ioc_toc_header		hdr;
-  int status;
+	int tmp;
+	struct ioc_toc_header hdr;
+	int status;
 
 #define LEADOUT 0xaa			/* see scsi.c.  what a hack! */
-  return gen_get_trackinfo(d, LEADOUT, &tmp, frames);
+	return gen_get_trackinfo(d, LEADOUT, &tmp, frames);
 } /* gen_get_cdlen() */
 
 
@@ -286,22 +283,22 @@ gen_get_cdlen(struct wm_drive *d, int *frames)
 int
 gen_play(struct wm_drive *d, int start, int end)
 {
-  struct ioc_play_msf	msf;
+	struct ioc_play_msf	msf;
 
-  msf.start_m	= start / (60*75);
-  msf.start_s	= (start % (60*75)) / 75;
-  msf.start_f	= start % 75;
-  msf.end_m	= end / (60*75);
-  msf.end_s	= (end % (60*75)) / 75;
-  msf.end_f	= end % 75;
+	msf.start_m	= start / (60*75);
+	msf.start_s	= (start % (60*75)) / 75;
+	msf.start_f	= start % 75;
+	msf.end_m	= end / (60*75);
+	msf.end_s	= (end % (60*75)) / 75;
+	msf.end_f	= end % 75;
 
-  if (ioctl(d->fd, CDIOCSTART))
-    return (-1);
+	if (ioctl(d->fd, CDIOCSTART))
+		return -1;
 
-  if (ioctl(d->fd, CDIOCPLAYMSF, &msf))
-    return (-2);
+	if (ioctl(d->fd, CDIOCPLAYMSF, &msf))
+    	return -2;
 
-  return (0);
+	return 0;
 } /* gen_play() */
 
 /*---------------*
@@ -310,7 +307,7 @@ gen_play(struct wm_drive *d, int start, int end)
 int
 gen_pause( struct wm_drive *d )
 {
-  return (ioctl(d->fd, CDIOCPAUSE));
+	return ioctl(d->fd, CDIOCPAUSE);
 } /* gen_pause() */
 
 /*-------------------------------------------------*
@@ -319,7 +316,7 @@ gen_pause( struct wm_drive *d )
 int
 gen_resume( struct wm_drive *d )
 {
-  return (ioctl(d->fd, CDIOCRESUME));
+	return ioctl(d->fd, CDIOCRESUME);
 } /* gen_resume() */
 
 /*--------------*
@@ -328,7 +325,7 @@ gen_resume( struct wm_drive *d )
 int
 gen_stop( struct wm_drive *d)
 {
-  return (ioctl(d->fd, CDIOCSTOP));
+	return ioctl(d->fd, CDIOCSTOP);
 } /* gen_stop() */
 
 /*----------------------------------------*
@@ -337,29 +334,29 @@ gen_stop( struct wm_drive *d)
 int
 gen_eject( struct wm_drive *d )
 {
-  /* On some systems, we can check to see if the CD is mounted. */
-  struct stat	stbuf;
-  struct statfs	buf;
-  int rval;
+	/* On some systems, we can check to see if the CD is mounted. */
+	struct stat stbuf;
+	struct statfs buf;
+	int rval;
 
-  if (fstat(d->fd, &stbuf) != 0)
-    return (-2);
+	if (fstat(d->fd, &stbuf) != 0)
+		return -2;
 
-  /* Is this a mounted filesystem? */
-  if (fstatfs(stbuf.st_rdev, &buf) == 0)
-    return (-3);
+	/* Is this a mounted filesystem? */
+	if (fstatfs(stbuf.st_rdev, &buf) == 0)
+	    return -3;
 
-  rval = ioctl(d->fd, CDIOCALLOW);
+	rval = ioctl(d->fd, CDIOCALLOW);
 
-  if (rval == 0)
-    rval = ioctl(d->fd, CDIOCEJECT);
+	if (rval == 0)
+    	rval = ioctl(d->fd, CDIOCEJECT);
 
-  if (rval == 0)
-    rval = ioctl(d->fd, CDIOCPREVENT);
+  	if (rval == 0)
+    	rval = ioctl(d->fd, CDIOCPREVENT);
 
-  d->proto.close(d);
+  	d->proto.close(d);
 
-  return rval;
+  	return rval;
 } /* gen_eject() */
 
 /*----------------------------------------*
@@ -371,13 +368,13 @@ gen_closetray(struct wm_drive *d)
 {
 #ifdef CAN_CLOSE
 	if(!d->proto.close(d)) {
-      return(d->proto.open(d));
+      return d->proto.open(d);
     } else {
-      return(-1);
-    }
+      return -1;
+    
 #else
-  /* Always succeed if the drive can't close */
-  return(0);
+	/* Always succeed if the drive can't close */
+	return 0;
 #endif /* CAN_CLOSE */
 } /* gen_closetray() */
 
@@ -407,7 +404,7 @@ gen_closetray(struct wm_drive *d)
 static int
 scale_volume(int vol, int max)
 {
-  return ((vol * (max_volume - min_volume)) / max + min_volume);
+	return ((vol * (max_volume - min_volume)) / max + min_volume);
 } /* scale_volume() */
 
 /*---------------------------------------------------------------------------*
@@ -422,26 +419,25 @@ scale_volume(int vol, int max)
 static int
 unscale_volume( int cd_vol, int max )
 {
-  int	vol = 0, top = max, bot = 0, scaled;
+	int vol = 0, top = max, bot = 0, scaled;
 
-  while (bot <= top)
-    {
-      vol = (top + bot) / 2;
-      scaled = scale_volume(vol, max);
-      if (cd_vol == scaled)
-	break;
-      if (cd_vol < scaled)
-	top = vol - 1;
-      else
-	bot = vol + 1;
+	while (bot <= top) {
+		vol = (top + bot) / 2;
+		scaled = scale_volume(vol, max);
+		if (cd_vol == scaled)
+			break;
+		if (cd_vol < scaled)
+			top = vol - 1;
+		else
+			bot = vol + 1;
     }
 
-  if (vol < 0)
-    vol = 0;
-  else if (vol > max)
-    vol = max;
+	if (vol < 0)
+		vol = 0;
+	else if (vol > max)
+		vol = max;
 
-  return (vol);
+	return vol;
 } /* unscale_volume() */
 
 /*---------------------------------------------------------------------*
@@ -451,22 +447,22 @@ unscale_volume( int cd_vol, int max )
 int
 gen_set_volume(struct wm_drive *d, int left, int right)
 {
-  struct ioc_vol vol;
+	struct ioc_vol vol;
 
-  if (left < 0)	/* don't laugh, I saw this happen once! */
-    left = 0;
-  if (right < 0)
-    right = 0;
+  	if (left < 0)	/* don't laugh, I saw this happen once! */
+    	left = 0;
+  	if (right < 0)
+    	right = 0;
 
-  bzero((char *)&vol, sizeof(vol));
+	bzero((char *)&vol, sizeof(vol));
 
-  vol.vol[LEFT_PORT] = left;
-  vol.vol[RIGHT_PORT] = right;
+	vol.vol[LEFT_PORT] = left;
+	vol.vol[RIGHT_PORT] = right;
 
-  if (ioctl(d->fd, CDIOCSETVOL, &vol))
-    return (-1);
+	if (ioctl(d->fd, CDIOCSETVOL, &vol))
+		return -1;
 
-  return (0);
+  	return 0;
 } /* gen_set_volume() */
 
 /*---------------------------------------------------------------------*
@@ -476,23 +472,22 @@ gen_set_volume(struct wm_drive *d, int left, int right)
 int
 gen_get_volume( struct wm_drive *d, int *left, int *right )
 {
-  struct ioc_vol vol;
+	struct ioc_vol vol;
 
-  if (d->fd >= 0)
-    {
-      bzero((char *)&vol, sizeof(vol));
+	if (d->fd > -1) {
+		bzero((char *)&vol, sizeof(vol));
 
-      if (ioctl(d->fd, CDIOCGETVOL, &vol))
-	*left = *right = -1;
-      else
-	{
-	  *left = vol.vol[LEFT_PORT];
-	  *right = vol.vol[RIGHT_PORT];
-	}
+		if (ioctl(d->fd, CDIOCGETVOL, &vol))
+			*left = *right = -1;
+		else {
+			*left = vol.vol[LEFT_PORT];
+			*right = vol.vol[RIGHT_PORT];
+		}
     } else {
-      *left = *right = -1;
+		*left = *right = -1;
     }
-  return (0);
+
+	return 0;
 } /* gen_get_volume() */
 
 int gen_scale_volume(int *left, int *right)

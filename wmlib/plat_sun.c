@@ -23,6 +23,11 @@
 
 #if defined(sun) || defined(__sun)
 
+#include "include/wm_config.h"
+#include "include/wm_helpers.h"
+#include "include/wm_cdrom.h"
+#include "include/wm_cdtext.h"
+
 #include <errno.h>
 #include <stdio.h>
 #include <sys/types.h>
@@ -32,11 +37,6 @@
 #include <sys/stat.h>
 #include <sys/time.h>
 #include <sys/ioctl.h>
-#include <config.h>
-#include "include/wm_config.h"
-#include "include/wm_helpers.h"
-#include "include/wm_cdrom.h"
-#include "include/wm_cdtext.h"
 
 #include <ustat.h>
 #include <unistd.h>
@@ -124,7 +124,7 @@ sigthawinit( void )
  * binary can be used on any 4.x or higher Sun system.
  */
 const char*
-find_cdrom( void )
+find_cdrom()
 {
   if (access("/vol/dev/aliases", X_OK) == 0)
     {
@@ -170,7 +170,7 @@ int
 gen_init( struct wm_drive *d )
 {
   codec_init();
-  return (0);
+  return 0;
 } /* gen_init() */
 
 
@@ -180,63 +180,40 @@ gen_init( struct wm_drive *d )
 int
 gen_open( struct wm_drive *d )
 {
-  static int	warned = 0;
+	static int warned = 0;
 
-  if (d->fd >= 0)		/* Device already open? */
-    {
-      wm_lib_message(WM_MSG_LEVEL_DEBUG|WM_MSG_CLASS, "gen_open(): [device is open (fd=%d)]\n", d->fd);
-      return (0);
+	if (d->fd >= 0) {		/* Device already open? */
+		wm_lib_message(WM_MSG_LEVEL_DEBUG|WM_MSG_CLASS, "gen_open(): [device is open (fd=%d)]\n", d->fd);
+		return 0;
     }
 
 
-  d->fd = open(d->cd_device, 0);
-  if (d->fd < 0)
-    {
-      /* Solaris 2.2 volume manager moves links around */
-      if (errno == ENOENT && intermittent_dev)
-	return (1);
+	d->fd = open(d->cd_device, 0);
+	if (d->fd < 0) {
+		/* Solaris 2.2 volume manager moves links around */
+		if (errno == ENOENT && intermittent_dev)
+			return 1;
 
-      if (errno == EACCES)
-	{
-	  if (!warned)
-	    {
-              /*
-	      char	realname[MAXPATHLEN];
-
-	      if (realpath(cd_device, realname) == NULL)
-		{
-		  perror("realpath");
-		  return (1);
+		if (errno == EACCES) {
+			if (!warned) {
+              /* char realname[MAXPATHLEN];
+				if (realpath(cd_device, realname) == NULL) {
+					perror("realpath");
+					return 1;
+				} */
+				return -EACCES;
+			}
+		} else if (errno != ENXIO) {
+			return -6;
 		}
-                */
-              return -EACCES;
-            }
-	}
-      else if (errno != ENXIO)
-	{
-          return( -6 );
+
+		/* No CD in drive. */
+		return 1;
 	}
 
-      /* No CD in drive. */
-      return (1);
-    }
+	thecd = d;
 
-  /*
-   * See if we can do digital audio.
-   */
-  if(d->cdda) {
-    if (!gen_cdda_init(d))
-      /* WARNING: Old GUI call. How could this survive? */
-      enable_cdda_controls(1);
-    else {
-      wm_lib_message(WM_MSG_LEVEL_DEBUG|WM_MSG_CLASS, "gen_open(): failed in gen_cdda_init\n");
-      gen_close(d);
-      return -1;
-    }
-
-  thecd = d;
-
-  return (0);
+  return 0;
 }
 
 /*
@@ -263,12 +240,12 @@ gen_scsi( struct wm_drive *d,
     cmd.uscsi_flags |= USCSI_READ;
 
   if (ioctl(d->fd, USCSICMD, &cmd))
-    return (-1);
+    return -1;
 
   if (cmd.uscsi_status)
-    return (-1);
+    return -1;
 
-  return (0);
+  return 0;
 #else
   return -1;
 #endif
@@ -310,10 +287,10 @@ gen_get_drive_status( struct wm_drive *d,
   if (d->fd < 0) {
     switch (d->proto.open(d)) {
 	case -1:	/* error */
-	  return (-1);
+	  return -1;
 
 	case 1:		/* retry */
-	  return (0);
+	  return 0;
 	}
   }
 
@@ -418,7 +395,7 @@ gen_get_trackcount( struct wm_drive *d, int *tracks )
   struct cdrom_tochdr	hdr;
 
   if (ioctl(d->fd, CDROMREADTOCHDR, &hdr))
-    return (-1);
+    return -1;
 
   *tracks = hdr.cdth_trk1;
   return 0;
@@ -603,47 +580,218 @@ gen_get_volume( struct wm_drive *d, int *left, int *right )
   return (wm_scsi2_get_volume(d, left, right));
 } /* gen_get_volume() */
 
+#define CDDABLKSIZE 2368
+#define SAMPLES_PER_BLK 588
+
+/*
+ * This is the fastest way to convert from BCD to 8-bit.
+ */
+static unsigned char unbcd[256] = {
+  0,  1,  2,  3,  4,  5,  6,  7,  8,  9,  0,0,0,0,0,0,
+ 10, 11, 12, 13, 14, 15, 16, 17, 18, 19,  0,0,0,0,0,0,
+ 20, 21, 22, 23, 24, 25, 26, 27, 28, 29,  0,0,0,0,0,0,
+ 30, 31, 32, 33, 34, 35, 36, 37, 38, 39,  0,0,0,0,0,0,
+ 40, 41, 42, 43, 44, 45, 46, 47, 48, 49,  0,0,0,0,0,0,
+ 50, 51, 52, 53, 54, 55, 56, 57, 58, 59,  0,0,0,0,0,0,
+ 60, 61, 62, 63, 64, 65, 66, 67, 68, 69,  0,0,0,0,0,0,
+ 70, 71, 72, 73, 74, 75, 76, 77, 78, 79,  0,0,0,0,0,0,
+ 80, 81, 82, 83, 84, 85, 86, 87, 88, 89,  0,0,0,0,0,0,
+ 90, 91, 92, 93, 94, 95, 96, 97, 98, 99,  0,0,0,0,0,0,
+ 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+ 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+ 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+ 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+ 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+ 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+};
 /*
  * Try to initialize the CDDA slave.  Returns 0 on success.
  */
 int
 gen_cdda_init( struct wm_drive *d )
 {
-  int slavefds[2];
+	enable_cdda_controls(1);
+	return 0;
+}
 
-  if (d->cdda_slave > -1)
-    return 0;
+/*
+ * Initialize the CDDA data buffer and open the appropriate device.
+ *
+ */
+int gen_cdda_open(struct wm_drive *d)
+{
+	int i;
+	struct cdrom_cdda cdda;
 
-  if (socketpair(AF_UNIX, SOCK_STREAM, 0, slavefds)) {
-      perror("socketpair");
-      return -1;
-  }
+	if (d->fd < 0)
+		return -1;
 
-  switch (fork()) {
-  case 0:
-	close(slavefds[0]);
-	dup2(slavefds[1], 1);
-	dup2(slavefds[1], 0);
-	close(slavefds[1]);
-	close(d->fd);
-	/* Try the default path first. */
-	execl(cddaslave_path, cddaslave_path, d->cd_device, (void *)0);
-	/* Search $PATH if that didn't work. */
-	execlp("cddaslave", "cddaslave", d->cd_device, (void *)0);
-	perror(cddaslave_path);
-	exit(1);
+	for (i = 0; i < d->numblocks; ++i) {
+		d->blocks[i].buflen = d->frames_at_once * CDDABLKSIZE;
+		d->blocks[i].buf = malloc(d->blocks[i].buflen);
+		if (!d->blocks[i].buf) {
+			ERRORLOG("plat_cdda_open: ENOMEM\n");
+			return -ENOMEM;
+		}
+	}
 
-  case -1:
-	close(slavefds[0]);
-	close(slavefds[1]);
-	perror("fork");
-	return -2;
-  }
+	cdda.cdda_addr = 200;
+	cdda.cdda_length = 1;
+	cdda.cdda_data = d->blocks[0].buf;
+	cdda.cdda_subcode = CDROM_DA_SUBQ;
+	
+	d->status = WM_CDM_STOPPED;
+	if((ioctl(d->fd, CDROMCDDA, &cdda) < 0)) {
+		return -1;
+	}
 
-  close(slavefds[1]);
-  d->cdda_slave = slavefds[0];
+	return 0;
+}
 
-  return 0;
+/*
+ * Normalize a bunch of CDDA data.  Basically this means ripping out the
+ * Q subchannel data and doing byte-swapping, since the CD audio is in
+ * littleendian format.
+ *
+ * Scanning is handled here too.
+ *
+ * XXX - do byte swapping on Intel boxes?
+ */
+long
+sun_normalize(struct cdda_block *block)
+{
+	int	i, nextq;
+	long buflen = block->buflen;
+	int	blocks = buflen / CDDABLKSIZE;
+	unsigned char *rawbuf = block->buf;
+	unsigned char *dest = rawbuf;
+	unsigned char tmp;
+	long *buf32 = (long *)rawbuf, tmp32;
+
+/*
+ * this was #ifndef LITTLEENDIAN
+ * in wmcdda it was called LITTLE_ENDIAN. Was this a flaw?
+ */
+#if WM_BIG_ENDIAN
+	if (blocks--) {
+		for (i = 0; i < SAMPLES_PER_BLK * 2; ++i) {
+			/* Only need to use temp buffer on first block. */
+			tmp = *rawbuf++;
+			*dest++ = *rawbuf++;
+			*dest++ = tmp;
+		}
+	}
+#endif
+
+	while (blocks--) {
+		/* Skip over Q data. */
+		rawbuf += 16;
+
+		for (i = 0; i < SAMPLES_PER_BLK * 2; i++) {
+#if WM_LITTLE_ENDIAN
+			*dest++ = *rawbuf++;
+			*dest++ = *rawbuf++;
+#else
+			*dest++ = rawbuf[1];
+			*dest++ = rawbuf[0];
+			rawbuf += 2;
+#endif
+		}
+	}
+
+	buflen -= ((buflen / CDDABLKSIZE) * 16);
+
+	return buflen;
+}
+
+/*
+ * Read some blocks from the CD.  Stop if we hit the end of the current region.
+ *
+ * Returns number of bytes read, -1 on error, 0 if stopped for a benign reason.
+ */
+int gen_cdda_read(struct wm_drive *d, struct wm_cdda_block *block)
+{
+	struct cdrom_cdda cdda;
+	int blk;
+	unsigned char *q;
+	unsigned char* rawbuf = block->buf;
+
+	if (d->fd < 0)
+		return -1;
+
+	/* Hit the end of the CD, probably. */
+    if ((direction > 0 && d->current_position >= d->ending_position) ||
+        (direction < 0 && d->current_position < d->starting_position)) {
+        block->status = WM_CDM_TRACK_DONE;
+        return 0;
+    }
+
+    cdda.cdda_addr = d->current_position - 150;
+    if (d->ending_position && d->current_position + d->frames_at_once > d->ending_position)
+        cdda.cdda_length = d->ending_position - d->current_position;
+    else
+        cdda.cdda_length = d->frames_at_once;
+    cdda.cdda_data = (unsigned char*)block->buf;
+    cdda.cdda_subcode = CDROM_DA_SUBQ;
+
+    if (ioctl(d->fd, CDROMCDDA, &cdda) < 0) {
+        if (errno == ENXIO)	{ /* CD ejected! */
+            block->status = WM_CDM_EJECTED;
+            return -1;
+        }
+
+        /* Sometimes it fails once, dunno why */
+        if (ioctl(d->fd, CDROMCDDA, &cdda) < 0) {
+            if (ioctl(d->fd, CDROMCDDA, &cdda) < 0)  {
+                if (ioctl(d->fd, CDROMCDDA, &cdda) < 0) {
+                    perror("CDROMCDDA");
+                    block->status = WM_CDM_CDDAERROR;
+                    return -1;
+                }
+            }
+        }
+    }
+
+	d->current_position = d->current_position + cdda.cdda_length * direction;
+
+#if 0
+	/*
+ 	 * New valid Q-subchannel information?  Update the block
+	 * status.
+	 */
+    for (blk = 0; blk < d->numblocks; ++blk) {
+        q = &rawbuf[blk * CDDABLKSIZE + SAMPLES_PER_BLK * 4];
+        if (*q == 1) {
+            block->track =  unbcd[q[1]];
+            block->index =  unbcd[q[2]];
+            /*block->minute = unbcd[q[7]];
+            block->second = unbcd[q[8]];*/
+            block->frame =  unbcd[q[9]];
+            block->status = WM_CDM_PLAYING;
+            block->buflen = cdda.cdda_length;
+        }
+    }
+#endif
+    return sun_normalize(block);
+}
+
+/*
+ * Close the CD-ROM device in preparation for exiting.
+ */
+int gen_cdda_close(struct wm_drive *d)
+{
+	int i;
+
+	if (d->fd < 0)
+		return -1;
+
+	for (i = 0; i < d->numblocks; i++) {
+		free(d->blocks[i].buf);
+		d->blocks[i].buf = 0;
+		d->blocks[i].buflen = 0;
+	}
+
+	return 0;
 }
 
 /*
@@ -706,7 +854,7 @@ codec_init( void )
   if (internal_audio == 0)
     {
       ctl_fd = -1;
-      return(0);
+      return 0;
     }
 
   if (!(devname = getenv("AUDIODEV"))) devname = "/dev/audio";
@@ -749,7 +897,7 @@ codec_init( void )
       perror("AUDIO_GETINFO");
       close(ctl_fd);
       ctl_fd = -1;
-      return(-1);
+      return -1;
     }
   if (foo.record.avail_ports & AUDIO_INTERNAL_CD_IN)
     port = AUDIO_INTERNAL_CD_IN;

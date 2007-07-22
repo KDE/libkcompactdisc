@@ -23,6 +23,16 @@
 
 #if defined(__linux__)
 
+#include "include/wm_config.h"
+#include "include/wm_struct.h"
+#include "include/wm_cdtext.h"
+#include "include/wm_cdda.h"
+#include "include/wm_struct.h"
+#include "include/wm_platform.h"
+#include "include/wm_cdrom.h"
+#include "include/wm_scsi.h"
+#include "include/wm_helpers.h"
+
 #include <errno.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -47,10 +57,6 @@ typedef unsigned long long __u64;
 #endif
 #endif
 
-#include "include/wm_config.h"
-#include "include/wm_struct.h"
-#include "include/wm_cdtext.h"
-#include <config.h>
 #if defined(BSD_MOUNTTEST)
   #include <mntent.h>
 #else
@@ -80,13 +86,6 @@ typedef unsigned long long __u64;
 #include <linux/cdrom.h>
 #undef asm
 #undef inline
-
-#include "include/wm_cdda.h"
-#include "include/wm_struct.h"
-#include "include/wm_platform.h"
-#include "include/wm_cdrom.h"
-#include "include/wm_scsi.h"
-#include "include/wm_helpers.h"
 
 #ifdef OSS_SUPPORT
 #include <linux/soundcard.h>
@@ -694,7 +693,7 @@ int gen_cdda_read(struct wm_drive *d, struct wm_cdda_block *block)
 {
 	struct cdrom_read_audio cdda;
 
-	if (d->fd > -1)
+	if (d->fd < 0)
 		return -1;
 
 	/* Hit the end of the CD, probably. */
@@ -742,7 +741,7 @@ int gen_cdda_close(struct wm_drive *d)
 {
 	int i;
 
-	if (d->fd > -1)
+	if (d->fd < 0)
 		return -1;
 
 	for (i = 0; i < d->numblocks; i++) {

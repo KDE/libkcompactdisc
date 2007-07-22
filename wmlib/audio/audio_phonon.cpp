@@ -18,7 +18,8 @@
     Boston, MA 02110-1301, USA.
 */
 
-#include <config.h>
+#include "audio.h"
+#include "audio_phonon.h"
 
 #include <QByteArray>
 #include <QDataStream>
@@ -29,8 +30,6 @@
 #include <phonon/audiooutput.h>
 #include <phonon/audiopath.h>
 #include <phonon/mediaobject.h>
-#include "audio.h"
-#include "audio_phonon.h"
 
 LibWMPcmPlayer::LibWMPcmPlayer() : AbstractMediaStream(NULL),
     m_media(NULL),

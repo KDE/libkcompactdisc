@@ -22,8 +22,6 @@
  *
  */
 
-#include <config.h>
-
 #include "wm_cdrom.h"
 #include "wm_config.h"
 #include "wm_struct.h"

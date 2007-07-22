@@ -21,9 +21,9 @@
     Sun (really Solaris) digital audio functions.
 */
 
-#include <config.h>
-
 #if defined(sun) || defined(__sun__)
+
+#include "audio.h"
 
 #include <stdio.h>
 #include <malloc.h>
@@ -34,8 +34,6 @@
 #include <errno.h>
 #include <fcntl.h>
 #include <signal.h>
-
-#include "audio.h"
 
 #define WM_MSG_CLASS WM_MSG_CLASS_PLATFORM
 

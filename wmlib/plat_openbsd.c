@@ -65,6 +65,21 @@ void *malloc();
 int	min_volume = 10;
 int	max_volume = 255;
 
+const char*
+find_cdrom()
+{
+	if (access("/dev/rcd0c", F_OK) == 0) {
+		return "/dev/rcd0c";
+    } else if (access("/dev/rcd1c", F_OK) == 0) {
+      	return "/dev/rcd1c";
+    } else if (access("/dev/acd0c", F_OK) == 0) {
+      	return "/dev/acd0c";
+    } else {
+		fprintf(stderr, "Couldn't find a CD device!\n");
+		return NULL;
+    }
+} /* find_cdrom() */
+
 /*
  * Initialize the drive.  A no-op for the generic driver.
  */
@@ -75,50 +90,26 @@ gen_init(struct wm_drive *d)
 } /* gen_init() */
 
 
-char *cds[] = {"/dev/rcd0c", "/dev/rcd1c", "/dev/acd0c", NULL};
-
-
 /*
  * Open the CD device and figure out what kind of drive is attached.
  */
 int
 gen_open(struct wm_drive *d)
 {
-  int		fd;
-  static int	warned = 0;
-  char vendor[32] = WM_STR_GENVENDOR;
-  char  model[32] = WM_STR_GENMODEL;
-  char    rev[32] = WM_STR_GENREV;
-  int i;
-
-  if (d->fd >= 0)		/* Device already open? */
-    {
+	if (d->fd >= 0) {		/* Device already open? */
        wm_lib_message(WM_MSG_LEVEL_DEBUG|WM_MSG_CLASS, "gen_open(): [device is open (fd=%d)]\n", d->fd);
-       return (0);
+       return 0;
     }
 
-  if (d->cd_device == NULL)
-    {
-      for (i = 0; cds[i] != NULL; i++)
-      {
-      	  d->cd_device = cds[i];
-	  d->fd = open(d->cd_device, O_RDONLY);
-	  if (d->fd >= 0)
-	    break;
-      }
-    }
-  else
-  	d->fd = open(d->cd_device, O_RDONLY);
-  if (d->fd < 0)
-    {
-      if (errno == EIO)
-      /* No CD in drive. */
-      	return 1;
-      else
-      	return -errno;
+	d->fd = open(d->cd_device, O_RDONLY);
+  	if (d->fd < 0) {
+      	if (errno == EIO) /* No CD in drive. */
+      		return 1;
+      	else
+      		return -errno;
     }
 
-  return (0);
+  	return 0;
 } /* gen_open() */
 
 /*
@@ -129,13 +120,13 @@ int
 gen_scsi(struct wm_drive *d, unsigned char *cdb,
 	int cdblen, void *retbuf, int retbuflen, int getreply)
 {
-  return (-1);
+  return -1;
 } /* gen_scsi() */
 
 int
 gen_close( struct wm_drive *d )
 {
-  if(d->fd != -1) {
+  if(d->fd > -1) {
     wm_lib_message(WM_MSG_LEVEL_DEBUG|WM_MSG_CLASS, "closing the device\n");
     close(d->fd);
   }

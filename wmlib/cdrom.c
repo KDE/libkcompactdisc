@@ -25,15 +25,6 @@
  * platform- or drive-dependent code here.
  */
 
-#include <errno.h>
-#include <stdio.h>
-#include <unistd.h>
-#include <stdlib.h>
-#include <string.h>
-#include <sys/types.h>
-/* #include <sys/time.h> */
-#include <config.h>
-
 #include "include/wm_config.h"
 #include "include/wm_struct.h"
 #include "include/wm_cddb.h"
@@ -42,6 +33,13 @@
 #include "include/wm_helpers.h"
 #include "include/wm_cdtext.h"
 #include "include/wm_scsi.h"
+
+#include <errno.h>
+#include <stdio.h>
+#include <unistd.h>
+#include <stdlib.h>
+#include <string.h>
+#include <sys/types.h>
 
 #ifdef CAN_CLOSE
 #include <fcntl.h>

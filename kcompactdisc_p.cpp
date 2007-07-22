@@ -205,13 +205,13 @@ bool KCompactDiscPrivate::skipStatusChange(KCompactDisc::DiscStatus status)
 			}
 		}
 	
-		emit q->discStatusChanged(status, KCompactDiscPrivate::discStatusI18n(status));
+		emit q->discStatusChanged(status);
 	}
 
 	return false;
 }
 
-QString KCompactDiscPrivate::discStatusI18n(KCompactDisc::DiscStatus status)
+const QString KCompactDiscPrivate::discStatusI18n(KCompactDisc::DiscStatus status)
 {
     switch (status) {
     case KCompactDisc::Playing:

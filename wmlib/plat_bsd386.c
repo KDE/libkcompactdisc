@@ -89,7 +89,7 @@ void *malloc();
 int
 gen_init(struct wm_drive *d)
 {
-  return 0;
+	return 0;
 } /* gen_init() */
 
 /*-----------------------------------------------------------------------*
@@ -98,35 +98,35 @@ gen_init(struct wm_drive *d)
 int
 gen_open(struct wm_drvie *d)
 {
-  void	*aux = NULL, *daux = NULL;
-  int fd = -1;
+	void	*aux = NULL, *daux = NULL;
+	int fd = -1;
 
-  if (d->aux)	/* Device already open? */
-    {
-      wm_lib_message(WM_MSG_LEVEL_DEBUG|WM_MSG_CLASS, "gen_open(): [device is open (aux=%d)]\n", d->aux);
-      return (0);
+	if (d->aux) {	/* Device already open? */
+		wm_lib_message(WM_MSG_LEVEL_DEBUG|WM_MSG_CLASS, "gen_open(): [device is open (aux=%d)]\n", d->aux);
+		return 0;
     }
 
-  if ((aux = cdopen(d->cd_device)) == NULL)
-    {
-      fprintf(stderr, "No cdrom found by libcdrom\n");
-      return (-6);
+	if ((aux = cdopen(d->cd_device)) == NULL) {
+		fprintf(stderr, "No cdrom found by libcdrom\n");
+		return -6;
     }
 
-  if ((daux = malloc(sizeof(struct pause_info))) == NULL)
-    return (-1);
+	if ((daux = malloc(sizeof(struct pause_info))) == NULL) {
+		cdclose( aux );
+    	return -1;
+	}
 
 #ifdef SOUNDBLASTER
-  fd = open("/dev/mixer", O_RDWR, 0);
+	fd = open("/dev/mixer", O_RDWR, 0);
 #endif
 
-  d->aux = aux;
-  d->daux = daux;
-  d->fd = fd;
-  PAUSE_FRAME = 0;
-  END_FRAME = 0;
+	d->aux = aux;
+	d->daux = daux;
+	d->fd = fd;
+	PAUSE_FRAME = 0;
+	END_FRAME = 0;
 
-  return (0);
+	return 0;
 }
 
 /*---------------------------------------------*
@@ -169,79 +169,74 @@ int
 gen_get_drive_status(struct wm_drive *d, int oldmode,
                      int *mode, int *pos, int *track, int *index)
 {
-  struct cdstatus	status;
-  extern enum wm_cd_modes cur_cdmode;
+	struct cdstatus	status;
+	extern enum wm_cd_modes cur_cdmode;
 
-  /* If we can't get status, the CD is ejected, so default to that. */
-  *mode = WM_CDM_EJECTED;
+	/* If we can't get status, the CD is ejected, so default to that. */
+	*mode = WM_CDM_EJECTED;
 
-  /* Is the device open? */
-  if (d->aux == NULL)
-    {
-      switch (d->proto.open(d))
-	{
-	case -1:	/* error */
-	  return (-1);
+	/* Is the device open? */
+	if (d->aux == NULL) {
+		switch (d->proto.open(d)) {
+		case -1:	/* error */
+	  		return -1;
 
-	case 1:		/* retry */
-	  return (0);
-	}
+		case 1:		/* retry */
+	  		return 0;
+		}
     }
 
-  if (cdstatus (CUR_CD, &status) < 0)
-    {
-      *mode = WM_CDM_TRACK_DONE;	/* waiting for next track. */
-      return (0);
+  	if (cdstatus (CUR_CD, &status) < 0) {
+		*mode = WM_CDM_TRACK_DONE;	/* waiting for next track. */
+		return 0;
     }
 
-  switch (status.state)
-    {
-    case cdstate_playing:
-      *mode = WM_CDM_PLAYING;
-      DOPOS;
-      break;
+	switch (status.state) {
+	case cdstate_playing:
+		*mode = WM_CDM_PLAYING;
+		break;
 
     case cdstate_stopped:
-      /* the MITSUMI drive doesn't have a "paused" state,
-	 so it always comes here and not to the paused section.
-	 The PAUSE_FRAME stuff below (in gen_pause())
-	 fakes out the paused state. */
-      if (oldmode == WM_CDM_PLAYING)
-	{
-	  *mode = WM_CDM_TRACK_DONE;
-	  break;
-	} else if (cur_cdmode != WM_CDM_PAUSED) {
-	  *mode = WM_CDM_STOPPED;
-	  DOPOS;
-	  break;
-	}
-      /* fall through if paused */
+		/* the MITSUMI drive doesn't have a "paused" state,
+		so it always comes here and not to the paused section.
+		The PAUSE_FRAME stuff below (in gen_pause())
+		fakes out the paused state. */
+		if (oldmode == WM_CDM_PLAYING) {
+	  		*mode = WM_CDM_TRACK_DONE;
+			break;
+		} else if (cur_cdmode != WM_CDM_PAUSED) {
+	  		*mode = WM_CDM_STOPPED;
+			break;
+		}
+      	/* fall through if paused */
 
     case cdstate_paused:
       /* the SCSI2 code in the cdrom library only pauses with
 	 cdstop(); it never truly stops a disc (until an in-progress
 	 play reaches the end).  So it always comes here. */
-      if (cur_cdmode == WM_CDM_STOPPED)
-	{
-	  *mode = WM_CDM_STOPPED;
-	  DOPOS;
-	  break;
-	}
-      if (oldmode == WM_CDM_PLAYING || oldmode == WM_CDM_PAUSED)
-	{
-	  *mode = WM_CDM_PAUSED;
-	  DOPOS;
-	} else {
-	  *mode = WM_CDM_STOPPED;
-	  DOPOS;
-	}
-      break;
+		if (cur_cdmode == WM_CDM_STOPPED)
+	  		*mode = WM_CDM_STOPPED;
+		else if (oldmode == WM_CDM_PLAYING || oldmode == WM_CDM_PAUSED)
+	  		*mode = WM_CDM_PAUSED;
+		else
+	  		*mode = WM_CDM_STOPPED;
+		break;
 
-    default:
-      *mode = WM_CDM_STOPPED;
+	default:
+		*mode = WM_CDM_STOPPED;
     }
 
-  return (0);
+	switch (*mode) {
+	case WM_CDM_PLAYING:
+	case WM_CDM_PAUSED:
+	case WM_CDM_STOPPED:
+		*pos = status.abs_frame;
+		*track = status.track_num;
+		*index = status.index_num;
+		break;
+	}
+
+	return 0;
 } /* gen_get_drive_status() */
 
 
@@ -253,7 +248,7 @@ gen_get_trackcount(struct wm_drive *d, int *tracks)
 {
   *tracks = CUR_CD->ntracks;
 
-  return (0);
+  return 0;
 } /* gen_get_trackcount() */
 
 /*---------------------------------------------------------*
@@ -265,7 +260,7 @@ gen_get_trackinfo(struct wm_drive *d, int track, int *data, int *startframe)
   *data = (CUR_CD->tracks[track - 1].control & 4) ? 1 : 0;
   *startframe = CUR_CD->tracks[track - 1].start_frame;
 
-  return (0);
+  return 0;
 } /* gen_get_trackinfo() */
 
 /*-------------------------------------*
@@ -276,7 +271,7 @@ gen_get_cdlen(struct wm_drive *d, int *frames)
 {
   *frames = CUR_CD->total_frames;
 
-  return (0);
+  return 0;
 } /* gen_get_cdlen() */
 
 /*------------------------------------------------------------*
@@ -287,9 +282,9 @@ gen_play(struct wm_drive *d, int start, int end)
 {
   END_FRAME = end;
   if (cdplay(d->aux, start, end) < 0)
-    return (-1);
+    return -1;
   else
-    return (0);
+    return 0;
 } /* gen_play() */
 
 /*--------------------------------------------------------------------*
@@ -303,15 +298,15 @@ gen_pause(struct wm_drive *d)
   struct cdstatus	status;
 
   if (cdstatus(d->aux, &status) < 0)
-    return (-1);
+    return -1;
   if (status.state != cdstate_playing)
     PAUSE_FRAME = CUR_CD->tracks[0].start_frame;
   else
     PAUSE_FRAME = status.abs_frame;
   if (cdstop(d->aux) < 0)
-    return (-1);
+    return -1;
 
-  return (0);
+  return 0;
 } /* gen_pause() */
 
 /*-------------------------------------------------*
@@ -324,7 +319,7 @@ gen_resume(struct wm_drive *d)
 
   status = (d->play)(d, PAUSE_FRAME, END_FRAME);
   PAUSE_FRAME = 0;
-  return (status);
+  return status;
 } /* gen_resume() */
 
 /*--------------*
@@ -351,7 +346,7 @@ gen_eject(struct wm_drive *d)
   if (d->fd >= 0)
      close(d->fd);     /* close mixer */
   d->fd = -1;
-  return (0);
+  return 0;
 } /* gen_eject() */
 
 /*----------------------------------------*
@@ -389,26 +384,25 @@ scale_volume(int vol, int max)
 static int
 unscale_volume(int cd_vol, int max)
 {
-  int	vol = 0, top = max, bot = 0, scaled;
+	int	vol = 0, top = max, bot = 0, scaled;
 
-  while (bot <= top)
-    {
-      vol = (top + bot) / 2;
-      scaled = scale_volume(vol, max);
-      if (cd_vol == scaled)
-	break;
-      if (cd_vol < scaled)
-	top = vol - 1;
-      else
-	bot = vol + 1;
+	while (bot <= top) {
+		vol = (top + bot) / 2;
+		scaled = scale_volume(vol, max);
+		if (cd_vol == scaled)
+			break;
+		if (cd_vol < scaled)
+			top = vol - 1;
+		else
+			bot = vol + 1;
     }
 
-  if (vol < 0)
-    vol = 0;
-  else if (vol > max)
-    vol = max;
+	if (vol < 0)
+		vol = 0;
+	else if (vol > max)
+		vol = max;
 
-  return (vol);
+  return vol;
 } /* unscale_volume() */
 
 /*---------------------------------------------------------------------*
@@ -434,7 +428,7 @@ gen_set_volume(struct wm_drive *d, int left, int right)
 	     right < 0 ? 0 : right > 255 ? 255 : right);
 
 #endif
-  return (0);
+  return 0;
 }
 
 /*---------------------------------------------------------------------*
@@ -456,7 +450,7 @@ gen_get_volume(struct wm_drive *d, int *left, int *right)
          *right = unscale_volume((level >> 8) & 0xff, 100);
        }
     }
-  return (0);
+  return 0;
 }
 
 #endif /* __bsdi__ */

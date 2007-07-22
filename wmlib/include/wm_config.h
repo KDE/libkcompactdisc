@@ -51,8 +51,6 @@
  * options below.
  */
 
-#include <config.h>
-
 /******************************************************************
  * generic options
  ******************************************************************
@@ -117,6 +115,10 @@
 #endif
 
 #endif /* freebsd */
+
+#if defined(__OpenBSD__)
+#define DEFAULT_CD_DEVICE	find_cdrom()
+#endif
 
 /******************************************************************
  * NetBSD
@@ -190,8 +192,9 @@
  * Which device should be opened by WorkMan at default?
  */
 #define DEFAULT_CD_DEVICE	"/dev/cdrom"
-
 #define WMLIB_CDDA_BUILD 1
+#define COUNT_CDDA_BLOCKS 10
+
 /*
  * Uncomment the following if you use the sbpcd or mcdx device driver.
  * It shouldn't hurt if you use it on other devices. It'll be nice to
@@ -259,8 +262,7 @@
  ******************************************************************/
 #if defined(__osf__) || defined(__osf)
 
-/* not needed here, it's figured out by plat_osf1.c */
-/* #define DEFAULT_CD_DEVICE "/dev/rcdrom/cd0" */
+#define DEFAULT_CD_DEVICE find_cdrom()
 
 #endif
 
@@ -286,6 +288,7 @@
 #define CODEC 1
 #define DEFAULT_CD_DEVICE find_cdrom()
 #define WMLIB_CDDA_BUILD 1
+#define COUNT_CDDA_BLOCKS 15
 
 /*
  * set the following to "SUNW,CS4231" for Sun and to "SUNW,sb16"

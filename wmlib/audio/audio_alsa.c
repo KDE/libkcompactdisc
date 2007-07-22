@@ -22,7 +22,10 @@
     Boston, MA 02110-1301, USA.
 */
 
-#include <config.h>
+#include "audio.h"
+#include "../include/wm_struct.h"
+#include "../include/wm_config.h"
+
 #include <config-alsa.h>
 
 #if defined(HAVE_LIBASOUND2)
@@ -32,10 +35,6 @@
 #elif defined(HAVE_SYS_ASOUNDLIB_H)
 #	include <sys/asoundlib.h>
 #endif
-#include "audio.h"
-
-#include "../include/wm_struct.h"
-#include "../include/wm_config.h"
 
 static char *device = NULL;
 static snd_pcm_t *handle;

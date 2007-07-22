@@ -159,37 +159,28 @@ gen_init( struct wm_drive *d )
 int
 gen_open( struct wm_drive *d )
 {
-  int	fd;
-  CDSTATUS s;
+	CDSTATUS s;
 
-  if (d->fd < 0)		/* Device already open? */
+  	if (d->fd < 0)		/* Device already open? */
     {
-      if (d->cd_device == NULL)
-        d->cd_device = DEFAULT_CD_DEVICE;
+      	d->daux = CDopen(d->cd_device, "r");
+      	if (d->daux == 0) {
+			return -6;
+		}
 
-      d->fd = 1;
-
-      /* Now fill in the relevant parts of the wm_drive structure. */
-      fd = d->fd;
-      d->fd = fd;
-
-      d->daux = CDopen(d->cd_device,"r");
-      if (d->daux == 0)
-	{
-          return (-6);
-	}
+		d->fd = 1;
 #ifdef CDDA
-      icd = d->daux;
+		icd = d->daux;
 #endif
     } else {
-      wm_lib_message(WM_MSG_LEVEL_DEBUG|WM_MSG_CLASS, "gen_open(): [device is open (fd=%d)]\n", d->fd);
+		wm_lib_message(WM_MSG_LEVEL_DEBUG|WM_MSG_CLASS, "gen_open(): [device is open (fd=%d)]\n", d->fd);
     }
 
-  CDgetstatus(d->daux, &s);
-  if( s.state==CD_NODISC || s.state==CD_ERROR )
-    return 1;
+	CDgetstatus(d->daux, &s);
+	if( s.state == CD_NODISC || s.state == CD_ERROR )
+	    return 1;
 
-  return (0);
+	return 0;
 } /* gen_open() */
 
 /*----------------------------------*

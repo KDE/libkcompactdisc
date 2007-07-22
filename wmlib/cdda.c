@@ -38,12 +38,10 @@ static pthread_t thread_play;
 /* CDDABLKSIZE give us the 588 samples 4 bytes each(16 bit x 2 channel)
    by rate 44100 HZ, 588 samples are 1/75 sec
    if we read 15 frames(8820 samples), we get in each block, data for 1/5 sec */
-#define NUMFRAMES 15
-/* by 5 blocks in chain, the total chain contents data for 1 sec */
-#define NUMBLOCKS 10
+#define COUNT_CDDA_FRAMES_PER_BLOCK 15
 
-static struct wm_cdda_block blks[NUMBLOCKS];
-static pthread_mutex_t blks_mutex[NUMBLOCKS];
+static struct wm_cdda_block blks[COUNT_CDDA_BLOCKS];
+static pthread_mutex_t blks_mutex[COUNT_CDDA_BLOCKS];
 static pthread_cond_t wakeup_audio;
 
 /*
@@ -242,7 +240,7 @@ cdda_save(struct wm_drive *, char *)
 static int get_next_block(int x)
 {
     int y = ++x;
-    return (y < NUMBLOCKS)?y:0;
+    return (y < COUNT_CDDA_BLOCKS)?y:0;
 }
 
 static void *cdda_fct_read(void* arg)
@@ -345,8 +343,8 @@ int wm_cdda_init(struct wm_drive *d)
 	memset(blks, 0, sizeof(blks));
 	
 	d->blocks = blks;
-	d->frames_at_once = NUMFRAMES;
-	d->numblocks = NUMBLOCKS;
+	d->frames_at_once = COUNT_CDDA_FRAMES_PER_BLOCK;
+	d->numblocks = COUNT_CDDA_BLOCKS;
 	d->status = WM_CDM_UNKNOWN;
 
 	if ((ret = gen_cdda_init(d)))

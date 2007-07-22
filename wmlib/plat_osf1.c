@@ -204,7 +204,7 @@ find_cdrom()
 int
 gen_init( struct wm_drive *d )
 {
-  return (0);
+  return 0;
 } /* gen_init() */
 
 /*
@@ -213,35 +213,23 @@ gen_init( struct wm_drive *d )
 int
 gen_open( struct wm_drive *d )
 {
-  int		fd;
-  static int	warned = 0;
-
-  if (d->fd >= 0)		/* Device already open? */
-    {
-      wm_lib_message(WM_MSG_LEVEL_DEBUG|WM_MSG_CLASS, "gen_open(): [device is open (fd=%d)]\n", d->fd);
-      return (0);
+	if (d->fd >= 0) {		/* Device already open? */
+		wm_lib_message(WM_MSG_LEVEL_DEBUG|WM_MSG_CLASS, "gen_open(): [device is open (fd=%d)]\n", d->fd);
+		return 0;
     }
 
-  if (d->cd_device == NULL)
-    d->cd_device = find_cdrom();
+	d->fd = open(d->cd_device, O_RDWR);
+	if (d->fd < 0) {
+		if (errno == EACCES)
+			return -EACCES;
+		else if (errno != EINTR)
+			return -6;
 
-  d->fd = open(d->cd_device, O_RDWR);
-  if (d->fd < 0)
-    {
-      if (errno == EACCES)
-	{
-          return -EACCES;
-	}
-      else if (errno != EINTR)
-	{
-          return (-6);
-	}
-
-      /* No CD in drive. */
-      return (1);
+		/* No CD in drive. */
+		return 1;
     }
 
-  return (0);
+	return 0;
 } /* gen_open() */
 
 /*
@@ -252,13 +240,13 @@ gen_scsi(struct wm_drive *d, unsigned char *cdb, int cdblen,
 	void *retbuf, int retbuflen, int getreply)
 {
 	/* OSF1 doesn't have a SCSI passthrough interface, does it? */
-	return (-1);
+	return -1;
 } /* gen_scsi() */
 
 int
 gen_close( struct wm_drive *d )
 {
-  if(d->fd != -1) {
+  if(d->fd > -1) {
     wm_lib_message(WM_MSG_LEVEL_DEBUG|WM_MSG_CLASS, "closing the device\n");
     close(d->fd);
     d->fd = -1;
@@ -275,36 +263,33 @@ int
 gen_get_drive_status(struct wm_drive *d, int oldmode,
 		     int *mode, int *pos, int *track, int *index)
 {
-  struct cd_sub_channel		sc;
-  struct cd_subc_channel_data	scd;
+	struct cd_sub_channel		sc;
+	struct cd_subc_channel_data	scd;
 
-  /* If we can't get status, the CD is ejected, so default to that. */
-  *mode = WM_CDM_EJECTED;
+	/* If we can't get status, the CD is ejected, so default to that. */
+	*mode = WM_CDM_EJECTED;
 
-  sc.sch_address_format	= CDROM_MSF_FORMAT;
-  sc.sch_data_format	= CDROM_CURRENT_POSITION;
-  sc.sch_track_number	= 0;
-  sc.sch_alloc_length	= sizeof(scd);
-  sc.sch_buffer		= (caddr_t)&scd;
+	sc.sch_address_format	= CDROM_MSF_FORMAT;
+	sc.sch_data_format	= CDROM_CURRENT_POSITION;
+	sc.sch_track_number	= 0;
+	sc.sch_alloc_length	= sizeof(scd);
+	sc.sch_buffer		= (caddr_t)&scd;
 
-  /* Is the device open? */
-  if (d->fd < 0)
-    {
-      switch (d->proto.open(d))
-	{
-	case -1:	/* error */
-	  return (-1);
+	/* Is the device open? */
+	if (d->fd < 0) {
+		switch (d->proto.open(d)) {
+		case -1:	/* error */
+	  		return -1;
 
-	case 1:		/* retry */
-	  return (0);
-	}
+		case 1:		/* retry */
+	  		return 0;
+		}
     }
 
-  if (ioctl(d->fd, CDROM_READ_SUBCHANNEL, &sc))
-    return (0);	/* ejected */
+  	if (ioctl(d->fd, CDROM_READ_SUBCHANNEL, &sc))
+    	return 0;	/* ejected */
 
-  switch (scd.scd_header.sh_audio_status)
-    {
+  	switch (scd.scd_header.sh_audio_status) {
     case AS_PLAY_IN_PROGRESS:
       *mode = WM_CDM_PLAYING;
     dopos:

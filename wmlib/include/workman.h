@@ -28,7 +28,6 @@
  * wm_config should always be included first
  */
 #include "wm_config.h"
-#include <config.h>
 #include "workman_defs.h"
 #include "wm_cdda.h"
 #include "wm_cddb.h"

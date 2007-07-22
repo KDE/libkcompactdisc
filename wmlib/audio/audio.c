@@ -17,12 +17,10 @@
 */
 
 #include "audio.h"
+#include "../include/wm_config.h"
 
-#include <config.h>
 #include <config-alsa.h>
 #include <string.h>
-
-#include "../include/wm_config.h"
 
 struct audio_oops *setup_phonon(const char *dev, const char *ctl);
 struct audio_oops *setup_arts(const char *dev, const char *ctl);

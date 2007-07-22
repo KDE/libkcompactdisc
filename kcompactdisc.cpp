@@ -19,6 +19,9 @@
  *  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
  */
 
+#include "kcompactdisc.h"
+#include "kcompactdisc_p.h"
+
 #include <QtDBus>
 
 #include <kdebug.h>
@@ -28,13 +31,6 @@
 #include <solid/device.h>
 #include <solid/block.h>
 #include <solid/opticaldrive.h>
-
-#include <config.h>
-
-//#include <fixx11h.h>
-
-#include "kcompactdisc.h"
-#include "kcompactdisc_p.h"
 
 static QMap<QString, KUrl> cdromsNameToDeviceUrl;
 static QMap<QString, QString> cdromsNameToUdi;
@@ -252,6 +248,17 @@ unsigned KCompactDisc::discPosition()
 	return d->m_discPosition;
 }
 
+KCompactDisc::DiscStatus KCompactDisc::discStatus()
+{
+	Q_D(KCompactDisc);
+	return d->m_status;
+}
+
+QString KCompactDisc::discStatusString(KCompactDisc::DiscStatus status)
+{
+	return KCompactDiscPrivate::discStatusI18n(status);
+}
+
 QString KCompactDisc::trackArtist()
 {
 	Q_D(KCompactDisc);
@@ -336,12 +343,6 @@ bool KCompactDisc::isAudio(unsigned track)
     if (!track)
         return 0;
     return d->isTrackAudio(track);
-}
-
-KCompactDisc::DiscStatus KCompactDisc::discStatus()
-{
-	Q_D(KCompactDisc);
-	return d->m_status;
 }
 
 void KCompactDisc::playTrack(unsigned track)

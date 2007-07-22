@@ -68,7 +68,7 @@ class KCompactDiscPrivate : public QObject
 		unsigned getNextTrackInPlaylist();
 		unsigned getPrevTrackInPlaylist();
 		bool skipStatusChange(KCompactDisc::DiscStatus);
-		static QString discStatusI18n(KCompactDisc::DiscStatus);
+		static const QString discStatusI18n(KCompactDisc::DiscStatus);
 
 		void clearDiscInfo();
 

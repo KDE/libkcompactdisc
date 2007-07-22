@@ -158,7 +158,7 @@ find_cdrom()
 int
 gen_init(struct wm_drive *d)
 {
-  return (0);
+  return 0;
 } /* gen_init() */
 
 /*
@@ -167,43 +167,22 @@ gen_init(struct wm_drive *d)
 int
 gen_open(struct wm_drive *d)
 {
-  int		fd, flag = 1;
-  static int	warned = 0;
-
-  if (d->fd >= 0)		/* Device already open? */
-    {
-      wm_lib_message(WM_MSG_LEVEL_DEBUG|WM_MSG_CLASS, "gen_open(): [device is open (fd=%d)]\n", d->fd);
-      return (0);
+	if (d->fd >= 0) {		/* Device already open? */
+		wm_lib_message(WM_MSG_LEVEL_DEBUG|WM_MSG_CLASS, "gen_open(): [device is open (fd=%d)]\n", d->fd);
+		return 0;
     }
 
-  d->fd = create_cdrom_node(d->cd_device); /* this will do open */
+  	d->fd = create_cdrom_node(d->cd_device); /* this will do open */
+	if (d->fd < 0) {
+		if (errno == EACCES)
+		else if (errno != EINTR)
+			return -6;
 
-  if (d->fd < 0)
-    {
-      if (errno == EACCES)
-	{
-	  if (! warned)
-	    {
-	      fprintf(stderr,"Cannot access %s\n",d->cd_device);
-	      warned++;
-	    }
-	}
-      else if (errno != EINTR)
-	{
-          return ( -6 );
-	}
-
-      /* No CD in drive. (Is this true also for svr4 ? XXX ) */
-      return (1);
+		/* No CD in drive. (Is this true also for svr4 ? XXX ) */
+		return 1;
     }
 
-  if (warned)
-    {
-      warned = 0;
-      fprintf(stderr, "Thank you.\n");
-    }
-
-  return (0);
+	return 0;
 } /* gen_open() */
 
 /*
@@ -313,7 +292,7 @@ int
 gen_get_drive_status(struct wm_drive *d, int oldmode,
 		     int *mode, int *pos, int *track, int *index)
 {
-  return (wm_scsi2_get_drive_status(d, oldmode, mode, pos, track, index));
+  return wm_scsi2_get_drive_status(d, oldmode, mode, pos, track, index);
 } /* gen_get_drive_status() */
 
 /*
@@ -322,7 +301,7 @@ gen_get_drive_status(struct wm_drive *d, int oldmode,
 int
 gen_get_trackcount(struct wm_drive *d, int *tracks)
 {
-  return (wm_scsi2_get_trackcount(d, tracks));
+  return wm_scsi2_get_trackcount(d, tracks);
 } /* gen_get_trackcount() */
 
 /*
@@ -331,7 +310,7 @@ gen_get_trackcount(struct wm_drive *d, int *tracks)
 int
 gen_get_trackinfo(struct wm_drive *d, int track, int *data, int *startframe)
 {
-  return (wm_scsi2_get_trackinfo(d, track, data, startframe));
+  return wm_scsi2_get_trackinfo(d, track, data, startframe);
 } /* gen_get_trackinfo() */
 
 /*
@@ -340,9 +319,9 @@ gen_get_trackinfo(struct wm_drive *d, int track, int *data, int *startframe)
 int
 gen_get_cdlen(struct wm_drive *d, int *frames)
 {
-  int		tmp;
+  int tmp;
 
-  return (wm_scsi2_get_cdlen(d, frames));
+  return wm_scsi2_get_cdlen(d, frames);
 } /* gen_get_cdlen() */
 
 /*
@@ -351,7 +330,7 @@ gen_get_cdlen(struct wm_drive *d, int *frames)
 int
 gen_play(struct wm_drive *d, int start, int end)
 {
-  return (wm_scsi2_play(d, start, end));
+  return wm_scsi2_play(d, start, end);
 } /* gen_play() */
 
 /*
@@ -360,7 +339,7 @@ gen_play(struct wm_drive *d, int start, int end)
 int
 gen_pause(struct wm_drive *d)
 {
-  return (wm_scsi2_pause(d));
+  return wm_scsi2_pause(d);
 } /* gen_pause() */
 
 /*
@@ -369,7 +348,7 @@ gen_pause(struct wm_drive *d)
 int
 gen_resume(struct wm_drive *d)
 {
-  return (wm_scsi2_resume(d));
+  return wm_scsi2_resume(d);
 } /* gen_resume() */
 
 /*
@@ -378,7 +357,7 @@ gen_resume(struct wm_drive *d)
 int
 gen_stop(struct wm_drive *d)
 {
-  return (wm_scsi2_stop(d));
+  return wm_scsi2_stop(d);
 } /* gen_stop() */
 
 
@@ -388,7 +367,7 @@ gen_stop(struct wm_drive *d)
 int
 gen_eject(struct wm_drive *d)
 {
-  return (wm_scsi2_eject(d));
+  return wm_scsi2_eject(d);
 } /* gen_eject() */
 
 /*
@@ -399,7 +378,7 @@ gen_eject(struct wm_drive *d)
 int
 gen_closetray( struct wm_drive *d )
 {
-  return(wm_scsi2_closetray(d));
+  return wm_scsi2_closetray(d);
 } /* gen_closetray() */
 
 
@@ -410,7 +389,7 @@ gen_closetray( struct wm_drive *d )
 int
 gen_set_volume(struct wm_drive *d, int left, int right)
 {
-  return (wm_scsi2_set_volume(d, left, right));
+  return wm_scsi2_set_volume(d, left, right);
 } /* gen_set_volume() */
 
 /*
@@ -420,7 +399,7 @@ gen_set_volume(struct wm_drive *d, int left, int right)
 int
 gen_get_volume(struct wm_drive *d, int *left, int *right)
 {
-  return (wm_scsi2_get_volume(d, left, right));
+  return wm_scsi2_get_volume(d, left, right);
 } /* gen_get_volume() */
 
 #endif
