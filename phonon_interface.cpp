@@ -242,7 +242,7 @@ void KPhononCompactDiscPrivate::queryMetadata()
 
 	QMultiMap<QString, QString> data = m_producerWidget->m_media->metaData();
 	kDebug() << "METADATA" << endl;
-	kDebug() << data << endl;
+	//kDebug() << data << endl;
 
 	m_trackArtists[0] = data.take("ARTIST");
 	m_trackTitles[0] = data.take("ALBUM");
