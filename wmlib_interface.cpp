@@ -217,7 +217,7 @@ void KWMLibCompactDiscPrivate::timerExpired()
 			if(m_tracks == 0) {
 				m_tracks = wm_cd_getcountoftracks(m_handle);
 				if(m_tracks > 0) {
-					kDebug() << "New disc with " << m_tracks << " tracks" << endl;
+					kDebug() << "New disc with " << m_tracks << " tracks";
 					m_discId = wm_cddb_discid(m_handle);
 		
 					for(i = 1; i <= m_tracks; i++) {
@@ -237,10 +237,10 @@ void KWMLibCompactDiscPrivate::timerExpired()
 						m_trackTitles.append(ki18n("Track %1").subs(i, 2).toString());
 					}
 
-kDebug() << "m_tracks " << m_tracks << endl;
-kDebug() << "m_trackStartFrames " << m_trackStartFrames << endl;
-kDebug() << "m_trackArtists " << m_trackArtists << endl;
-kDebug() << "m_trackTitles " << m_trackTitles << endl;
+kDebug() << "m_tracks " << m_tracks;
+kDebug() << "m_trackStartFrames " << m_trackStartFrames;
+kDebug() << "m_trackArtists " << m_trackArtists;
+kDebug() << "m_trackTitles " << m_trackTitles;
 
 					emit q->discChanged(m_tracks);
 
@@ -258,7 +258,7 @@ kDebug() << "m_trackTitles " << m_trackTitles << endl;
 		m_discPosition = wm_get_cur_pos_abs(m_handle) - FRAMES2SEC(m_trackStartFrames[0]);
 		// Update the current playing position.
 		if(m_seek) {
-			kDebug() << "seek: " << m_seek << " trackPosition " << m_trackPosition << endl;
+			kDebug() << "seek: " << m_seek << " trackPosition " << m_trackPosition;
 			if(abs(m_trackExpectedPosition - m_trackPosition) > m_seek)
 				m_seek = 0;
 			else
@@ -302,7 +302,7 @@ void KWMLibCompactDiscPrivate::cdtext()
 	info = wm_cd_get_cdtext(m_handle);
 	
 	if(!info || !info->valid || (unsigned)info->count_of_entries != (m_tracks + 1)) {
-		kDebug() << "no or invalid CDTEXT" << endl;
+		kDebug() << "no or invalid CDTEXT";
 		return;
 	}
 
@@ -314,9 +314,9 @@ void KWMLibCompactDiscPrivate::cdtext()
 		m_trackTitles[i] = reinterpret_cast<char*>(info->blocks[0]->name[i]);
 	}
 
-	kDebug() << "CDTEXT" << endl;
-	kDebug() << "m_trackArtists " << m_trackArtists << endl;
-	kDebug() << "m_trackTitles " << m_trackTitles << endl;
+	kDebug() << "CDTEXT";
+	kDebug() << "m_trackArtists " << m_trackArtists;
+	kDebug() << "m_trackTitles " << m_trackTitles;
 
 	emit q->discInformation(KCompactDisc::Cdtext);
 }

@@ -132,7 +132,7 @@ ProducerWidget *KPhononCompactDiscPrivate::producer()
 
 		if(opticalDrive) {
 			Solid::OpticalDisc *opticalDisc = opticalDevice.as<Solid::OpticalDisc>();
-			kDebug() << "opticalDisc " << opticalDisc << endl;
+			kDebug() << "opticalDisc " << opticalDisc;
 			//if(opticalDisc && (opticalDisc->availableContent() == Solid::OpticalDisc::Audio)) {
 				m_producerWidget = new ProducerWidget(this, m_udi);
 			//}
@@ -160,7 +160,7 @@ void KPhononCompactDiscPrivate::playTrackPosition(unsigned track, unsigned posit
     if(!producer())
 		return;
 
-	kDebug() << "play track " << track << " position " << position << endl;
+	kDebug() << "play track " << track << " position " << position;
 
     m_producerWidget->m_mediaController->setCurrentTitle(track);
     m_producerWidget->m_media->seek(SEC2MS(position));
@@ -241,8 +241,8 @@ void KPhononCompactDiscPrivate::queryMetadata()
 		return;
 
 	QMultiMap<QString, QString> data = m_producerWidget->m_media->metaData();
-	kDebug() << "METADATA" << endl;
-	//kDebug() << data << endl;
+	kDebug() << "METADATA";
+	//kDebug() << data;
 
 	m_trackArtists[0] = data.take("ARTIST");
 	m_trackTitles[0] = data.take("ALBUM");
@@ -292,7 +292,7 @@ void KPhononCompactDiscPrivate::tick(qint64 t)
 	m_discPosition = m_trackPosition;
 	// Update the current playing position.
 	if(m_seek) {
-		kDebug() << "seek: " << m_seek << " trackPosition " << m_trackPosition << endl;
+		kDebug() << "seek: " << m_seek << " trackPosition " << m_trackPosition;
 		if(abs(m_trackExpectedPosition - m_trackPosition) > m_seek)
 			m_seek = 0;
 		else
@@ -327,7 +327,7 @@ void KPhononCompactDiscPrivate::stateChanged(Phonon::State newstate, Phonon::Sta
             if(m_tracks == 0) {
 				m_tracks = m_producerWidget->m_mediaController->availableTitles();
 				if(m_tracks > 0) {
-					kDebug() << "New disc with " << m_tracks << " tracks" << endl;
+					kDebug() << "New disc with " << m_tracks << " tracks";
 
 					make_playlist();
 

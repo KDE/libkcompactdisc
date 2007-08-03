@@ -65,8 +65,8 @@ bool KCompactDiscPrivate::moveInterface(const QString &deviceName,
 
 	KCompactDiscPrivate *pOld, *pNew;
 
-	kDebug() << "switch from " << q->d_ptr->m_interface << " on " << q->d_ptr->m_deviceName << endl;
-	kDebug() << "         to " << audioSystem << " on " << deviceName << endl;
+	kDebug() << "switch from " << q->d_ptr->m_interface << " on " << q->d_ptr->m_deviceName;
+	kDebug() << "         to " << audioSystem << " on " << deviceName;
 
 	/* switch temporary to dummy implementation */
 	if(q->d_ptr != this) {
@@ -106,7 +106,7 @@ void KCompactDiscPrivate::make_playlist()
     unsigned selected = 0, size = m_tracks;
     bool rejected = false;
 
-    kDebug(67000) << "Playlist has " << size << " entries\n" << endl;
+    kDebug(67000) << "Playlist has " << size << " entries\n";
     m_playlist.clear();
     for(unsigned i = 0; i < size; i++) {
         if(m_randomPlaylist) {
@@ -120,12 +120,12 @@ void KCompactDiscPrivate::make_playlist()
         m_playlist.append(selected);
     }
 
-    kDebug(67000) << "debug: dump playlist" << endl;
+    kDebug(67000) << "debug: dump playlist";
     QList<unsigned>::iterator it;
     for(it = m_playlist.begin(); it != m_playlist.end(); it++) {
-        kDebug(67000) << "debug: " << *it << endl;
+        kDebug(67000) << "debug: " << *it;
     }
-    kDebug(67000) << "debug: dump playlist end" << endl;
+    kDebug(67000) << "debug: dump playlist end";
 }
 
 unsigned KCompactDiscPrivate::getNextTrackInPlaylist()
