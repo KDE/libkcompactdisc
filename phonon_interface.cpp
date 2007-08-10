@@ -24,11 +24,11 @@
 #include <kdebug.h>
 #include <klocale.h>
 
-#include <phonon/phononnamespace.h>
-#include <phonon/mediaobject.h>
-#include <phonon/audiooutput.h>
-#include <phonon/audiopath.h>
-#include <phonon/mediacontroller.h>
+#include <Phonon/Global>
+#include <Phonon/MediaObject>
+#include <Phonon/AudioOutput>
+#include <Phonon/Path>
+#include <Phonon/MediaController>
 
 #include <solid/device.h>
 #include <solid/opticaldrive.h>
@@ -49,14 +49,12 @@ class ProducerWidget : public QObject
     public:
         MediaObject *m_media;
         AudioOutput *m_output;
-        AudioPath *m_path;
         MediaController *m_mediaController;
 };
 
 ProducerWidget::ProducerWidget(KPhononCompactDiscPrivate *p, const QString &Udi) :
     m_media(0),
     m_output(0),
-	m_path(0),
     m_mediaController(0)
 {
     m_media = new MediaObject(this);
@@ -64,9 +62,7 @@ ProducerWidget::ProducerWidget(KPhononCompactDiscPrivate *p, const QString &Udi)
     m_media->setTickInterval(1000);
 
     m_output = new AudioOutput(Phonon::MusicCategory, this);
-    m_path = new AudioPath(this);
-    m_path->addOutput(m_output);
-    m_media->addAudioPath(m_path);
+    Phonon::createPath(m_media, m_output);
 
     connect(m_media, SIGNAL(stateChanged(Phonon::State, Phonon::State)),
             p, SLOT(stateChanged(Phonon::State, Phonon::State)));
@@ -82,7 +78,6 @@ ProducerWidget::ProducerWidget(KPhononCompactDiscPrivate *p, const QString &Udi)
 ProducerWidget::~ProducerWidget()
 {
 	delete(m_mediaController);
-    delete(m_path);
     delete(m_output);
 	delete(m_media);
 }
