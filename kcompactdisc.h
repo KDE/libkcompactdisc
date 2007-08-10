@@ -175,9 +175,9 @@ public:
 
     /**
      * @param device Name of CD device, e.g. /dev/cdrom.
-     * @param digitalPlayback Select digial or analog playback.
-     * @param audioSystem For digial playback, system to use, e.g. "arts".
-     * @param audioDevice For digial playback, device to use.
+     * @param digitalPlayback Select digital or analog playback.
+     * @param audioSystem For digital playback, system to use, e.g. "phonon".
+     * @param audioDevice For digital playback, device to use.
      * @return true if the device seemed usable.
      */
     bool setDevice(
