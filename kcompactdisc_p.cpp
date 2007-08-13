@@ -99,54 +99,53 @@ bool KCompactDiscPrivate::createInterface()
 
 void KCompactDiscPrivate::make_playlist()
 {
-    /* koz: 15/01/00. I want a random list that does not repeat tracks. Ie, */
-    /* a list is created in which each track is listed only once. The tracks */
-    /* are picked off one by one until the end of the list */
-
-    unsigned selected = 0, size = m_tracks;
-    bool rejected = false;
-
-    kDebug(67000) << "Playlist has " << size << " entries\n";
-    m_playlist.clear();
-    for(unsigned i = 0; i < size; i++) {
-        if(m_randomPlaylist) {
-        	do {
-            	selected = 1 + m_randSequence.getLong(size);
-            	rejected = (m_playlist.indexOf(selected) != -1);
-        	} while(rejected == true);
+	/* koz: 15/01/00. I want a random list that does not repeat tracks. Ie, */
+	/* a list is created in which each track is listed only once. The tracks */
+	/* are picked off one by one until the end of the list */
+	
+	unsigned selected = 0, size = m_tracks;
+	bool rejected = false;
+	
+	kDebug(67000) << "Playlist has " << size << " entries\n";
+	m_playlist.clear();
+	for(unsigned i = 0; i < size; i++) {
+		if(m_randomPlaylist) {
+			do {
+				selected = 1 + m_randSequence.getLong(size);
+				rejected = (m_playlist.indexOf(selected) != -1);
+			} while(rejected == true);
 		} else {
 			selected = 1 + i;	
 		}
-        m_playlist.append(selected);
-    }
+		m_playlist.append(selected);
+	}
 
-    kDebug(67000) << "debug: dump playlist";
-    QList<unsigned>::iterator it;
-    for(it = m_playlist.begin(); it != m_playlist.end(); it++) {
-        kDebug(67000) << "debug: " << *it;
-    }
-    kDebug(67000) << "debug: dump playlist end";
+	kDebug(67000) << "dump playlist";
+	QList<unsigned>::const_iterator it;
+	for(it = m_playlist.begin(); it != m_playlist.end(); it++) {
+		kDebug(67000) << " " << *it;
+	}
+	kDebug(67000) << "dump playlist end";
 }
 
 unsigned KCompactDiscPrivate::getNextTrackInPlaylist()
 {
-    int current_index, min_index, max_index;
+	int current_index, min_index, max_index;
 
 	if(m_playlist.empty())
 		return 0;
 
 	min_index = 0;
-    max_index = m_playlist.size() - 1;
+	max_index = m_playlist.size() - 1;
 	
 	current_index = m_playlist.indexOf(m_track);
-    if(current_index < 0)
+	if(current_index < 0)
 		current_index = min_index;
 	else if(current_index >= max_index) {
 		if(m_loopPlaylist) {
 			//wrap around
 			if(m_randomPlaylist)
 				make_playlist();
-
 			current_index = min_index;
 		} else {
 			return 0;

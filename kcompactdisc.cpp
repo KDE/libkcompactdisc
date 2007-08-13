@@ -71,7 +71,7 @@ static void refreshListOfCdromDevices()
             name = (QString("[") + type + " - Manufacturer? - " + device.product() + "]");
 
         cdromsNameToDeviceUrl.insert(name, url);
-		cdromsNameToUdi.insert(name, device.udi()); 
+		cdromsNameToUdi.insert(name, device.udi());
     }
 #if 0
     if(cdromsNameToDeviceUrl.empty()) {
@@ -225,12 +225,16 @@ const QList<unsigned> &KCompactDisc::discSignature()
 const QString &KCompactDisc::discArtist()
 {
 	Q_D(KCompactDisc);
+    if (!d->m_tracks)
+        return QString();
 	return d->m_trackArtists[0];
 }
 
 const QString &KCompactDisc::discTitle()
 {
 	Q_D(KCompactDisc);
+    if (!d->m_tracks)
+        return QString();
 	return d->m_trackTitles[0];
 }
 
@@ -352,7 +356,7 @@ void KCompactDisc::playTrack(unsigned track)
 	d->m_statusExpected = KCompactDisc::Playing;
     d->m_trackExpectedPosition = 0;
     d->m_seek = abs(d->m_trackExpectedPosition - trackPosition());
-	
+
 	d->playTrackPosition(track, 0);
 }
 
@@ -363,7 +367,7 @@ void KCompactDisc::playPosition(unsigned position)
 	d->m_statusExpected = Playing;
     d->m_trackExpectedPosition = position;
     d->m_seek = abs(d->m_trackExpectedPosition - trackPosition());
-	
+
 	d->playTrackPosition(d->m_track, position);
 }
 
@@ -436,7 +440,7 @@ void KCompactDisc::doCommand(KCompactDisc::DiscCommand cmd)
 			d->m_statusExpected = KCompactDisc::Playing;
 		else
 			d->m_statusExpected = KCompactDisc::Paused;
-	
+
 		d->pause();
 		break;
 
