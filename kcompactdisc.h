@@ -184,8 +184,8 @@ public:
         const QString &device,
         unsigned volume = 50,
         bool digitalPlayback = true,
-        const QString &audioSystem = QString::null,
-        const QString &audioDevice = QString::null);
+        const QString &audioSystem = QString::null,	//krazy:exclude=nullstrassign for old broken gcc
+        const QString &audioDevice = QString::null);	//krazy:exclude=nullstrassign for old broken gcc
 
     /**
      * If the url is a media:/ or system:/ URL returns
