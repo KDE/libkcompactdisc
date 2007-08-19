@@ -18,8 +18,8 @@
  *  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
  */
 
-#ifndef WMLIB_KCOMPACTDISC_P_H
-#define WMLIB_KCOMPACTDISC_P_H
+#ifndef WMLIB_INTERFACE_H
+#define WMLIB_INTERFACE_H
 
 #include "kcompactdisc_p.h"
 
@@ -61,4 +61,4 @@ class KWMLibCompactDiscPrivate : public KCompactDiscPrivate
 		void cdtext();
 };
 
-#endif /* WMLIB_KCOMPACTDISC_P_H */
+#endif // WMLIB_INTERFACE_H

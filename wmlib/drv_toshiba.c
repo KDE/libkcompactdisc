@@ -3,7 +3,7 @@
  * Copyright (C) 1991-1997 by Steven Grimm (original author)
  * Copyright (C) by Dirk FÃ¶rsterling (current 'author' = maintainer)
  * The maintainer can be contacted by his e-mail address:
- * milliByte@DeathsDoor.com
+ * <milliByte@DeathsDoor.com>
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Library General Public

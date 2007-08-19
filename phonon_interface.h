@@ -21,8 +21,8 @@
  * CDDA version taken from guitest in phonon test directory
  */
 
-#ifndef CDDA_PHONON_H
-#define CDDA_PHONON_H
+#ifndef PHONON_INTERFACE_H
+#define PHONON_INTERFACE_H
 
 #include "kcompactdisc_p.h"
 #include <phonon/phononnamespace.h>
@@ -67,4 +67,4 @@ class KPhononCompactDiscPrivate : public KCompactDiscPrivate
 		void stateChanged(Phonon::State, Phonon::State);
 };
 
-#endif /* CDDA_PHONON_H */
+#endif // PHONON_INTERFACE_H
