@@ -34,11 +34,12 @@
 
 static QMap<QString, KUrl> cdromsNameToDeviceUrl;
 static QMap<QString, QString> cdromsNameToUdi;
+static QString ___null = QString();
 
 static void refreshListOfCdromDevices()
 {
     cdromsNameToDeviceUrl.clear();
-	cdromsNameToUdi.clear();
+    cdromsNameToUdi.clear();
     QString name, type;
     KUrl url;
 
@@ -68,10 +69,10 @@ static void refreshListOfCdromDevices()
         if(!device.vendor().isEmpty())
             name = (QString('[') + type + " - " + device.vendor() + " - " + device.product() + "]");
         else
-            name = (QString('[') + type + " - Manufacturer? - " + device.product() + "]");
+            name = (QString('[') + type + " - unknown vendor - " + device.product() + "]");
 
         cdromsNameToDeviceUrl.insert(name, url);
-		cdromsNameToUdi.insert(name, device.udi());
+        cdromsNameToUdi.insert(name, device.udi());
     }
 #if 0
     if(cdromsNameToDeviceUrl.empty()) {
@@ -164,83 +165,83 @@ const QString KCompactDisc::defaultCdromDeviceUdi()
 
 const QString KCompactDisc::cdromDeviceUdi(const QString &cdromDeviceName)
 {
-	return getListOfCdromDevicesNamesAndUdi().value(cdromDeviceName, KCompactDisc::defaultCdromDeviceUdi());
+    return getListOfCdromDevicesNamesAndUdi().value(cdromDeviceName, KCompactDisc::defaultCdromDeviceUdi());
 }
 
 KCompactDisc::KCompactDisc(InformationMode infoMode) :
     d_ptr(new KCompactDiscPrivate(this, KCompactDisc::defaultCdromDeviceName()))
 {
-	Q_D(KCompactDisc);
-	dummy_ptr = d;
-	d->m_infoMode = infoMode;
+    Q_D(KCompactDisc);
+    dummy_ptr = d;
+    d->m_infoMode = infoMode;
 }
 
 KCompactDisc::~KCompactDisc()
 {
-	stop();
+    stop();
 }
 
 const QString &KCompactDisc::deviceVendor()
 {
-	Q_D(KCompactDisc);
-	return d->m_deviceVendor;
+    Q_D(KCompactDisc);
+    return d->m_deviceVendor;
 }
 
 const QString &KCompactDisc::deviceModel()
 {
-	Q_D(KCompactDisc);
-	return d->m_deviceModel;
+    Q_D(KCompactDisc);
+    return d->m_deviceModel;
 }
 
 const QString &KCompactDisc::deviceRevision()
 {
-	Q_D(KCompactDisc);
-	return d->m_deviceRevision;
+    Q_D(KCompactDisc);
+    return d->m_deviceRevision;
 }
 
 const QString &KCompactDisc::deviceName()
 {
-	Q_D(KCompactDisc);
+    Q_D(KCompactDisc);
     return d->m_deviceName;
 }
 
 const KUrl KCompactDisc::deviceUrl()
 {
-	Q_D(KCompactDisc);
+    Q_D(KCompactDisc);
     return KCompactDisc::cdromDeviceUrl(d->m_deviceName);
 }
 
 unsigned KCompactDisc::discId()
 {
-	Q_D(KCompactDisc);
-	return d->m_discId;
+    Q_D(KCompactDisc);
+    return d->m_discId;
 }
 
 const QList<unsigned> &KCompactDisc::discSignature()
 {
-	Q_D(KCompactDisc);
-	return d->m_trackStartFrames;
+    Q_D(KCompactDisc);
+    return d->m_trackStartFrames;
 }
 
 const QString &KCompactDisc::discArtist()
 {
-	Q_D(KCompactDisc);
+    Q_D(KCompactDisc);
     if (!d->m_tracks)
-        return QString();
-	return d->m_trackArtists[0];
+        return ___null;
+    return d->m_trackArtists[0];
 }
 
 const QString &KCompactDisc::discTitle()
 {
-	Q_D(KCompactDisc);
+    Q_D(KCompactDisc);
     if (!d->m_tracks)
-        return QString();
-	return d->m_trackTitles[0];
+        return ___null;
+    return d->m_trackTitles[0];
 }
 
 unsigned KCompactDisc::discLength()
 {
-	Q_D(KCompactDisc);
+    Q_D(KCompactDisc);
     if (!d->m_tracks)
         return 0;
     return d->m_discLength;
@@ -248,19 +249,19 @@ unsigned KCompactDisc::discLength()
 
 unsigned KCompactDisc::discPosition()
 {
-	Q_D(KCompactDisc);
-	return d->m_discPosition;
+    Q_D(KCompactDisc);
+    return d->m_discPosition;
 }
 
 KCompactDisc::DiscStatus KCompactDisc::discStatus()
 {
-	Q_D(KCompactDisc);
-	return d->m_status;
+    Q_D(KCompactDisc);
+    return d->m_status;
 }
 
 QString KCompactDisc::discStatusString(KCompactDisc::DiscStatus status)
 {
-	return KCompactDiscPrivate::discStatusI18n(status);
+    return KCompactDiscPrivate::discStatusI18n(status);
 }
 
 QString KCompactDisc::trackArtist()
