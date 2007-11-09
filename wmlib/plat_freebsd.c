@@ -204,7 +204,7 @@ gen_get_drive_status(struct wm_drive *d, int oldmode,
 
 	switch(*mode) {
 	case WM_CDM_PLAYING:
-	case WM_CDM_PAUSED;
+	case WM_CDM_PAUSED:
 		*pos = scd.what.position.absaddr.msf.minute * 60 * 75 +
 			scd.what.position.absaddr.msf.second * 75 +
 			scd.what.position.absaddr.msf.frame;
@@ -367,11 +367,11 @@ int
 gen_closetray(struct wm_drive *d)
 {
 #ifdef CAN_CLOSE
-	if(!d->proto.close(d)) {
-      return d->proto.open(d);
+    if(!d->proto.close(d)) {
+        return d->proto.open(d);
     } else {
-      return -1;
-    
+        return -1;
+    } 
 #else
 	/* Always succeed if the drive can't close */
 	return 0;
@@ -508,3 +508,4 @@ int gen_unscale_volume(int *left, int *right)
 }
 
 #endif
+
