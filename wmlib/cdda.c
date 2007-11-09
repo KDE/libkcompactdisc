@@ -40,6 +40,13 @@ static pthread_t thread_play;
    if we read 15 frames(8820 samples), we get in each block, data for 1/5 sec */
 #define COUNT_CDDA_FRAMES_PER_BLOCK 15
 
+/* Only Linux and Sun define the number of blocks explicity; assume all
+   other systems are like Linux and have 10 blocks.
+*/
+#ifndef COUNT_CDDA_BLOCKS
+#define COUNT_CDDA_BLOCKS 10
+#endif
+
 static struct wm_cdda_block blks[COUNT_CDDA_BLOCKS];
 static pthread_mutex_t blks_mutex[COUNT_CDDA_BLOCKS];
 static pthread_cond_t wakeup_audio;
