@@ -401,12 +401,12 @@ public Q_SLOTS:
     /**
      * Start playout of track.
      */
-    void playTrack(unsigned track);
+    void playTrack(unsigned int track);
 
     /**
      * Start playout or seek to given position of track.
      */
-    void playPosition(unsigned position);
+    void playPosition(unsigned int position);
 
     /* GUI bindings */
     /**
@@ -468,14 +468,14 @@ Q_SIGNALS:
      *
      * @param position Position within track in seconds.
      */
-    void playoutPositionChanged(unsigned position);
+    void playoutPositionChanged(unsigned int position);
 
     /**
      * A new track is started.
      *
      * @param track Track number.
      */
-    void playoutTrackChanged(unsigned track);
+    void playoutTrackChanged(unsigned int track);
 
 
 public Q_SLOTS:
@@ -497,7 +497,7 @@ Q_SIGNALS:
      * A new Disc is inserted
      *
      */
-    void discChanged(unsigned tracks);
+    void discChanged(unsigned int tracks);
 
     /**
      * A new Disc information is arrived
@@ -517,24 +517,24 @@ public Q_SLOTS:
     /**
      * Set volume
      */
-    void setVolume(unsigned volume);
+    void setVolume(unsigned int volume);
 
     /**
      * Set balance
      */
-    void setBalance(unsigned balance);
+    void setBalance(unsigned int balance);
 
 Q_SIGNALS:
 
     /**
      * New volume
      */
-    void volumeChanged(unsigned volume);
+    void volumeChanged(unsigned int volume);
 
     /**
      * New balance
      */
-    void balanceChanged(unsigned balance);
+    void balanceChanged(unsigned int balance);
 
 
 protected:
