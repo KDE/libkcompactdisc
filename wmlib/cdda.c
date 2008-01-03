@@ -20,6 +20,7 @@
 #include <string.h>
 #include <sys/poll.h>
 #include <sys/wait.h>
+#include <arpa/inet.h> /* For htonl(3) */
 #include <stdio.h>
 #include <unistd.h>
 #include "include/wm_config.h"
@@ -74,20 +75,6 @@ struct auheader {
 	u_32 sample_rate;
 	u_32 channels;
 };
-
-/* had to change #ifdef to #if   -> see wm_cdda.h */
-#ifdef __FreeBSD__
-/* Phungus not with htonl on FreeBSD */
-#include <sys/param.h>
-#else
-#if WM_BIG_ENDIAN
-# ifndef htonl
-#  define htonl(x) (x)
-# endif
-#else
-extern unsigned long htonl(unsigned long);
-#endif
-#endif
 
 static int cdda_status(struct wm_drive *d, int oldmode,
   int *mode, int *frame, int *track, int *ind)

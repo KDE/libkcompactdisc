@@ -51,16 +51,30 @@
 # include <sys/scsiio.h>
 # include "/sys/scsi/scsi_all.h"
 # include "/sys/scsi/scsi_cd.h"
+
 #elif defined(__NetBSD__)
-#include <sys/scsiio.h>
-#include <dev/scsipi/scsipi_cd.h>
-#else
+
+# include <sys/scsiio.h>
+# include <dev/scsipi/scsipi_cd.h>
+
+/* Fix http://bugs.kde.org/show_bug.cgi?id=154718 by wrapping calls to removed
+ * functions with their replacements in NetBSD 3.0
+ */
+# if __NetBSD_Version__ >= 299000900	 /* 2.99.9 */
+#  include <sys/statvfs.h>
+#  define statfs statvfs
+#  define fstatfs fstatvfs
+# endif
+
+#else /* Not OpenBSD, not NetBSD, therefore (probably) FreeBSD */
+
 # define LEFT_PORT 0
 # define RIGHT_PORT 1
 # if __FreeBSD_version < 300000
 #  include <scsi.h>
 # endif
-#endif
+
+#endif /* if defined(__OpenBSD__) */
 
 #include "include/wm_struct.h"
 #include "include/wm_platform.h"
@@ -507,5 +521,5 @@ int gen_unscale_volume(int *left, int *right)
 	return 0;
 }
 
-#endif
+#endif /* If FreeBSD or NetBSD */
 
