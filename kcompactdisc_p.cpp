@@ -77,9 +77,11 @@ bool KCompactDiscPrivate::moveInterface(const QString &deviceName,
 
 	if(audioSystem == QString("phonon"))
 		pNew = new KPhononCompactDiscPrivate(q, deviceName);
+#ifdef USE_WMLIB
 	else
 		pNew = new KWMLibCompactDiscPrivate(q, deviceName,
 			audioSystem, audioDevice);
+#endif
 
 	pNew->m_infoMode = m_infoMode;
 

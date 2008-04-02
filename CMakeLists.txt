@@ -32,9 +32,18 @@ set(wmlib_SRCS
         wmlib/drv_toshiba.c
 )
 
+if (APPLE)
+	set(USE_WMLIB false)
+else (APPLE)
+	set(USE_WMLIB true)
+endif (APPLE)
 
-set(kcompactdisc_LIB_SRCS kcompactdisc.cpp kcompactdisc_p.cpp phonon_interface.cpp wmlib_interface.cpp ${wmlib_SRCS} ${wmlib_audio_SRCS})
+set(kcompactdisc_LIB_SRCS kcompactdisc.cpp kcompactdisc_p.cpp phonon_interface.cpp)
 
+if (USE_WMLIB)
+	set(kcompactdisc_LIB_SRCS ${kcompactdisc_LIB_SRCS} wmlib_interface.cpp ${wmlib_SRCS} ${wmlib_audio_SRCS})
+	add_definitions(-DUSE_WMLIB=1)
+endif (USE_WMLIB)
 
 kde4_add_library(kcompactdisc SHARED ${kcompactdisc_LIB_SRCS})
 
