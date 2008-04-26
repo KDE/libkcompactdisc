@@ -44,10 +44,10 @@ static void refreshListOfCdromDevices()
     KUrl url;
 
     //get a list of all devices that are Cdrom
-    foreach(Solid::Device device, Solid::Device::listFromType(Solid::DeviceInterface::OpticalDrive)) {
+    foreach(const Solid::Device &device, Solid::Device::listFromType(Solid::DeviceInterface::OpticalDrive)) {
         kDebug() << device.udi().toLatin1().constData();
-        Solid::Block *b = device.as<Solid::Block>();
-        Solid::OpticalDrive *o = device.as<Solid::OpticalDrive>();
+        const Solid::Block *b = device.as<Solid::Block>();
+        const Solid::OpticalDrive *o = device.as<Solid::OpticalDrive>();
         Solid::OpticalDrive::MediumTypes mediumType = o->supportedMedia();
 
         url = KUrl::fromPath(b->device().toLatin1());
