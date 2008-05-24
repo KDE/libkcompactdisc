@@ -54,7 +54,7 @@ endif (HAVE_LIBASOUND2)
 
 set_target_properties(kcompactdisc PROPERTIES VERSION ${GENERIC_LIB_VERSION} SOVERSION ${GENERIC_LIB_SOVERSION} )
 
-install(TARGETS kcompactdisc  DESTINATION ${LIB_INSTALL_DIR} )
+install(TARGETS kcompactdisc  ${INSTALL_TARGETS_DEFAULT_ARGS} )
 
 ########### install files ###############
 
