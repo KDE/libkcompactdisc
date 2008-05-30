@@ -356,7 +356,7 @@ void KCompactDisc::playTrack(unsigned track)
 
 	d->m_statusExpected = KCompactDisc::Playing;
     d->m_trackExpectedPosition = 0;
-    d->m_seek = abs(d->m_trackExpectedPosition - trackPosition());
+    d->m_seek = abs( (double) d->m_trackExpectedPosition - trackPosition());
 
 	d->playTrackPosition(track, 0);
 }
@@ -367,7 +367,7 @@ void KCompactDisc::playPosition(unsigned position)
 
 	d->m_statusExpected = Playing;
     d->m_trackExpectedPosition = position;
-    d->m_seek = abs(d->m_trackExpectedPosition - trackPosition());
+    d->m_seek = abs( (double) d->m_trackExpectedPosition - trackPosition());
 
 	d->playTrackPosition(d->m_track, position);
 }
