@@ -67,9 +67,9 @@ static void refreshListOfCdromDevices()
         }
 
         if(!device.vendor().isEmpty())
-            name = (QString('[') + type + " - " + device.vendor() + " - " + device.product() + "]");
+            name = (QString('[') + type + " - " + device.vendor() + " - " + device.product() + ']');
         else
-            name = (QString('[') + type + " - unknown vendor - " + device.product() + "]");
+            name = (QString('[') + type + " - unknown vendor - " + device.product() + ']');
 
         cdromsNameToDeviceUrl.insert(name, url);
         cdromsNameToUdi.insert(name, device.udi());

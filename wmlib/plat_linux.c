@@ -109,7 +109,7 @@ typedef unsigned long long __u64;
 int gen_init(struct wm_drive *d)
 {
 	return 0;
-} 
+}
 
 int gen_open(struct wm_drive *d)
 {
@@ -158,7 +158,7 @@ int gen_get_drive_status(struct wm_drive *d, int oldmode, int *mode, int *pos, i
 		ret = d->proto.open(d);
 		if(ret < 0) /* error */
 			return ret;
-	
+
 		if(ret == 1) {
 			/* retry */
 			*mode = WM_CDM_UNKNOWN;
@@ -170,11 +170,11 @@ int gen_get_drive_status(struct wm_drive *d, int oldmode, int *mode, int *pos, i
 	/* Don't care about return value. If it  */
 	/* works - fine. If not - ...            */
 	ioctl(d->fd, CDROM_LOCKDOOR, 0);
-	
+
 	*mode = WM_CDM_UNKNOWN;
-	
+
 	sc.cdsc_format = CDROM_MSF;
-	
+
 	if(!ioctl(d->fd, CDROMSUBCHNL, &sc)) {
 		switch (sc.cdsc_audiostatus) {
 		case CDROM_AUDIO_PLAY:
@@ -206,15 +206,15 @@ int gen_get_drive_status(struct wm_drive *d, int oldmode, int *mode, int *pos, i
 			} else
 				*mode = WM_CDM_STOPPED;
 			break;
-		
+
 		case CDROM_AUDIO_NO_STATUS:
 			*mode = WM_CDM_STOPPED;
 			break;
-		
+
 		case CDROM_AUDIO_COMPLETED:
 			*mode = WM_CDM_TRACK_DONE; /* waiting for next track. */
 			break;
-		
+
 		case CDROM_AUDIO_INVALID: /**/
 		default:
 			*mode = WM_CDM_UNKNOWN;
@@ -360,7 +360,7 @@ int gen_eject(struct wm_drive *d)
 #endif
 
 	wm_lib_message(WM_MSG_LEVEL_DEBUG|WM_MSG_CLASS, "ejecting?\n");
-	
+
 	if(fstat(d->fd, &stbuf) != 0) {
 		wm_lib_message(WM_MSG_LEVEL_ERROR|WM_MSG_CLASS, "that weird fstat() thingy\n");
 		return -2;
@@ -473,7 +473,7 @@ static int unscale_volume(int vol, int max)
 int gen_set_volume(struct wm_drive *d, int left, int right)
 {
 	struct cdrom_volctrl v;
-	
+
 	v.channel0 = v.channel2 = left < 0 ? 0 : left > 255 ? 255 : left;
 	v.channel1 = v.channel3 = right < 0 ? 0 : right > 255 ? 255 : right;
 
@@ -577,26 +577,26 @@ int gen_scsi(struct wm_drive *d, unsigned char *cdb, int cdblen,
 	int capability;
 
 	wm_lib_message(WM_MSG_LEVEL_DEBUG|WM_MSG_CLASS, "wm_scsi over CDROM_SEND_PACKET entered\n");
-	
+
 	capability = ioctl(d->fd, CDROM_GET_CAPABILITY);
-	
+
 	if(!(capability & CDC_GENERIC_PACKET)) {
 		wm_lib_message(WM_MSG_LEVEL_DEBUG|WM_MSG_CLASS,
-			"your CDROM or/and kernel don't support CDC_GENERIC_PACKET ...\n");
+			"your CDROM or/and kernel does not support CDC_GENERIC_PACKET ...\n");
 		return -1;
 	}
 
 	memset(&cdc, 0, sizeof(struct cdrom_generic_command));
 	memset(&sense, 0, sizeof(struct request_sense));
-	
+
 	memcpy(cdc.cmd, cdb, cdblen);
-	
+
 	cdc.buffer = retbuf;
 	cdc.buflen = retbuflen;
 	cdc.stat = 0;
 	cdc.sense = &sense;
 	cdc.data_direction = getreply?CGC_DATA_READ:CGC_DATA_WRITE;
-	
+
 	/* sendpacket_over_cdrom_interface() */
 	if((ret = ioctl(d->fd, CDROM_SEND_PACKET, &cdc)))
 		wm_lib_message(WM_MSG_LEVEL_ERROR|WM_MSG_CLASS,
@@ -666,7 +666,7 @@ int gen_cdda_open(struct wm_drive *d)
 	cdda.addr.lba = 200;
 	cdda.nframes = 1;
 	cdda.buf = (unsigned char *)d->blocks[0].buf;
-	
+
 	d->status = WM_CDM_STOPPED;
 	if((ioctl(d->fd, CDROMREADAUDIO, &cdda) < 0)) {
 		if (errno == ENXIO) {

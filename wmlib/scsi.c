@@ -543,7 +543,7 @@ wm_scsi_get_cdtext(struct wm_drive *d, unsigned char **pp_buffer, int *p_buffer_
 #else
 		cdtext_possible = 1;
 		wm_lib_message(WM_MSG_LEVEL_INFO|WM_MSG_CLASS,
-			"CDTEXT INFO: GET_FEATURY_LIST(0x46) ignored. It's OK, because many CDROMS don't implement this feature\n");
+			"CDTEXT INFO: GET_FEATURY_LIST(0x46) ignored. It is OK, because many CDROMS do not implement this feature\n");
 #endif /* IGNORE_FEATURE_LIST */
 	} else {
 		feature_list_length = temp[0]*0xFFFFFF + temp[1]*0xFFFF + temp[2]*0xFF + temp[3] + 4;
@@ -635,7 +635,7 @@ int
 wm_scsi_set_speed(struct wm_drive *d, int read_speed)
 {
 	int ret;
-	
+
 	ret = sendscsi(d, NULL, 0, 0,
 		SCMD_SET_CD_SPEED, 0x00, (read_speed>>8) & 0xFF, read_speed & 0xFF, 0xFF, 0xFF,
 		0, 0, 0, 0, 0, 0);

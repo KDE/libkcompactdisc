@@ -75,7 +75,7 @@ find_cdrom()
     } else if (access("/dev/acd0c", F_OK) == 0) {
       	return "/dev/acd0c";
     } else {
-		fprintf(stderr, "Couldn't find a CD device!\n");
+		fprintf(stderr, "Could not find a CD device!\n");
 		return NULL;
     }
 } /* find_cdrom() */

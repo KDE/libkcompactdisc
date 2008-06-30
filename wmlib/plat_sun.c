@@ -158,7 +158,7 @@ find_cdrom()
     return "/dev/rsr0";
   else
     {
-      fprintf(stderr, "Couldn't find a CD device!\n");
+      fprintf(stderr, "Could not find a CD device!\n");
       return NULL;
     }
 } /* find_cdrom() */
@@ -639,7 +639,7 @@ int gen_cdda_open(struct wm_drive *d)
 	cdda.cdda_length = 1;
 	cdda.cdda_data = d->blocks[0].buf;
 	cdda.cdda_subcode = CDROM_DA_SUBQ;
-	
+
 	d->status = WM_CDM_STOPPED;
 	if((ioctl(d->fd, CDROMCDDA, &cdda) < 0)) {
 		return -1;

@@ -21,6 +21,8 @@
  * CDDA version taken from guitest in phonon test directory
  */
 
+#include "phonon_interface.h"
+
 #include <kdebug.h>
 #include <klocale.h>
 
@@ -33,8 +35,6 @@
 #include <solid/device.h>
 #include <solid/opticaldrive.h>
 #include <solid/opticaldisc.h>
-
-#include "phonon_interface.h"
 
 #define WM_MSG_CLASS WM_MSG_CLASS_PLATFORM
 
@@ -115,7 +115,7 @@ bool KPhononCompactDiscPrivate::createInterface()
 		return true;
 	}
 
-	return false; 
+	return false;
 }
 
 ProducerWidget *KPhononCompactDiscPrivate::producer()
@@ -123,7 +123,7 @@ ProducerWidget *KPhononCompactDiscPrivate::producer()
 	//try to create
 	if(!m_producerWidget) {
 		Solid::Device opticalDevice(m_udi);
-		Solid::OpticalDrive *opticalDrive = opticalDevice.as<Solid::OpticalDrive>();	
+		Solid::OpticalDrive *opticalDrive = opticalDevice.as<Solid::OpticalDrive>();
 
 		if(opticalDrive) {
 			Solid::OpticalDisc *opticalDisc = opticalDevice.as<Solid::OpticalDisc>();
@@ -181,19 +181,19 @@ void KPhononCompactDiscPrivate::stop()
 void KPhononCompactDiscPrivate::eject()
 {
 	Solid::Device opticalDevice(m_udi);
-	Solid::OpticalDrive *opticalDrive = opticalDevice.as<Solid::OpticalDrive>();	
+	Solid::OpticalDrive *opticalDrive = opticalDevice.as<Solid::OpticalDrive>();
 	Solid::OpticalDisc *opticalDisc = opticalDevice.as<Solid::OpticalDisc>();
 
 	if(!opticalDrive || !opticalDisc)
 		return;
-	
+
 	opticalDrive->eject();
 }
 
 void KPhononCompactDiscPrivate::closetray()
 {
 	Solid::Device opticalDevice(m_udi);
-	Solid::OpticalDrive *opticalDrive = opticalDevice.as<Solid::OpticalDrive>();	
+	Solid::OpticalDrive *opticalDrive = opticalDevice.as<Solid::OpticalDrive>();
 	Solid::OpticalDisc *opticalDisc = opticalDevice.as<Solid::OpticalDisc>();
 
 	if(!opticalDrive || opticalDisc)

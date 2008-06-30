@@ -1,9 +1,8 @@
 /*
  * This file is part of WorkMan, the civilized CD player library
  * Copyright (C) 1991-1997 by Steven Grimm (original author)
- * Copyright (C) by Dirk Försterling (current 'author' = maintainer)
- * The maintainer can be contacted by his e-mail address:
- * <milliByte@DeathsDoor.com>
+ * Copyright (C) by Dirk Försterling <milliByte@DeathsDoor.com>
+ * Copyright (C) 2004-2006 Alexander Kern <alex.kern@gmx.de>
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Library General Public
@@ -132,7 +131,10 @@ int wm_cd_init(const char *cd_device, const char *soundsystem,
 	pdrive->soundsystem = soundsystem ? strdup(soundsystem): NULL;
 	pdrive->sounddevice = sounddevice ? strdup(sounddevice) : NULL;
 	pdrive->ctldevice = ctldevice ? strdup(ctldevice) : NULL;
-
+	if(!pdrive->cd_device) {
+		err = -ENOMEM;
+		goto init_failed;
+	}
 	pdrive->fd = -1;
 
 	pdrive->proto.open = gen_open;

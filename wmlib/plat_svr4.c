@@ -147,7 +147,7 @@ find_cdrom()
     }
   else
     {
-      fprintf(stderr, "Couldn't find a CD device!\n");
+      fprintf(stderr, "Could not find a CD device!\n");
       return NULL;
     }
 } /* find_cdrom() */

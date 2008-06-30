@@ -205,7 +205,7 @@ void get_data_from_cdtext_pack(
   }
 #else
   else {
-     wm_lib_message(WM_MSG_LEVEL_ERROR | WM_MSG_CLASS, "can't handle unicode");
+     wm_lib_message(WM_MSG_LEVEL_ERROR | WM_MSG_CLASS, "cannot handle unicode");
   }
 #endif
 }
@@ -305,7 +305,7 @@ struct cdtext_info *get_glob_cdtext(struct wm_drive *d, int redo)
             if(0 == lp_block)
             {
               wm_lib_message(WM_MSG_LEVEL_ERROR | WM_MSG_CLASS,
-                "CDTEXT ERROR: out of memory, can't create a new language block\n");
+                "CDTEXT ERROR: out of memory, cannot create a new language block\n");
               free_cdtext_info(&wm_cdtext_info);
               return NULL /*ENOMEM*/;
             }

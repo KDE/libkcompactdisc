@@ -18,8 +18,8 @@
     Boston, MA 02110-1301, USA.
 */
 
-#include "audio.h"
 #include "audio_phonon.h"
+#include "audio.h"
 
 #include <QByteArray>
 #include <QDataStream>
@@ -173,7 +173,7 @@ int phonon_open(void)
     DEBUGLOG("phonon_open\n");
 
     if(PhononObject) {
-        ERRORLOG("Allready initialized!\n");
+        ERRORLOG("Already initialized!\n");
         return -1;
     }
 

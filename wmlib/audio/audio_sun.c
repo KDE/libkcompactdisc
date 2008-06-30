@@ -103,7 +103,7 @@ sun_audio_init( void )
 	acdev = malloc(strlen(audiodev) + 4);
 	if (acdev == NULL)
 	{
-		perror("Can't allocate audio control filename");
+		perror("Cannot allocate audio control filename");
 		exit(1);
 	}
 	strcpy(acdev, audiodev);

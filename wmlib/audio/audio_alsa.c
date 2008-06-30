@@ -112,7 +112,7 @@ static int set_hwparams(snd_pcm_hw_params_t *params,
                 return err;
         }
         if (new_rate != rate) {
-                ERRORLOG("Rate doesn't match (requested %iHz, get %iHz)\n", rate, new_rate);
+                ERRORLOG("Rate does not match (requested %iHz, get %iHz)\n", rate, new_rate);
                 return -EINVAL;
         }
         /* set the buffer time */

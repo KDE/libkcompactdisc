@@ -18,12 +18,13 @@
  *  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
  */
 
-#include <kdebug.h>
-#include <klocale.h>
-
 #include "kcompactdisc_p.h"
+
 #include "wmlib_interface.h"
 #include "phonon_interface.h"
+
+#include <kdebug.h>
+#include <klocale.h>
 
 KCompactDiscPrivate::KCompactDiscPrivate(KCompactDisc *p, const QString& dev) :
     m_infoMode(KCompactDisc::Synchronous),
@@ -32,7 +33,7 @@ KCompactDiscPrivate::KCompactDiscPrivate(KCompactDisc *p, const QString& dev) :
     m_status(KCompactDisc::NoDisc),
     m_statusExpected(KCompactDisc::NoDisc),
     m_discId(0),
-	m_discLength(0),
+    m_discLength(0),
     m_track(0),
     m_tracks(0),
     m_trackPosition(0),
@@ -43,13 +44,13 @@ KCompactDiscPrivate::KCompactDiscPrivate(KCompactDisc *p, const QString& dev) :
     m_randSequence(0),
     m_loopPlaylist(false),
     m_randomPlaylist(false),
-	m_autoMetadata(true),
+    m_autoMetadata(true),
 
-	m_deviceVendor(QString()),
+    m_deviceVendor(QString()),
     m_deviceModel(QString()),
     m_deviceRevision(QString()),
 
-	q_ptr(p)
+    q_ptr(p)
 {
 	m_interface = QString("dummy");
     m_trackStartFrames.clear();
@@ -104,10 +105,10 @@ void KCompactDiscPrivate::make_playlist()
 	/* koz: 15/01/00. I want a random list that does not repeat tracks. Ie, */
 	/* a list is created in which each track is listed only once. The tracks */
 	/* are picked off one by one until the end of the list */
-	
+
 	unsigned selected = 0, size = m_tracks;
 	bool rejected = false;
-	
+
 	kDebug(67000) << "Playlist has " << size << " entries\n";
 	m_playlist.clear();
 	for(unsigned i = 0; i < size; i++) {
@@ -117,7 +118,7 @@ void KCompactDiscPrivate::make_playlist()
 				rejected = (m_playlist.indexOf(selected) != -1);
 			} while(rejected == true);
 		} else {
-			selected = 1 + i;	
+			selected = 1 + i;
 		}
 		m_playlist.append(selected);
 	}
@@ -139,7 +140,7 @@ unsigned KCompactDiscPrivate::getNextTrackInPlaylist()
 
 	min_index = 0;
 	max_index = m_playlist.size() - 1;
-	
+
 	current_index = m_playlist.indexOf(m_track);
 	if(current_index < 0)
 		current_index = min_index;
@@ -205,7 +206,7 @@ bool KCompactDiscPrivate::skipStatusChange(KCompactDisc::DiscStatus status)
 				}
 			}
 		}
-	
+
 		emit q->discStatusChanged(status);
 	}
 

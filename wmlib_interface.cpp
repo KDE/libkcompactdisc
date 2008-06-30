@@ -18,10 +18,10 @@
  *  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
  */
 
+#include "wmlib_interface.h"
+
 #include <kdebug.h>
 #include <klocale.h>
-
-#include "wmlib_interface.h"
 
 extern "C"
 {
@@ -54,7 +54,7 @@ bool KWMLibCompactDiscPrivate::createInterface()
 	QString devicePath;
 
 	devicePath = KCompactDisc::cdromDeviceUrl(m_deviceName).path();
-	
+
 	// Debug.
 	//wm_cd_set_verbosity(WM_MSG_LEVEL_DEBUG | WM_MSG_CLASS_ALL);
 
@@ -78,7 +78,7 @@ bool KWMLibCompactDiscPrivate::createInterface()
 		} else {
 			QTimer::singleShot(1000, this, SLOT(timerExpired()));
 		}
-		
+
 		return true;
 	}
 	return false;
@@ -97,11 +97,11 @@ bool KWMLibCompactDiscPrivate::isTrackAudio(unsigned track)
 void KWMLibCompactDiscPrivate::playTrackPosition(unsigned track, unsigned position)
 {
 	unsigned firstTrack, lastTrack;
-	
+
 	firstTrack = TRACK_VALID(track) ? track : 1;
 	lastTrack = firstTrack + 1;
 	lastTrack = TRACK_VALID(lastTrack) ? lastTrack : WM_ENDTRACK;
-	
+
 	kDebug() << "play track " << firstTrack << " position "
 		 << position << endl;
 
@@ -159,7 +159,7 @@ unsigned KWMLibCompactDiscPrivate::balance()
 {
 	int bal = wm_cd_getbalance(m_handle);
 	unsigned balance = RANGE2PERCENT(bal, WM_BALANCE_ALL_LEFTS, WM_BALANCE_ALL_RIGHTS);
-	
+
 	return balance;
 }
 
@@ -219,7 +219,7 @@ void KWMLibCompactDiscPrivate::timerExpired()
 				if(m_tracks > 0) {
 					kDebug() << "New disc with " << m_tracks << " tracks";
 					m_discId = wm_cddb_discid(m_handle);
-		
+
 					for(i = 1; i <= m_tracks; i++) {
 						m_trackStartFrames.append(wm_cd_gettrackstart(m_handle, i));
 					}
@@ -272,7 +272,7 @@ kDebug() << "m_trackTitles " << m_trackTitles;
 
 		// Per-event processing.
 		track = wm_cd_getcurtrack(m_handle);
-	
+
 		if(m_track != track) {
 			m_track = track;
 			emit q->playoutTrackChanged(m_track);
@@ -300,7 +300,7 @@ void KWMLibCompactDiscPrivate::cdtext()
 	Q_Q(KCompactDisc);
 
 	info = wm_cd_get_cdtext(m_handle);
-	
+
 	if(!info || !info->valid || (unsigned)info->count_of_entries != (m_tracks + 1)) {
 		kDebug() << "no or invalid CDTEXT";
 		return;

@@ -41,7 +41,7 @@ static pthread_t thread_play;
    if we read 15 frames(8820 samples), we get in each block, data for 1/5 sec */
 #define COUNT_CDDA_FRAMES_PER_BLOCK 15
 
-/* Only Linux and Sun define the number of blocks explicity; assume all
+/* Only Linux and Sun define the number of blocks explicitly; assume all
    other systems are like Linux and have 10 blocks.
 */
 #ifndef COUNT_CDDA_BLOCKS
@@ -250,7 +250,7 @@ static void *cdda_fct_read(void* arg)
         }
 
         i = 0;
-        pthread_mutex_lock(&blks_mutex[i]);
+        (void) pthread_mutex_lock(&blks_mutex[i]);
         wakeup = 1;
 
         while(d->command == WM_CDM_PLAYING) {
@@ -265,20 +265,20 @@ static void *cdda_fct_read(void* arg)
             }
 
             j = get_next_block(i);
-            pthread_mutex_lock(&blks_mutex[j]);
+            (void) pthread_mutex_lock(&blks_mutex[j]);
 
             if(wakeup) {
                 wakeup = 0;
                 pthread_cond_signal(&wakeup_audio);
             }
 
-            pthread_mutex_unlock(&blks_mutex[i]);
+            (void) pthread_mutex_unlock(&blks_mutex[i]);
             /* audio can start here */
 
             i = j;
         }
 
-        pthread_mutex_unlock(&blks_mutex[i]);
+        (void) pthread_mutex_unlock(&blks_mutex[i]);
     }
 
     return 0;
@@ -292,11 +292,11 @@ static void *cdda_fct_play(void* arg)
     while (d->blocks) {
         if(d->command != WM_CDM_PLAYING) {
             i = 0;
-            pthread_mutex_lock(&blks_mutex[i]);
+            (void) pthread_mutex_lock(&blks_mutex[i]);
             pthread_cond_wait(&wakeup_audio, &blks_mutex[i]);
         } else {
             i = get_next_block(i);
-            pthread_mutex_lock(&blks_mutex[i]);
+            (void) pthread_mutex_lock(&blks_mutex[i]);
         }
 
         if (oops->wmaudio_play(&blks[i])) {
@@ -313,7 +313,7 @@ static void *cdda_fct_play(void* arg)
         if ((d->status = blks[i].status) == WM_CDM_TRACK_DONE)
             d->command = WM_CDM_STOPPED;
 
-        pthread_mutex_unlock(&blks_mutex[i]);
+        (void) pthread_mutex_unlock(&blks_mutex[i]);
     }
 
     return 0;
@@ -325,17 +325,17 @@ static void *cdda_fct_play(void* arg)
 int wm_cdda_init(struct wm_drive *d)
 {
 	int ret = 0;
-	
+
 	if (d->cddax) {
 		wm_cdda_destroy(d);
-	
+
 		wm_susleep(1000);
 		d->blocks = 0;
 		wm_susleep(1000);
 	}
-	
+
 	memset(blks, 0, sizeof(blks));
-	
+
 	d->blocks = blks;
 	d->frames_at_once = COUNT_CDDA_FRAMES_PER_BLOCK;
 	d->numblocks = COUNT_CDDA_BLOCKS;
@@ -348,14 +348,14 @@ int wm_cdda_init(struct wm_drive *d)
 		return ret;
 
 	wm_scsi_set_speed(d, 4);
-	
+
 	oops = setup_soundsystem(d->soundsystem, d->sounddevice, d->ctldevice);
 	if (!oops) {
 		ERRORLOG("cdda: setup_soundsystem failed\n");
 		gen_cdda_close(d);
 		return -1;
 	}
-	
+
 	if(pthread_create(&thread_read, NULL, cdda_fct_read, d)) {
 		ERRORLOG("error by create pthread");
 		oops->wmaudio_close();
