@@ -32,11 +32,11 @@ set(wmlib_SRCS
         wmlib/drv_toshiba.c
 )
 
-if (APPLE OR MSVC)
+if (APPLE OR WIN32)
 	set(USE_WMLIB false)
-else (APPLE OR MSVC)
+else (APPLE OR WIN32)
 	set(USE_WMLIB true)
-endif (APPLE OR MSVC)
+endif (APPLE OR WIN32)
 
 set(kcompactdisc_LIB_SRCS kcompactdisc.cpp kcompactdisc_p.cpp phonon_interface.cpp)
 
