@@ -269,7 +269,7 @@ KCompactDisc::DiscStatus KPhononCompactDiscPrivate::discStatusTranslate(Phonon::
 
 void KPhononCompactDiscPrivate::tick(qint64 t)
 {
-    unsigned track;
+	unsigned track;
 	Q_Q(KCompactDisc);
 
 	track = m_producerWidget->m_mediaController->currentTitle();
@@ -278,7 +278,7 @@ void KPhononCompactDiscPrivate::tick(qint64 t)
 		m_discLength = trackLength(m_track);
 		emit q->playoutTrackChanged(m_track);
 
-		/* phonon gives us Matadata only per Track */
+		/* phonon gives us Metadata only per Track */
 		if(m_autoMetadata)
 			queryMetadata();
 	}
@@ -288,15 +288,14 @@ void KPhononCompactDiscPrivate::tick(qint64 t)
 	// Update the current playing position.
 	if(m_seek) {
 		kDebug() << "seek: " << m_seek << " trackPosition " << m_trackPosition;
-		if(abs(m_trackExpectedPosition - m_trackPosition) > m_seek)
+		if(abs((long)(m_trackExpectedPosition - m_trackPosition)) > m_seek)
 			m_seek = 0;
 		else
-			m_seek = abs(m_trackExpectedPosition - m_trackPosition);
+			m_seek = abs((long)(m_trackExpectedPosition - m_trackPosition));
 	}
 
 	if(!m_seek) {
 		emit q->playoutPositionChanged(m_trackPosition);
-		//emit q->playoutDiscPositionChanged(m_discPosition);
 	}
 }
 

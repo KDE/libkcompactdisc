@@ -46,7 +46,7 @@ class KCompactDiscPrivate : public QObject
 		KCompactDisc::DiscStatus m_status;
 		KCompactDisc::DiscStatus m_statusExpected;
 		unsigned m_discId;
-        unsigned m_discLength;
+		unsigned m_discLength;
 		unsigned m_track;
 		unsigned m_tracks;
 		unsigned m_trackPosition;
