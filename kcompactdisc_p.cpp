@@ -125,7 +125,7 @@ void KCompactDiscPrivate::make_playlist()
 
 	kDebug(67000) << "dump playlist";
 	QList<unsigned>::const_iterator it;
-	for(it = m_playlist.begin(); it != m_playlist.end(); it++) {
+	for(it = m_playlist.constBegin(); it != m_playlist.constEnd(); it++) {
 		kDebug(67000) << " " << *it;
 	}
 	kDebug(67000) << "dump playlist end";
