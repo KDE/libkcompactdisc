@@ -106,9 +106,9 @@
  ***  ******  **  **  ******  ******  **  ******  **  *  **********
  ***  ******  **  **      **      **     ****    ***    ***********
  ******************************************************************/
-#if defined(__FreeBSD__) || defined(__FreeBSD)
+#if defined(__FreeBSD__) || defined(__FreeBSD) || defined(__DragonFly__)
 
-#if __FreeBSD_version >= 500100
+#if (defined(__FreeBSD_version) && __FreeBSD_version >= 500100) || defined(__DragonFly__)
 #define DEFAULT_CD_DEVICE	"/dev/acd0"
 #else
 #define DEFAULT_CD_DEVICE	"/dev/acd0c"
