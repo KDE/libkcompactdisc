@@ -462,7 +462,7 @@ Q_SIGNALS:
     /**
      * A new position in a track. This signal is delivered at
      * approximately 1 second intervals while a track is playing. At first sight,
-     * this might seem overzealous, but its likely that any CD player UI will use
+     * this might seem overzealous, but it is likely that any CD player UI will use
      * this to track the second-by-second position, so we may as well do it for
      * them.
      *
