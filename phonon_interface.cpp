@@ -26,7 +26,7 @@
 #include <kdebug.h>
 #include <klocale.h>
 
-#include <Phonon/Global>
+#include <Phonon/phononnamespace.h>
 #include <Phonon/MediaObject>
 #include <Phonon/AudioOutput>
 #include <Phonon/Path>
