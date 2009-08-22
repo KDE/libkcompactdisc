@@ -26,7 +26,8 @@
  *
  */
 
-#if defined(__FreeBSD__) || defined(__FreeBSD) || defined(__NetBSD__) || defined (__NetBSD)
+#if defined(__FreeBSD__) || defined(__FreeBSD) || defined(__NetBSD__) || defined (__NetBSD) || defined(__FreeBSD_kernel__)
+
 
 #include <errno.h>
 #include <stdio.h>
