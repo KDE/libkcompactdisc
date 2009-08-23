@@ -71,7 +71,7 @@
 
 # define LEFT_PORT 0
 # define RIGHT_PORT 1
-# if __FreeBSD_version < 300000
+# if (__FreeBSD_version < 300000) && (__FreeBSD_kernel_version < 300000)
 #  include <scsi.h>
 # endif
 
