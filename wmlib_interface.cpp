@@ -46,7 +46,9 @@ KWMLibCompactDiscPrivate::KWMLibCompactDiscPrivate(KCompactDisc *p,
 
 KWMLibCompactDiscPrivate::~KWMLibCompactDiscPrivate()
 {
-	wm_cd_destroy(m_handle);
+	if (m_handle) {
+		wm_cd_destroy(m_handle);
+	}
 }
 
 bool KWMLibCompactDiscPrivate::createInterface()
@@ -81,6 +83,7 @@ bool KWMLibCompactDiscPrivate::createInterface()
 
 		return true;
 	}
+	m_handle = NULL;
 	return false;
 }
 
