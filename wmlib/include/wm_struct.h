@@ -172,6 +172,7 @@ struct wm_drive
     struct wm_cdda_block *blocks;
     int numblocks;
   	void  *cddax;         /* Pointer to optional drive-specific info  etc. */
+  	int oldmode;
 };
 
 int toshiba_fixup(struct wm_drive *d);

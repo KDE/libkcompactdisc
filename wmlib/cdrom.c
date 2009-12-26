@@ -154,6 +154,7 @@ int wm_cd_init(const char *cd_device, const char *soundsystem,
 	pdrive->proto.get_volume = gen_get_volume;
 	pdrive->proto.scale_volume = gen_scale_volume;
 	pdrive->proto.unscale_volume = gen_unscale_volume;
+	pdrive->oldmode = WM_CDM_UNKNOWN;
 
 	if((err = gen_init(pdrive)) < 0)
 		goto init_failed;
@@ -334,11 +335,10 @@ static int read_toc(struct wm_drive *pdrive)
 int wm_cd_status(void *p)
 {
 	struct wm_drive *pdrive = (struct wm_drive *)p;
-	static int oldmode = WM_CDM_UNKNOWN;
 	int mode = -1, tmp;
 
 	if(!pdrive->proto.get_drive_status ||
-		(tmp = pdrive->proto.get_drive_status(pdrive, oldmode, &mode,
+		(tmp = pdrive->proto.get_drive_status(pdrive, pdrive->oldmode, &mode,
 		&pdrive->thiscd.cur_frame,
 		&pdrive->thiscd.curtrack,
 		&pdrive->thiscd.cur_index)) < 0) {
@@ -350,7 +350,7 @@ int wm_cd_status(void *p)
 		"get_drive_status returns status %s, track %i, frame %i\n",
 		gen_status(mode), pdrive->thiscd.curtrack, pdrive->thiscd.cur_frame);
 
-	if(WM_CDS_NO_DISC(oldmode) && WM_CDS_DISC_READY(mode)) {
+	if(WM_CDS_NO_DISC(pdrive->oldmode) && WM_CDS_DISC_READY(mode)) {
 		/* device changed */
 		pdrive->thiscd.ntracks = 0;
 
@@ -362,9 +362,9 @@ int wm_cd_status(void *p)
 
 		wm_lib_message(WM_MSG_LEVEL_DEBUG|WM_MSG_CLASS,
 			"device status changed() from %s to %s\n",
-			gen_status(oldmode), gen_status(mode));
+			gen_status(pdrive->oldmode), gen_status(mode));
 	}
-	oldmode = mode;
+	pdrive->oldmode = mode;
 
 	/*
 	* it seems all driver have'nt state for stop
