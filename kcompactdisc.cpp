@@ -145,12 +145,16 @@ const QStringList KCompactDisc::cdromDeviceNames()
 
 const QString KCompactDisc::defaultCdromDeviceName()
 {
-    return getListOfCdromDevicesNamesAndUrl().keys().at(0);
+    const QStringList names = getListOfCdromDevicesNamesAndUrl().keys();
+    if (!names.isEmpty()) return names[0];
+    else return QString();
 }
 
 const KUrl KCompactDisc::defaultCdromDeviceUrl()
 {
-    return getListOfCdromDevicesNamesAndUrl().values().at(0);
+    const QList<KUrl> urls = getListOfCdromDevicesNamesAndUrl().values();
+    if (!urls.isEmpty()) return urls[0];
+    else return KUrl();
 }
 
 const KUrl KCompactDisc::cdromDeviceUrl(const QString &cdromDeviceName)
@@ -160,7 +164,9 @@ const KUrl KCompactDisc::cdromDeviceUrl(const QString &cdromDeviceName)
 
 const QString KCompactDisc::defaultCdromDeviceUdi()
 {
-    return getListOfCdromDevicesNamesAndUdi().values().at(0);
+    const QStringList udis = getListOfCdromDevicesNamesAndUdi().values();
+    if (!udis.isEmpty()) return udis[0];
+    else return QString();
 }
 
 const QString KCompactDisc::cdromDeviceUdi(const QString &cdromDeviceName)
