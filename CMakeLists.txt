@@ -47,7 +47,7 @@ endif (USE_WMLIB)
 
 kde4_add_library(kcompactdisc SHARED ${kcompactdisc_LIB_SRCS})
 
-target_link_libraries(kcompactdisc ${KDE4_KIO_LIBS} ${KDE4_PHONON_LIBS} ${KDE4_SOLID_LIBS})
+target_link_libraries(kcompactdisc ${KDE4_KDECORE_LIBS} ${KDE4_PHONON_LIBS} ${KDE4_SOLID_LIBS})
 if (HAVE_LIBASOUND2)
     target_link_libraries(kcompactdisc ${ASOUND_LIBRARY})
 endif (HAVE_LIBASOUND2)
