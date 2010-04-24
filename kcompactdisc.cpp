@@ -159,7 +159,21 @@ const KUrl KCompactDisc::defaultCdromDeviceUrl()
 
 const KUrl KCompactDisc::cdromDeviceUrl(const QString &cdromDeviceName)
 {
-    return getListOfCdromDevicesNamesAndUrl().value(cdromDeviceName, KCompactDisc::defaultCdromDeviceUrl());
+	const QMap<QString, KUrl> &nameUrls = getListOfCdromDevicesNamesAndUrl();
+    KUrl result = nameUrls.value(cdromDeviceName);
+    if (!result.isValid())
+    {
+        const KUrl passedUrl(cdromDeviceName);
+        foreach(const KUrl &url, nameUrls)
+        {
+            if (url == passedUrl)
+            {
+                return passedUrl;
+            }
+        }
+        result = KCompactDisc::defaultCdromDeviceUrl();
+    }
+    return result;
 }
 
 const QString KCompactDisc::defaultCdromDeviceUdi()
