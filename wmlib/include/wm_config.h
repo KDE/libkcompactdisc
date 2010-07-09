@@ -352,11 +352,19 @@
 
 #define DEBUG
 #ifdef DEBUG
- #define DEBUGLOG(fmt, args...) fprintf(stderr, fmt, ##args)
+ #if defined(__SUNPRO_C) || defined(__SUNPRO_CC)
+  #define DEBUGLOG(...) fprintf(stderr, __VA_ARGS__)
+ #else
+  #define DEBUGLOG(fmt, args...) fprintf(stderr, fmt, ##args)
+ #endif
 #else
  #define DEBUGLOG(fmt, args...)
 #endif
-#define ERRORLOG(fmt, args...) fprintf(stderr, fmt, ##args)
+#if defined(__SUNPRO_C) || defined(__SUNPRO_CC)
+ #define ERRORLOG(...) fprintf(stderr, __VA_ARGS__)
+#else
+ #define ERRORLOG(fmt, args...) fprintf(stderr, fmt, ##args)
+#endif
 
 #endif /* WM_CONFIG_H */
 
