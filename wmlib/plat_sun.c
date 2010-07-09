@@ -38,7 +38,7 @@
 #include <sys/time.h>
 #include <sys/ioctl.h>
 
-#include <ustat.h>
+#include <sys/statvfs.h>
 #include <unistd.h>
 #include <signal.h>
 #ifdef solbourne
@@ -502,13 +502,13 @@ int
 gen_eject( struct wm_drive *d )cddax
 {
   struct stat	stbuf;
-  struct ustat	ust;
+  struct statvfs ust;
 
   if (fstat(d->fd, &stbuf) != 0)
     return -2;
 
   /* Is this a mounted filesystem? */
-  if (ustat(stbuf.st_rdev, &ust) == 0)
+  if (statvfs(stbuf.st_rdev, &ust) == 0)
     return -3;
 
   if (ioctl(d->fd, CDROMEJECT))
