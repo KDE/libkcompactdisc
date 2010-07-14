@@ -539,7 +539,6 @@ Q_SIGNALS:
 
 protected:
     KCompactDiscPrivate * d_ptr;
-    KCompactDiscPrivate * dummy_ptr;
     KCompactDisc(KCompactDiscPrivate &dd, QObject *parent);
 
 private:
