@@ -192,7 +192,6 @@ KCompactDisc::KCompactDisc(InformationMode infoMode) :
     d_ptr(new KCompactDiscPrivate(this, KCompactDisc::defaultCdromDeviceName()))
 {
     Q_D(KCompactDisc);
-    dummy_ptr = d;
     d->m_infoMode = infoMode;
 }
 
@@ -527,11 +526,11 @@ void KCompactDisc::setAutoMetadataLookup(bool autoMetadata)
 bool KCompactDisc::setDevice(const QString &deviceName, unsigned volume,
     bool digitalPlayback, const QString &audioSystem, const QString &audioDevice)
 {
-	QString as = digitalPlayback ? audioSystem : QString("cdin");
-	QString ad = digitalPlayback ? audioDevice : QString();
+	const QString as = digitalPlayback ? audioSystem : QString("cdin");
+	const QString ad = digitalPlayback ? audioDevice : QString();
     kDebug() << "Device init: " << deviceName << ", " << as << ", " << ad;
 
-	if(dummy_ptr->moveInterface(deviceName, as, ad)) {
+	if(d_ptr->moveInterface(deviceName, as, ad)) {
 		setVolume(volume);
 		return 1;
 	} else {
