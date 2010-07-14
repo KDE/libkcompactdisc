@@ -199,7 +199,6 @@ KCompactDisc::KCompactDisc(InformationMode infoMode) :
 KCompactDisc::~KCompactDisc()
 {
     stop();
-    delete dummy_ptr;
     delete d_ptr;
 }
 
