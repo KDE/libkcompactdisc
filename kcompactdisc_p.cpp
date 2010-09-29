@@ -52,11 +52,11 @@ KCompactDiscPrivate::KCompactDiscPrivate(KCompactDisc *p, const QString& dev) :
 
     q_ptr(p)
 {
-	m_interface = QString("dummy");
+    m_interface = QLatin1String("dummy");
     m_trackStartFrames.clear();
-	m_trackArtists.clear();
+    m_trackArtists.clear();
     m_trackTitles.clear();
-	m_playlist.clear();
+    m_playlist.clear();
 }
 
 bool KCompactDiscPrivate::moveInterface(const QString &deviceName,
@@ -76,7 +76,7 @@ bool KCompactDiscPrivate::moveInterface(const QString &deviceName,
 		delete pOld;
 	}
 
-	if(audioSystem == QString("phonon"))
+	if(audioSystem == QLatin1String("phonon"))
 		pNew = new KPhononCompactDiscPrivate(q, deviceName);
 #ifdef USE_WMLIB
 	else

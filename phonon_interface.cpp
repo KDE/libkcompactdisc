@@ -88,7 +88,7 @@ KPhononCompactDiscPrivate::KPhononCompactDiscPrivate(KCompactDisc *p,
 	m_producerWidget(NULL),
 	m_udi(KCompactDisc::cdromDeviceUdi(dev))
 {
-	m_interface = QString("phonon");
+	m_interface = QLatin1String("phonon");
 }
 
 KPhononCompactDiscPrivate::~KPhononCompactDiscPrivate()
@@ -239,11 +239,11 @@ void KPhononCompactDiscPrivate::queryMetadata()
 	kDebug() << "METADATA";
 	//kDebug() << data;
 
-	m_trackArtists[0] = data.take("ARTIST");
-	m_trackTitles[0] = data.take("ALBUM");
+	m_trackArtists[0] = data.take(QLatin1String( "ARTIST" ));
+	m_trackTitles[0] = data.take(QLatin1String( "ALBUM" ));
 
-	m_trackArtists[m_track] = data.take("ARTIST");
-	m_trackTitles[m_track] = data.take("TITLE");
+	m_trackArtists[m_track] = data.take(QLatin1String( "ARTIST" ));
+	m_trackTitles[m_track] = data.take(QLatin1String( "TITLE" ));
 
 	emit q->discInformation(KCompactDisc::PhononMetadata);
 }

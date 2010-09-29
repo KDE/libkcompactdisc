@@ -50,26 +50,26 @@ static void refreshListOfCdromDevices()
         const Solid::OpticalDrive *o = device.as<Solid::OpticalDrive>();
         Solid::OpticalDrive::MediumTypes mediumType = o->supportedMedia();
 
-        url = KUrl::fromPath(b->device().toLatin1());
-
+        url = KUrl::fromPath(QLatin1String( b->device().toLatin1() ));
+        //TODO translate them ?
         if(mediumType < Solid::OpticalDrive::Cdrw) {
-            type = "CD-ROM";
+            type = QLatin1String( "CD-ROM" );
         } else if(mediumType < Solid::OpticalDrive::Dvd) {
-            type = "CDRW";
+            type = QLatin1String( "CDRW" );
         } else if(mediumType < Solid::OpticalDrive::Dvdr) {
-            type = "DVD-ROM";
+            type = QLatin1String( "DVD-ROM" );
         } else if(mediumType < Solid::OpticalDrive::Bd) {
-            type = "DVDRW";
+            type = QLatin1String( "DVDRW" );
         } else if(mediumType < Solid::OpticalDrive::HdDvd) {
-            type = "Blu-ray";
+            type = QLatin1String( "Blu-ray" );
         } else {
-            type = "High Density DVD";
+            type = QLatin1String( "High Density DVD" );
         }
 
         if(!device.vendor().isEmpty())
-            name = (QString('[') + type + " - " + device.vendor() + " - " + device.product() + ']');
+            name = (QLatin1Char('[') + type + QLatin1String( " - " ) + device.vendor() + QLatin1String( " - " ) + device.product() + QLatin1Char( ']' ));
         else
-            name = (QString('[') + type + " - unknown vendor - " + device.product() + ']');
+            name = (QLatin1Char('[') + type + QLatin1String( " - unknown vendor - " ) + device.product() + QLatin1Char( ']' ));
 
         cdromsNameToDeviceUrl.insert(name, url);
         cdromsNameToUdi.insert(name, device.udi());
@@ -99,11 +99,11 @@ static QMap<QString, QString> &getListOfCdromDevicesNamesAndUdi()
 
 QString KCompactDisc::urlToDevice(const KUrl& deviceUrl)
 {
-    if(deviceUrl.protocol() == "media" || deviceUrl.protocol() == "system") {
+    if(deviceUrl.protocol() == QLatin1String( "media" ) || deviceUrl.protocol() == QLatin1String( "system" )) {
         kDebug() << "Asking mediamanager for " << deviceUrl.fileName();
 
-        QDBusInterface mediamanager( "org.kde.kded", "/modules/mediamanager", "org.kde.MediaManager" );
-        QDBusReply<QStringList> reply = mediamanager.call("properties", deviceUrl.fileName());
+        QDBusInterface mediamanager( QLatin1String( "org.kde.kded" ), QLatin1String( "/modules/mediamanager" ), QLatin1String( "org.kde.MediaManager" ) );
+        QDBusReply<QStringList> reply = mediamanager.call(QLatin1String( "properties" ), deviceUrl.fileName());
 
         QStringList properties = reply;
         if(!reply.isValid() || properties.count() < 6) {
@@ -113,7 +113,7 @@ QString KCompactDisc::urlToDevice(const KUrl& deviceUrl)
             kDebug() << "Reply from mediamanager " << properties[5];
             return properties[5];
         }
-    } else if(deviceUrl.protocol() == "file") {
+    } else if(deviceUrl.protocol() == QLatin1String( "file" )) {
         return deviceUrl.path();
     } else {
         return QString();
@@ -124,15 +124,12 @@ const QStringList KCompactDisc::audioSystems()
 {
     QStringList list;
 
-    list << "phonon"
-#ifdef USE_ARTS
-        << "arts"
-#endif
+    list << QLatin1String( "phonon" )
 #if defined(HAVE_LIBASOUND2)
-        << "alsa"
+        << QLatin1String( "alsa" )
 #endif
 #if defined(sun) || defined(__sun__)
-        << "sun"
+        << QLatin1String( "sun" )
 #endif
     ;
     return list;
@@ -526,7 +523,7 @@ void KCompactDisc::setAutoMetadataLookup(bool autoMetadata)
 bool KCompactDisc::setDevice(const QString &deviceName, unsigned volume,
     bool digitalPlayback, const QString &audioSystem, const QString &audioDevice)
 {
-	const QString as = digitalPlayback ? audioSystem : QString("cdin");
+	const QString as = digitalPlayback ? audioSystem : QLatin1String("cdin");
 	const QString ad = digitalPlayback ? audioDevice : QString();
     kDebug() << "Device init: " << deviceName << ", " << as << ", " << ad;
 

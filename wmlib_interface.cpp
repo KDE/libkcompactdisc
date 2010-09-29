@@ -68,9 +68,9 @@ bool KWMLibCompactDiscPrivate::createInterface()
 		&m_handle);
 
 	if(!WM_CDS_ERROR(status)) {
-		m_deviceVendor = QString(wm_drive_vendor(m_handle));
-		m_deviceModel = QString(wm_drive_model(m_handle));
-		m_deviceRevision = QString(wm_drive_revision(m_handle));
+		m_deviceVendor = QLatin1String(wm_drive_vendor(m_handle));
+		m_deviceModel = QLatin1String(wm_drive_model(m_handle));
+		m_deviceRevision = QLatin1String(wm_drive_revision(m_handle));
 
 		Q_Q(KCompactDisc);
 		emit q->discChanged(0);
@@ -309,12 +309,12 @@ void KWMLibCompactDiscPrivate::cdtext()
 		return;
 	}
 
-	m_trackArtists[0] = reinterpret_cast<char*>(info->blocks[0]->performer[0]);
-	m_trackTitles[0] = reinterpret_cast<char*>(info->blocks[0]->name[0]);
+	m_trackArtists[0] = QLatin1String( reinterpret_cast<char*>(info->blocks[0]->performer[0]) );
+	m_trackTitles[0] = QLatin1String( reinterpret_cast<char*>(info->blocks[0]->name[0]) );
 
 	for(i = 1; i <= m_tracks; i++) {
-		m_trackArtists[i] = reinterpret_cast<char*>(info->blocks[0]->performer[i]);
-		m_trackTitles[i] = reinterpret_cast<char*>(info->blocks[0]->name[i]);
+            m_trackArtists[i] = QLatin1String( reinterpret_cast<char*>(info->blocks[0]->performer[i]) );
+            m_trackTitles[i] =QLatin1String( reinterpret_cast<char*>(info->blocks[0]->name[i]) );
 	}
 
 	kDebug() << "CDTEXT";
