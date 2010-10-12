@@ -262,10 +262,10 @@ kDebug() << "m_trackTitles " << m_trackTitles;
 		// Update the current playing position.
 		if(m_seek) {
 			kDebug() << "seek: " << m_seek << " trackPosition " << m_trackPosition;
-			if(abs(m_trackExpectedPosition - m_trackPosition) > m_seek)
+			if(abs((long)(m_trackExpectedPosition - m_trackPosition)) > m_seek)
 				m_seek = 0;
 			else
-				m_seek = abs(m_trackExpectedPosition - m_trackPosition);
+				m_seek = abs((long)(m_trackExpectedPosition - m_trackPosition));
 		}
 
 		if(!m_seek) {
