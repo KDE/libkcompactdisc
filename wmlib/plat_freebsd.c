@@ -26,7 +26,7 @@
  *
  */
 
-#if defined(__FreeBSD__) || defined(__FreeBSD) || defined(__NetBSD__) || defined (__NetBSD) || defined(__FreeBSD_kernel__)
+#if defined(__FreeBSD__) || defined(__FreeBSD) || defined(__NetBSD__) || defined (__NetBSD) || defined(__FreeBSD_kernel__) || defined(__DragonFly__)
 
 
 #include <errno.h>
@@ -68,11 +68,12 @@
 # endif
 
 #else /* Not OpenBSD, not NetBSD, therefore (probably) FreeBSD */
-
 # define LEFT_PORT 0
 # define RIGHT_PORT 1
+# if defined (__FreeBSD__)
 # if (__FreeBSD_version < 300000) && (__FreeBSD_kernel_version < 300000)
 #  include <scsi.h>
+# endif
 # endif
 
 #endif /* if defined(__OpenBSD__) */
