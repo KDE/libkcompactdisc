@@ -47,6 +47,11 @@ static void refreshListOfCdromDevices()
     foreach(const Solid::Device &device, Solid::Device::listFromType(Solid::DeviceInterface::OpticalDrive)) {
         kDebug() << device.udi().toLatin1().constData();
         const Solid::Block *b = device.as<Solid::Block>();
+        
+        if(!b) {
+            continue;
+        }
+
         const Solid::OpticalDrive *o = device.as<Solid::OpticalDrive>();
         Solid::OpticalDrive::MediumTypes mediumType = o->supportedMedia();
 
