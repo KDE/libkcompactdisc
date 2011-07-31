@@ -64,8 +64,8 @@ ProducerWidget::ProducerWidget(KPhononCompactDiscPrivate *p, const QString &Udi)
     m_output = new AudioOutput(Phonon::MusicCategory, this);
     Phonon::createPath(m_media, m_output);
 
-    connect(m_media, SIGNAL(stateChanged(Phonon::State, Phonon::State)),
-            p, SLOT(stateChanged(Phonon::State, Phonon::State)));
+    connect(m_media, SIGNAL(stateChanged(Phonon::State,Phonon::State)),
+            p, SLOT(stateChanged(Phonon::State,Phonon::State)));
 
     connect(m_media, SIGNAL(tick(qint64)), p, SLOT(tick(qint64)));
 
