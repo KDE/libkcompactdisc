@@ -76,7 +76,9 @@ bool KCompactDiscPrivate::moveInterface(const QString &deviceName,
 		delete pOld;
 	}
 
+#ifdef USE_WMLIB
 	if(audioSystem == QLatin1String("phonon"))
+#endif
 		pNew = new KPhononCompactDiscPrivate(q, deviceName);
 #ifdef USE_WMLIB
 	else
