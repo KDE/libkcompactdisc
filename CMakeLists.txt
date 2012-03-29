@@ -1,5 +1,16 @@
 project(libkcompactdisc)
 
+find_package(Qt4 REQUIRED)
+find_package(KDE4 REQUIRED)
+include(KDE4Defaults)
+include(MacroLibrary)
+
+find_package(Alsa)
+alsa_configure_file(${CMAKE_CURRENT_BINARY_DIR}/config-alsa.h)
+
+include_directories(${KDE4_INCLUDES} ${QT_INCLUDES})
+include_directories(${CMAKE_CURRENT_BINARY_DIR} ${CMAKE_CURRENT_SOURCE_DIR})
+
 
 set(wmlib_audio_SRCS
         wmlib/audio/audio.c
@@ -54,9 +65,10 @@ endif (HAVE_LIBASOUND2)
 
 set_target_properties(kcompactdisc PROPERTIES VERSION ${GENERIC_LIB_VERSION} SOVERSION ${GENERIC_LIB_SOVERSION} )
 
-install(TARGETS kcompactdisc  ${INSTALL_TARGETS_DEFAULT_ARGS} )
+install(TARGETS kcompactdisc EXPORT LibkcompactdiscTargets ${INSTALL_TARGETS_DEFAULT_ARGS} )
 
 ########### install files ###############
 
 install( FILES kcompactdisc.h  DESTINATION ${INCLUDE_INSTALL_DIR}/libkcompactdisc COMPONENT Devel)
 
+install(EXPORT LibkcompactdiscTargets DESTINATION ${LIB_INSTALL_DIR}/cmake/libkcompactdisc/ FILE LibkcompactdiscConfig.cmake NAMESPACE KDE::Libkcompactdisc)
