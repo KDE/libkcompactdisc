@@ -5,6 +5,8 @@ find_package(KDE4 REQUIRED)
 include(KDE4Defaults)
 include(MacroLibrary)
 
+add_definitions(${QT_DEFINITIONS} ${KDE4_DEFINITIONS})
+
 find_package(Alsa)
 alsa_configure_file(${CMAKE_CURRENT_BINARY_DIR}/config-alsa.h)
 
