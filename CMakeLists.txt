@@ -1,6 +1,5 @@
 project(libkcompactdisc)
 
-find_package(Qt4 REQUIRED)
 find_package(KDE4 REQUIRED)
 include(KDE4Defaults)
 include(MacroLibrary)
@@ -10,7 +9,7 @@ add_definitions(${QT_DEFINITIONS} ${KDE4_DEFINITIONS})
 find_package(Alsa)
 alsa_configure_file(${CMAKE_CURRENT_BINARY_DIR}/config-alsa.h)
 
-include_directories(${KDE4_INCLUDES} ${QT_INCLUDES})
+include_directories(${KDE4_INCLUDES})
 include_directories(${CMAKE_CURRENT_BINARY_DIR} ${CMAKE_CURRENT_SOURCE_DIR})
 
 
