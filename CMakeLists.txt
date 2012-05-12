@@ -72,4 +72,11 @@ install(TARGETS kcompactdisc EXPORT LibkcompactdiscTargets ${INSTALL_TARGETS_DEF
 
 install( FILES kcompactdisc.h  DESTINATION ${INCLUDE_INSTALL_DIR}/libkcompactdisc COMPONENT Devel)
 
-install(EXPORT LibkcompactdiscTargets DESTINATION ${LIB_INSTALL_DIR}/cmake/libkcompactdisc/ FILE LibkcompactdiscConfig.cmake NAMESPACE KDE::Libkcompactdisc)
+# Figure out the relative path from the installed Config.cmake file to the install prefix (which may be at
+# runtime different from the chosen CMAKE_INSTALL_PREFIX if under Windows the package was installed anywhere)
+# This relative path will be configured into LibkcompactdiscConfig.cmake
+file(RELATIVE_PATH relInstallDir ${CMAKE_INSTALL_PREFIX}/${LIB_INSTALL_DIR}/cmake/libkcompactdisc ${CMAKE_INSTALL_PREFIX})
+
+configure_file(LibkcompactdiscConfig.cmake.in ${CMAKE_BINARY_DIR}/LibkcompactdiscConfig.cmake @ONLY)
+install(FILES ${CMAKE_BINARY_DIR}/LibkcompactdiscConfig.cmake DESTINATION ${LIB_INSTALL_DIR}/cmake/libkcompactdisc)
+install(EXPORT LibkcompactdiscTargets DESTINATION ${LIB_INSTALL_DIR}/cmake/libkcompactdisc/ FILE LibkcompactdiscTargets.cmake NAMESPACE KDE::Libkcompactdisc::)
