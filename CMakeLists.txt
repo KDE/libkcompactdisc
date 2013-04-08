@@ -44,11 +44,11 @@ set(wmlib_SRCS
         wmlib/drv_toshiba.c
 )
 
-if (APPLE OR WIN32)
+if (APPLE OR WIN32 OR CMAKE_SYSTEM_NAME STREQUAL GNU)
 	set(USE_WMLIB false)
-else (APPLE OR WIN32)
+else (APPLE OR WIN32 OR CMAKE_SYSTEM_NAME STREQUAL GNU)
 	set(USE_WMLIB true)
-endif (APPLE OR WIN32)
+endif (APPLE OR WIN32 OR CMAKE_SYSTEM_NAME STREQUAL GNU)
 
 set(kcompactdisc_LIB_SRCS kcompactdisc.cpp kcompactdisc_p.cpp phonon_interface.cpp)
 
