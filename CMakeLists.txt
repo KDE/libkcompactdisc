@@ -63,6 +63,9 @@ target_link_libraries(kcompactdisc ${KDE4_KDECORE_LIBS} ${KDE4_PHONON_LIBS} ${KD
 if (HAVE_LIBASOUND2)
     target_link_libraries(kcompactdisc ${ASOUND_LIBRARY})
 endif (HAVE_LIBASOUND2)
+if (USE_WMLIB)
+    target_link_libraries(kcompactdisc ${CMAKE_THREAD_LIBS_INIT})
+endif (USE_WMLIB)
 
 set_target_properties(kcompactdisc PROPERTIES VERSION ${GENERIC_LIB_VERSION} SOVERSION ${GENERIC_LIB_SOVERSION} )
 
