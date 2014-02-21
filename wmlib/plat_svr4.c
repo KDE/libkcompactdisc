@@ -63,6 +63,7 @@ create_cdrom_node(char *dev_name)
 
 
   strncpy(pass_through, dev_name, sizeof(pass_through) - 2);
+  pass_through[sizeof(pass_through) - 2] = '\0';
   strcat(pass_through, "p" );
 
   if (setreuid(-1,0) < 0)
