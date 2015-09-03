@@ -26,11 +26,11 @@
 #include <kdebug.h>
 #include <klocale.h>
 
-#include <Phonon/Global>
-#include <Phonon/MediaObject>
-#include <Phonon/AudioOutput>
-#include <Phonon/Path>
-#include <Phonon/MediaController>
+#include <phonon/Global>
+#include <phonon/MediaObject>
+#include <phonon/AudioOutput>
+#include <phonon/Path>
+#include <phonon/MediaController>
 
 #include <solid/device.h>
 #include <solid/opticaldrive.h>
