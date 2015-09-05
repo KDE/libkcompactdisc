@@ -26,11 +26,9 @@
 #include <QUrl>
 #include <QtGlobal>
 
-#include <klocale.h>
-
-#include <solid/device.h>
-#include <solid/block.h>
-#include <solid/opticaldrive.h>
+#include <Solid/Device>
+#include <Solid/Block>
+#include <Solid/OpticalDrive>
 
 static QMap<QString, QUrl> cdromsNameToDeviceUrl;
 static QMap<QString, QString> cdromsNameToUdi;
