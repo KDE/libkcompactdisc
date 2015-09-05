@@ -1,6 +1,10 @@
 cmake_minimum_required(VERSION 2.8.12)
 
 project(libkcompactdisc)
+set(KSCD_VERSION_MAJOR 5)
+set(KSCD_VERSION_MINOR 0)
+set(KSCD_VERSION_PATCH 0)
+set(KSCD_VERSION ${KSCD_VERSION_MAJOR}.${KSCD_VERSION_MINOR}.${KSCD_VERSION_PATCH})
 
 include(FeatureSummary)
 find_package(Qt5 REQUIRED COMPONENTS Core)
@@ -82,22 +86,24 @@ if (USE_WMLIB)
 	add_definitions(-DUSE_WMLIB=1)
 endif (USE_WMLIB)
 
-add_library(kcompactdisc SHARED ${kcompactdisc_LIB_SRCS})
+add_library(KF5CompactDisc SHARED ${kcompactdisc_LIB_SRCS})
+set_target_properties(KF5CompactDisc PROPERTIES VERSION ${KSCD_VERSION} SOVERSION ${KSCD_VERSION_MAJOR} )
 
-target_link_libraries(kcompactdisc 
+
+target_link_libraries(KF5CompactDisc
         KF5::KDELibs4Support 
         Phonon::phonon4qt5 )
 if (HAVE_LIBASOUND2)
-    target_link_libraries(kcompactdisc ${ASOUND_LIBRARY})
+    target_link_libraries(KF5CompactDisc ${ASOUND_LIBRARY})
 endif (HAVE_LIBASOUND2)
 if (USE_WMLIB)
     find_package(Threads)
-    target_link_libraries(kcompactdisc ${CMAKE_THREAD_LIBS_INIT})
+    target_link_libraries(KF5CompactDisc ${CMAKE_THREAD_LIBS_INIT})
 endif (USE_WMLIB)
 
-set_target_properties(kcompactdisc PROPERTIES VERSION ${GENERIC_LIB_VERSION} SOVERSION ${GENERIC_LIB_SOVERSION} )
 
-install(TARGETS kcompactdisc EXPORT LibkcompactdiscTargets ${INSTALL_TARGETS_DEFAULT_ARGS} )
+
+install(TARGETS KF5CompactDisc EXPORT LibkcompactdiscTargets ${INSTALL_TARGETS_DEFAULT_ARGS} )
 
 ########### install files ###############
 
