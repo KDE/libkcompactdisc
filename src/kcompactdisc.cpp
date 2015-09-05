@@ -24,8 +24,8 @@
 
 #include <QtDBus>
 #include <QUrl>
+#include <QtGlobal>
 
-#include <kdebug.h>
 #include <klocale.h>
 
 #include <solid/device.h>
@@ -45,7 +45,7 @@ static void refreshListOfCdromDevices()
 
     //get a list of all devices that are Cdrom
     foreach(const Solid::Device &device, Solid::Device::listFromType(Solid::DeviceInterface::OpticalDrive)) {
-        kDebug() << device.udi().toLatin1().constData();
+        qDebug() << device.udi().toLatin1().constData();
         const Solid::Block *b = device.as<Solid::Block>();
         
         if(!b) {
@@ -105,17 +105,17 @@ static QMap<QString, QString> &getListOfCdromDevicesNamesAndUdi()
 QString KCompactDisc::urlToDevice(const QUrl &deviceUrl)
 {
     if(deviceUrl.scheme() == QLatin1String( "media" ) || deviceUrl.scheme() == QLatin1String( "system" )) {
-        kDebug() << "Asking mediamanager for " << deviceUrl.fileName();
+        qDebug() << "Asking mediamanager for " << deviceUrl.fileName();
 
         QDBusInterface mediamanager( QLatin1String( "org.kde.kded" ), QLatin1String( "/modules/mediamanager" ), QLatin1String( "org.kde.MediaManager" ) );
         QDBusReply<QStringList> reply = mediamanager.call(QLatin1String( "properties" ), deviceUrl.fileName());
 
         QStringList properties = reply;
         if(!reply.isValid() || properties.count() < 6) {
-            kError() << "Invalid reply from mediamanager" << endl;
+            qCritical() << "Invalid reply from mediamanager" << endl;
             return deviceUrl.path();
         } else {
-            kDebug() << "Reply from mediamanager " << properties[5];
+            qDebug() << "Reply from mediamanager " << properties[5];
             return properties[5];
         }
     } else if(deviceUrl.scheme() == QLatin1String( "file" )) {
@@ -530,7 +530,7 @@ bool KCompactDisc::setDevice(const QString &deviceName, unsigned volume,
 {
 	const QString as = digitalPlayback ? audioSystem : QLatin1String("cdin");
 	const QString ad = digitalPlayback ? audioDevice : QString();
-    kDebug() << "Device init: " << deviceName << ", " << as << ", " << ad;
+    qDebug() << "Device init: " << deviceName << ", " << as << ", " << ad;
 
 	if(d_ptr->moveInterface(deviceName, as, ad)) {
 		setVolume(volume);
@@ -544,14 +544,14 @@ bool KCompactDisc::setDevice(const QString &deviceName, unsigned volume,
 void KCompactDisc::setVolume(unsigned volume)
 {
 	Q_D(KCompactDisc);
-    kDebug() << "change volume: " << volume;
+    qDebug() << "change volume: " << volume;
 	d->setVolume(volume);
 }
 
 void KCompactDisc::setBalance(unsigned balance)
 {
 	Q_D(KCompactDisc);
-    kDebug() << "change balance: " << balance;
+    qDebug() << "change balance: " << balance;
 	d->setBalance(balance);
 }
 

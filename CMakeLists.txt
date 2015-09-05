@@ -1,119 +1,74 @@
-cmake_minimum_required(VERSION 2.8.12)
-
+﻿cmake_minimum_required(VERSION 2.8.12)
 project(libkcompactdisc)
-set(KSCD_VERSION_MAJOR 5)
-set(KSCD_VERSION_MINOR 0)
-set(KSCD_VERSION_PATCH 0)
-set(KSCD_VERSION ${KSCD_VERSION_MAJOR}.${KSCD_VERSION_MINOR}.${KSCD_VERSION_PATCH})
 
-include(FeatureSummary)
-find_package(Qt5 REQUIRED COMPONENTS Core)
+set(QT5_REQUIRED_VERSION 5.5.0)
+set(KF5_REQUIRED_VERSION 5.13.0)
 
-find_package(ECM 1.7.0 NO_MODULE REQUIRED)
+find_package(ECM ${KF5_REQUIRED_VERSION} NO_MODULE REQUIRED)
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${ECM_MODULE_PATH} ${ECM_KDE_MODULE_DIR})
 
-include(ECMAddAppIcon)
 include(KDEInstallDirs)
 include(KDECMakeSettings)
 include(KDECompilerSettings)
-include(ECMInstallIcons)
-include(ECMAddAppIcon)
+include(ECMPackageConfigHelpers)
+include(ECMGenerateHeaders)
+include(ECMSetupVersion)
+include(ECMGeneratePriFile)
+include(FeatureSummary)
 
-find_package(KF5 REQUIRED COMPONENTS
-    I18n
-    Crash
-    CoreAddons
-    DocTools
-    KIO
-    Solid
-    KDELibs4Support
-)
-find_package(Phonon4Qt5 CONFIG REQUIRED)
-include_directories (${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CURRENT_BINARY_DIR} )
+# Version Setup
 
-## Compiler flags
-if(CMAKE_COMPILER_IS_GNUCXX)
-    set(CMAKE_C_FLAGS "-std=c99")   ## ALSA no longer compiles with -std=c90, see https://bugzilla.novell.com/show_bug.cgi?id=817077
-endif()
-
-find_package(Alsa)
-alsa_configure_file(${CMAKE_CURRENT_BINARY_DIR}/config-alsa.h)
-
-include_directories(${CMAKE_CURRENT_BINARY_DIR} ${CMAKE_CURRENT_SOURCE_DIR})
-
-
-set(wmlib_audio_SRCS
-        wmlib/audio/audio.c
-        wmlib/audio/audio_arts.c
-        wmlib/audio/audio_alsa.c
-        wmlib/audio/audio_sun.c
+ecm_setup_version("5.0.0"
+    VARIABLE_PREFIX KCOMPACTDISC
+    VERSION_HEADER ${CMAKE_CURRENT_BINARY_DIR}/kcompactdisc_version.h
+    PACKAGE_VERSION_FILE ${CMAKE_CURRENT_BINARY_DIR}/KF5CompactDiscConfigVersion.cmake
+    SOVERSION 5
 )
 
-set(wmlib_SRCS
-        wmlib/cdda.c
-        wmlib/cddb.c
-        wmlib/cdrom.c
-        wmlib/wm_helpers.c
-        wmlib/cdtext.c
-        wmlib/scsi.c
-        wmlib/plat_aix.c
-        wmlib/plat_bsd386.c
-        wmlib/plat_freebsd.c
-        wmlib/plat_hpux.c
-        wmlib/plat_irix.c
-        wmlib/plat_linux.c
-        wmlib/plat_svr4.c
-        wmlib/plat_ultrix.c
-        wmlib/plat_news.c
-        wmlib/plat_openbsd.c
-        wmlib/plat_osf1.c
-        wmlib/plat_sun.c
-        wmlib/plat_scor5.c
-        wmlib/drv_sony.c
-        wmlib/drv_toshiba.c
+# Qt5, KF5 and Phonon Packages
+
+find_package(Qt5 ${QT5_REQUIRED_VERSION} REQUIRED COMPONENTS Core DBus)
+find_package(KF5 ${KF5_REQUIRED_VERSION} REQUIRED COMPONENTS CoreAddons Solid I18n)
+find_package(Phonon4Qt5 4.8.0 CONFIG REQUIRED)
+
+# Sources
+
+include_directories(
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    ${CMAKE_CURRENT_BINARY_DIR}
 )
 
-if (APPLE OR WIN32 OR CMAKE_SYSTEM_NAME STREQUAL GNU)
-	set(USE_WMLIB false)
-else (APPLE OR WIN32 OR CMAKE_SYSTEM_NAME STREQUAL GNU)
-	set(USE_WMLIB true)
-endif (APPLE OR WIN32 OR CMAKE_SYSTEM_NAME STREQUAL GNU)
+add_subdirectory(src)
 
-set(kcompactdisc_LIB_SRCS kcompactdisc.cpp kcompactdisc_p.cpp phonon_interface.cpp)
+# Additional
 
-if (USE_WMLIB)
-	set(kcompactdisc_LIB_SRCS ${kcompactdisc_LIB_SRCS} wmlib_interface.cpp ${wmlib_SRCS} ${wmlib_audio_SRCS})
-	add_definitions(-DUSE_WMLIB=1)
-endif (USE_WMLIB)
+set(CMAKECONFIG_INSTALL_DIR ${CMAKECONFIG_INSTALL_PREFIX}/KF5CompactDisc)
 
-add_library(KF5CompactDisc SHARED ${kcompactdisc_LIB_SRCS})
-set_target_properties(KF5CompactDisc PROPERTIES VERSION ${KSCD_VERSION} SOVERSION ${KSCD_VERSION_MAJOR} )
+ecm_configure_package_config_file(
+    ${CMAKE_CURRENT_SOURCE_DIR}/KF5CompactDiscConfig.cmake.in
+    ${CMAKE_CURRENT_BINARY_DIR}/KF5CompactDiscConfig.cmake
+    INSTALL_DESTINATION ${CMAKECONFIG_INSTALL_DIR}
+)
 
+install(FILES
+    ${CMAKE_CURRENT_BINARY_DIR}/KF5CompactDiscConfig.cmake
+    ${CMAKE_CURRENT_BINARY_DIR}/KF5CompactDiscConfigVersion.cmake
+    DESTINATION "${CMAKECONFIG_INSTALL_DIR}"
+    COMPONENT Devel
+)
 
-target_link_libraries(KF5CompactDisc
-        KF5::KDELibs4Support 
-        Phonon::phonon4qt5 )
-if (HAVE_LIBASOUND2)
-    target_link_libraries(KF5CompactDisc ${ASOUND_LIBRARY})
-endif (HAVE_LIBASOUND2)
-if (USE_WMLIB)
-    find_package(Threads)
-    target_link_libraries(KF5CompactDisc ${CMAKE_THREAD_LIBS_INIT})
-endif (USE_WMLIB)
+install(EXPORT
+    KF5CompactDiscTargets
+    DESTINATION "${CMAKECONFIG_INSTALL_DIR}"
+    FILE KF5CompactDiscTargets.cmake
+    NAMESPACE KF5::
+    COMPONENT Devel
+)
 
+install(FILES
+    ${CMAKE_CURRENT_BINARY_DIR}/kcompactdisc_version.h
+    DESTINATION "${KF5_INCLUDE_INSTALL_DIR}"
+    COMPONENT Devel
+)
 
-
-install(TARGETS KF5CompactDisc EXPORT LibkcompactdiscTargets ${INSTALL_TARGETS_DEFAULT_ARGS} )
-
-########### install files ###############
-
-install( FILES kcompactdisc.h  DESTINATION ${INCLUDE_INSTALL_DIR}/libkcompactdisc COMPONENT Devel)
-
-# Figure out the relative path from the installed Config.cmake file to the install prefix (which may be at
-# runtime different from the chosen CMAKE_INSTALL_PREFIX if under Windows the package was installed anywhere)
-# This relative path will be configured into LibkcompactdiscConfig.cmake
-file(RELATIVE_PATH relInstallDir ${CMAKE_INSTALL_PREFIX}/${LIB_INSTALL_DIR}/cmake/libkcompactdisc ${CMAKE_INSTALL_PREFIX})
-
-configure_file(LibkcompactdiscConfig.cmake.in ${CMAKE_BINARY_DIR}/LibkcompactdiscConfig.cmake @ONLY)
-install(FILES ${CMAKE_BINARY_DIR}/LibkcompactdiscConfig.cmake DESTINATION ${LIB_INSTALL_DIR}/cmake/libkcompactdisc)
-install(EXPORT LibkcompactdiscTargets DESTINATION ${LIB_INSTALL_DIR}/cmake/libkcompactdisc/ FILE LibkcompactdiscTargets.cmake NAMESPACE KDE::Libkcompactdisc::)
+feature_summary(WHAT ALL FATAL_ON_MISSING_REQUIRED_PACKAGES)

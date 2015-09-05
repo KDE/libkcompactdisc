@@ -20,7 +20,8 @@
 
 #include "wmlib_interface.h"
 
-#include <kdebug.h>
+#include <QtGlobal>
+
 #include <klocale.h>
 
 extern "C"
@@ -61,9 +62,9 @@ bool KWMLibCompactDiscPrivate::createInterface()
 	//wm_cd_set_verbosity(WM_MSG_LEVEL_DEBUG | WM_MSG_CLASS_ALL);
 
 	int status = wm_cd_init(
-		devicePath.toAscii().data(),
-		m_audioSystem.toAscii().data(),
-		m_audioDevice.toAscii().data(),
+        devicePath.toLatin1().data(),
+        m_audioSystem.toLatin1().data(),
+        m_audioDevice.toLatin1().data(),
 		NULL,
 		&m_handle);
 
@@ -105,7 +106,7 @@ void KWMLibCompactDiscPrivate::playTrackPosition(unsigned track, unsigned positi
 	lastTrack = firstTrack + 1;
 	lastTrack = TRACK_VALID(lastTrack) ? lastTrack : WM_ENDTRACK;
 
-	kDebug() << "play track " << firstTrack << " position "
+    qDebug() << "play track " << firstTrack << " position "
 		 << position << endl;
 
     wm_cd_play(m_handle, firstTrack, position, lastTrack);
@@ -220,7 +221,7 @@ void KWMLibCompactDiscPrivate::timerExpired()
 			if(m_tracks == 0) {
 				m_tracks = wm_cd_getcountoftracks(m_handle);
 				if(m_tracks > 0) {
-					kDebug() << "New disc with " << m_tracks << " tracks";
+                    qDebug() << "New disc with " << m_tracks << " tracks";
 					m_discId = wm_cddb_discid(m_handle);
 
 					for(i = 1; i <= m_tracks; i++) {
@@ -240,10 +241,10 @@ void KWMLibCompactDiscPrivate::timerExpired()
 						m_trackTitles.append(ki18n("Track %1").subs(i, 2).toString());
 					}
 
-kDebug() << "m_tracks " << m_tracks;
-kDebug() << "m_trackStartFrames " << m_trackStartFrames;
-kDebug() << "m_trackArtists " << m_trackArtists;
-kDebug() << "m_trackTitles " << m_trackTitles;
+qDebug() << "m_tracks " << m_tracks;
+qDebug() << "m_trackStartFrames " << m_trackStartFrames;
+qDebug() << "m_trackArtists " << m_trackArtists;
+qDebug() << "m_trackTitles " << m_trackTitles;
 
 					emit q->discChanged(m_tracks);
 
@@ -261,7 +262,7 @@ kDebug() << "m_trackTitles " << m_trackTitles;
 		m_discPosition = wm_get_cur_pos_abs(m_handle) - FRAMES2SEC(m_trackStartFrames[0]);
 		// Update the current playing position.
 		if(m_seek) {
-			kDebug() << "seek: " << m_seek << " trackPosition " << m_trackPosition;
+            qDebug() << "seek: " << m_seek << " trackPosition " << m_trackPosition;
 			if(abs((long)(m_trackExpectedPosition - m_trackPosition)) > m_seek)
 				m_seek = 0;
 			else
@@ -305,7 +306,7 @@ void KWMLibCompactDiscPrivate::cdtext()
 	info = wm_cd_get_cdtext(m_handle);
 
 	if(!info || !info->valid || (unsigned)info->count_of_entries != (m_tracks + 1)) {
-		kDebug() << "no or invalid CDTEXT";
+        qDebug() << "no or invalid CDTEXT";
 		return;
 	}
 
@@ -317,9 +318,9 @@ void KWMLibCompactDiscPrivate::cdtext()
             m_trackTitles[i] =QLatin1String( reinterpret_cast<char*>(info->blocks[0]->name[i]) );
 	}
 
-	kDebug() << "CDTEXT";
-	kDebug() << "m_trackArtists " << m_trackArtists;
-	kDebug() << "m_trackTitles " << m_trackTitles;
+    qDebug() << "CDTEXT";
+    qDebug() << "m_trackArtists " << m_trackArtists;
+    qDebug() << "m_trackTitles " << m_trackTitles;
 
 	emit q->discInformation(KCompactDisc::Cdtext);
 }

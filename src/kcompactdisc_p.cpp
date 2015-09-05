@@ -23,8 +23,10 @@
 #include "wmlib_interface.h"
 #include "phonon_interface.h"
 
-#include <kdebug.h>
+#include <QtGlobal>
 #include <klocale.h>
+
+Q_LOGGING_CATEGORY(CD_PLAYLIST, "cd.playlist")
 
 KCompactDiscPrivate::KCompactDiscPrivate(KCompactDisc *p, const QString& dev) :
     m_infoMode(KCompactDisc::Synchronous),
@@ -66,8 +68,8 @@ bool KCompactDiscPrivate::moveInterface(const QString &deviceName,
 
 	KCompactDiscPrivate *pOld, *pNew;
 
-	kDebug() << "switch from " << q->d_ptr->m_interface << " on " << q->d_ptr->m_deviceName;
-	kDebug() << "         to " << audioSystem << " on " << deviceName;
+    qDebug() << "switch from " << q->d_ptr->m_interface << " on " << q->d_ptr->m_deviceName;
+    qDebug() << "         to " << audioSystem << " on " << deviceName;
 
 	/* switch temporary to dummy implementation */
 	if(q->d_ptr != this) {
@@ -111,7 +113,7 @@ void KCompactDiscPrivate::make_playlist()
 	unsigned selected = 0, size = m_tracks;
 	bool rejected = false;
 
-	kDebug(67000) << "Playlist has " << size << " entries\n";
+    qCDebug(CD_PLAYLIST) << "Playlist has " << size << " entries\n";
 	m_playlist.clear();
 	for(unsigned i = 0; i < size; i++) {
 		if(m_randomPlaylist) {
@@ -125,12 +127,12 @@ void KCompactDiscPrivate::make_playlist()
 		m_playlist.append(selected);
 	}
 
-	kDebug(67000) << "dump playlist";
+    qCDebug(CD_PLAYLIST) << "dump playlist";
 	QList<unsigned>::const_iterator it;
 	for(it = m_playlist.constBegin(); it != m_playlist.constEnd(); it++) {
-		kDebug(67000) << " " << *it;
+        qCDebug(CD_PLAYLIST) << " " << *it;
 	}
-	kDebug(67000) << "dump playlist end";
+    qCDebug(CD_PLAYLIST) << "dump playlist end";
 }
 
 unsigned KCompactDiscPrivate::getNextTrackInPlaylist()
