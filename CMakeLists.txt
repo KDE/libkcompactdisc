@@ -1,7 +1,7 @@
 ﻿cmake_minimum_required(VERSION 2.8.12)
 project(libkcompactdisc)
 
-set(QT5_REQUIRED_VERSION 5.5.0)
+set(QT5_REQUIRED_VERSION 5.4.0)
 set(KF5_REQUIRED_VERSION 5.13.0)
 
 find_package(ECM ${KF5_REQUIRED_VERSION} NO_MODULE REQUIRED)
