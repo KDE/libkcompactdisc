@@ -1,0 +1,70 @@
+#include <QObject>
+#include <QDebug>
+#include <QMetaObject>
+#include <QCoreApplication>
+#include <QtGlobal>
+
+#include <KCompactDisc/KCompactDisc>
+
+class TestKCD : public QObject
+{
+    Q_OBJECT
+
+    public:
+
+    explicit TestKCD(QObject *parent = 0) :
+        QObject(parent),
+        mKcd(new KCompactDisc(KCompactDisc::Asynchronous))
+    {}
+
+    virtual ~TestKCD()
+    {
+        mKcd->deleteLater();
+    }
+
+    public slots:
+
+    void doTest()
+    {
+        qDebug() << "Starting test";
+        qDebug() << "";
+
+        qDebug() << "We have" << mKcd->audioSystems().size() << "audo systems available:";
+        for (auto system: mKcd->audioSystems()) {
+            qDebug() << system;
+        }
+        qDebug() << "";
+
+        qDebug() << "We have" << mKcd->cdromDeviceNames().size() << "cdrom drives available:";
+        for (auto cdrom: mKcd->cdromDeviceNames()) {
+            qDebug() << cdrom;
+        }
+        qDebug() << "";
+
+        qDebug() << "The current cdrom drive loaded is:" << mKcd->deviceName();
+        qDebug() << "The disc device node url is:" << mKcd->deviceUrl();
+        qDebug() << "The disc status is" << mKcd->discStatus();
+        qDebug() << "Does the drive have a disc in it:" << !mKcd->isNoDisc();
+        qDebug() << "The number of tracks in the disc:" << mKcd->tracks();
+        qDebug() << "The current track no:" << mKcd->trackPosition();
+
+        qApp->exit();
+    }
+
+    private:
+
+    KCompactDisc *mKcd;
+};
+
+int main(int argc, char **argv)
+{
+    QCoreApplication app(argc, argv);
+
+    qDebug() << "Testing libKF5CompactDisc";
+    TestKCD test;
+    QMetaObject::invokeMethod(&test, "doTest", Qt::QueuedConnection);
+
+    return app.exec();
+}
+
+#include "testkcd.moc"
