@@ -6,6 +6,8 @@
 
 #include <KCompactDisc/KCompactDisc>
 
+#include <cdio/cdio.h>
+
 class TestKCD : public QObject
 {
     Q_OBJECT
@@ -49,7 +51,26 @@ class TestKCD : public QObject
         qDebug() << "The number of tracks in the disc:" << mKcd->tracks();
         qDebug() << "The current track no:" << mKcd->trackPosition();
 
+        qDebug() << "";
+        qDebug() << "Running tests with Cdio";
+        doCdioTest();
+
         qApp->exit();
+    }
+
+    void doCdioTest()
+    {
+        CdIo_t *_cd_dev = cdio_open(mKcd->deviceUrl().toLocalFile().toUtf8().constData(), DRIVER_UNKNOWN);
+        if (!_cd_dev) {
+            qDebug() << "Failed to open CdIo device";
+            return;
+        }
+
+        discmode_t mode = cdio_get_discmode(_cd_dev);
+        qDebug() << mode;
+        qDebug() << discmode2str[cdio_get_discmode(_cd_dev)];
+
+        cdio_destroy(_cd_dev);
     }
 
     private:
