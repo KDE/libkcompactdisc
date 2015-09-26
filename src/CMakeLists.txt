@@ -6,7 +6,8 @@ if(CMAKE_COMPILER_IS_GNUCXX)
     set(CMAKE_C_FLAGS "-std=c99")   ## ALSA no longer compiles with -std=c90, see https://bugzilla.novell.com/show_bug.cgi?id=817077
 endif()
 
-find_package(ALSA)
+find_package(Alsa)
+alsa_configure_file(${CMAKE_CURRENT_BINARY_DIR}/config-alsa.h)
 
 set(wmlib_audio_SRCS
         wmlib/audio/audio.c
@@ -45,10 +46,6 @@ else (APPLE OR WIN32 OR CMAKE_SYSTEM_NAME STREQUAL GNU)
         set(USE_WMLIB true)
 endif (APPLE OR WIN32 OR CMAKE_SYSTEM_NAME STREQUAL GNU)
 
-# Disable WMLib temporarily
-
-set(USE_WMLIB false)
-
 set(KCD_LIB_SRCS
     kcompactdisc.cpp
     kcompactdisc_p.cpp
@@ -56,8 +53,8 @@ set(KCD_LIB_SRCS
 )
 
 if (USE_WMLIB)
-        set(KCD_LIB_SRCS ${KCD_LIB_SRCS} wmlib_interface.cpp ${wmlib_SRCS} ${wmlib_audio_SRCS})
-        add_definitions(-DUSE_WMLIB=1)
+    set(KCD_LIB_SRCS ${KCD_LIB_SRCS} wmlib_interface.cpp ${wmlib_SRCS} ${wmlib_audio_SRCS})
+    add_definitions(-DUSE_WMLIB=1)
 endif (USE_WMLIB)
 
 add_library(KF5CompactDisc SHARED ${KCD_LIB_SRCS})
