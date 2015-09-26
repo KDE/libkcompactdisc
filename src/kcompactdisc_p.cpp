@@ -1,3 +1,22 @@
+/*
+ *  Copyright (C) 2015 Boudhayan Gupta <bgupta@kde.org>
+ *
+ *  This program is free software; you can redistribute it and/or modify
+ *  it under the terms of the GNU Lesser General Public License as published by
+ *  the Free Software Foundation; either version 2 of the License, or
+ *  (at your option) any later version.
+ *
+ *  This program is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU General Public License for more details.
+ *
+ *  You should have received a copy of the GNU Lesser General Public License
+ *  along with this program; if not, write to the Free Software
+ *  Foundation, Inc., 51 Franklin Street, Fifth Floor,
+ *  Boston, MA 02110-1301, USA.
+ */
+
 #include "kcompactdisc_p.h"
 
 #include <KLocalizedString>
@@ -5,6 +24,9 @@
 
 KCompactDiscPrivate::KCompactDiscPrivate(const QString &deviceNode, QObject *parent) :
     QObject(parent),
+    mPhononCdObject(nullptr),
+    mPhononCdController(nullptr),
+    mPhononCdOutput(nullptr),
     mCdioDev(nullptr)
 {
     // reset everything
@@ -121,9 +143,12 @@ void KCompactDiscPrivate::queryMetadata()
     // we're done with cdtext
     cdtext_destroy(cdTextData);
 
+    // todo: read in the track signatures
+
+
+
     // we have one thing left to do now, and that is
     // calculate the cddb discid for the disc.
-
     quint64 msfSum = 0;
     msf_t msfStart;
     msf_t msfEnd;
@@ -138,6 +163,21 @@ void KCompactDiscPrivate::queryMetadata()
     quint64 msfDiff = cdio_audio_get_msf_seconds(&msfEnd) - cdio_audio_get_msf_seconds(&msfStart);
 
     m_discId = ((msfSum % 0xff) << 24 | msfDiff << 8 | m_tracks);
+
+    //initialize phonon
+    Phonon::MediaSource mediaSource(Phonon::Cd, mDeviceNode);
+
+    mPhononCdObject = new Phonon::MediaObject(this);
+    mPhononCdObject->setCurrentSource(mediaSource);
+    mPhononCdObject->setTickInterval(1000);
+
+    mPhononCdOutput = new Phonon::AudioOutput(Phonon::MusicCategory, this);
+    mPhononCdController = new Phonon::MediaController(mPhononCdObject);
+    Phonon::createPath(mPhononCdObject, mPhononCdOutput);
+
+    // generate a playlist
+    makePlaylist();
+    m_track = 1;
 
     // done
 }
@@ -163,9 +203,23 @@ bool KCompactDiscPrivate::isTrackAudio(quint8 trackNo) const
 
 // playback control
 
-void KCompactDiscPrivate::playTrackPosition(quint8 trackNo, quint64 trackOffset) {}
-void KCompactDiscPrivate::pause() {}
-void KCompactDiscPrivate::stop() {}
+void KCompactDiscPrivate::playTrackPosition(quint8 trackNo, quint64 trackOffset)
+{
+    mPhononCdObject->play();
+    mPhononCdController->setAutoplayTitles(true);
+    mPhononCdController->setCurrentTitle(trackNo);
+    mPhononCdObject->seek(trackOffset * 1000);
+}
+
+void KCompactDiscPrivate::pause()
+{
+    mPhononCdObject->pause();
+}
+
+void KCompactDiscPrivate::stop()
+{
+    mPhononCdObject->stop();
+}
 
 void KCompactDiscPrivate::eject()
 {
@@ -189,8 +243,15 @@ void KCompactDiscPrivate::closeTray()
     }
 }
 
-void KCompactDiscPrivate::setVolume(quint8 volume) {}
-void KCompactDiscPrivate::setBalance(quint8 balance) {}
+void KCompactDiscPrivate::setVolume(quint8 volume)
+{
+    mPhononCdOutput->setVolume(0.01 * volume);
+}
+
+void KCompactDiscPrivate::setBalance(quint8 balance)
+{
+    Q_UNUSED(balance);
+}
 
 // playlist control
 
@@ -272,6 +333,21 @@ void KCompactDiscPrivate::resetMetadata()
     m_loopPlaylist = false;
     m_randomPlaylist = false;
     m_autoMetadata = true;
+
+    if (mPhononCdController) {
+        mPhononCdController->deleteLater();
+        mPhononCdController = nullptr;
+    }
+
+    if (mPhononCdObject) {
+        mPhononCdObject->deleteLater();
+        mPhononCdObject = nullptr;
+    }
+
+    if (mPhononCdOutput) {
+        mPhononCdOutput->deleteLater();
+        mPhononCdOutput = nullptr;
+    }
 }
 
 void KCompactDiscPrivate::resetDevice()

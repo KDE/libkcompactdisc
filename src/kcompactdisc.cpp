@@ -445,8 +445,10 @@ void KCompactDisc::doCommand(KCompactDisc::DiscCommand cmd)
 
 	case Next:
 		track = d->getNextTrackInPlaylist();
-    	if(track)
+        if(track) {
+            qDebug() << "Playing track" << track;
 			playTrack(track);
+        }
 		break;
 
 	case Prev:

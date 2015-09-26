@@ -3,6 +3,7 @@ include_directories(${CMAKE_SOURCE_DIR} ${CMAKE_BINARY_DIR} ${CMAKE_CURRENT_BINA
 set(KCD_LIB_SRCS
     kcompactdisc.cpp
     kcompactdisc_p.cpp
+    cdioaudiofile.cpp
 )
 
 add_library(KF5CompactDisc SHARED ${KCD_LIB_SRCS})
@@ -13,7 +14,7 @@ set_target_properties(KF5CompactDisc PROPERTIES
 )
 
 target_link_libraries(KF5CompactDisc
-    Qt5::DBus
+    Qt5::Multimedia
     KF5::CoreAddons
     KF5::KDELibs4Support
     KF5::Solid

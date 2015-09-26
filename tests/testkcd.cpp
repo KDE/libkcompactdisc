@@ -55,7 +55,11 @@ class TestKCD : public QObject
         qDebug() << "Running tests with Cdio";
         doCdioTest();
 
-        qApp->exit();
+        qDebug() << "Here";
+        mKcd->next();
+        qDebug() << "Here";
+
+       // qApp->exit();
     }
 
     void doCdioTest()
