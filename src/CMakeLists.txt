@@ -88,6 +88,7 @@ ecm_generate_headers(KCOMPACTDISC_HEADERS
     PREFIX KCompactDisc
     REQUIRED_HEADERS KCOMPACTDISC_REQ_HEADERS
 )
+generate_export_header(KF5CompactDisc BASE_NAME kcompactdisc)
 
 ecm_generate_pri_file(
     BASE_NAME KCompactDisc
@@ -96,7 +97,9 @@ ecm_generate_pri_file(
     FILENAME_VAR PRI_FILENAME
 )
 
+
 install(TARGETS KF5CompactDisc EXPORT KF5CompactDiscTargets ${INSTALL_TARGETS_DEFAULT_ARGS})
 install(FILES ${KCOMPACTDISC_HEADERS} DESTINATION ${KF5_INCLUDE_INSTALL_DIR}/KCompactDisc/KCompactDisc COMPONENT Devel)
 install(FILES ${KCOMPACTDISC_REQ_HEADERS} DESTINATION ${KF5_INCLUDE_INSTALL_DIR}/KCompactDisc/kcompactdisc COMPONENT Devel)
+install(FILES ${CMAKE_CURRENT_BINARY_DIR}/kcompactdisc_export.h DESTINATION ${KF5_INCLUDE_INSTALL_DIR}/KCompactDisc/kcompactdisc COMPONENT Devel)
 install(FILES ${PRI_FILENAME} DESTINATION ${ECM_MKSPECS_INSTALL_DIR})

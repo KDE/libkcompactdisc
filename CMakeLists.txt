@@ -1,5 +1,5 @@
-﻿cmake_minimum_required(VERSION 2.8.12)
-project(libkcompactdisc)
+﻿cmake_minimum_required(VERSION 3.0.2)
+project(libkcompactdisc VERSION 5.0.0)
 
 set(QT5_REQUIRED_VERSION 5.4.0)
 set(KF5_REQUIRED_VERSION 5.13.0)
@@ -10,15 +10,16 @@ set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${ECM_MODULE_PATH} ${ECM_KDE_MODULE_D
 include(KDEInstallDirs)
 include(KDECMakeSettings)
 include(KDECompilerSettings)
-include(ECMPackageConfigHelpers)
+include(CMakePackageConfigHelpers)
 include(ECMGenerateHeaders)
 include(ECMSetupVersion)
 include(ECMGeneratePriFile)
+include(GenerateExportHeader)
 include(FeatureSummary)
 
 # Version Setup
 
-ecm_setup_version("5.0.0"
+ecm_setup_version(PROJECT
     VARIABLE_PREFIX KCOMPACTDISC
     VERSION_HEADER ${CMAKE_CURRENT_BINARY_DIR}/kcompactdisc_version.h
     PACKAGE_VERSION_FILE ${CMAKE_CURRENT_BINARY_DIR}/KF5CompactDiscConfigVersion.cmake
@@ -45,7 +46,7 @@ add_subdirectory(tests)
 
 set(CMAKECONFIG_INSTALL_DIR ${CMAKECONFIG_INSTALL_PREFIX}/KF5CompactDisc)
 
-ecm_configure_package_config_file(
+configure_package_config_file(
     ${CMAKE_CURRENT_SOURCE_DIR}/KF5CompactDiscConfig.cmake.in
     ${CMAKE_CURRENT_BINARY_DIR}/KF5CompactDiscConfig.cmake
     INSTALL_DESTINATION ${CMAKECONFIG_INSTALL_DIR}

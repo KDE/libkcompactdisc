@@ -27,23 +27,7 @@
 #include <QUrl>
 #include <QTimer>
 
-#include <kdemacros.h>
-
-#if defined Q_OS_WIN
-
-#ifndef KCOMPACTDISC_EXPORT
-# ifdef MAKE_KCOMPACTDISC_LIB
-#  define KCOMPACTDISC_EXPORT KDE_EXPORT
-# else
-#  define KCOMPACTDISC_EXPORT KDE_IMPORT
-# endif
-#endif
-
-#else /* UNIX */
-
-/* export statements for unix */
-#define KCOMPACTDISC_EXPORT KDE_EXPORT
-#endif
+#include "kcompactdisc_export.h"
 
 class KCompactDiscPrivate;
 
