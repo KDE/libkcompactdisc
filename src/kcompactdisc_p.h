@@ -1,110 +1,102 @@
-/*
- *  KCompactDisc - A CD drive interface for the KDE Project.
- *
- *  Copyright (C) 2007 Alexander Kern <alex.kern@gmx.de>
- *
- *  This program is free software; you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation; either version 2, or (at your option)
- *  any later version.
- *
- *  This program is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU General Public License for more details.
- *
- *  You should have received a copy of the GNU General Public License
- *  along with this program; if not, write to the Free Software
- *  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
- */
+#ifndef KCOMPACTDISCPRIVATE_H
+#define KCOMPACTDISCPRIVATE_H
 
-#ifndef KCOMPACTDISC_P_H
-#define KCOMPACTDISC_P_H
-
+#include <QObject>
 #include <QString>
 #include <QList>
-#include <QLoggingCategory>
-#include <QtGlobal>
 
-#include <krandomsequence.h>
+#include <cdio/cdio.h>
+#include <cdio/audio.h>
+
 #include "kcompactdisc.h"
-
-Q_DECLARE_LOGGING_CATEGORY(CD_PLAYLIST)
 
 class KCompactDiscPrivate : public QObject
 {
-	Q_OBJECT
+    Q_OBJECT
 
-	public:
-		KCompactDiscPrivate(KCompactDisc *, const QString&);
-        virtual ~KCompactDiscPrivate() { }
-	
-		bool moveInterface(const QString &, const QString &, const QString &);
-		virtual bool createInterface();
+    public:
 
-		QString m_interface;
-		KCompactDisc::InformationMode m_infoMode;
-		QString m_deviceName;
-	
-		KCompactDisc::DiscStatus m_status;
-		KCompactDisc::DiscStatus m_statusExpected;
-		unsigned m_discId;
-		unsigned m_discLength;
-		unsigned m_track;
-		unsigned m_tracks;
-		unsigned m_trackPosition;
-		unsigned m_discPosition;
-		unsigned m_trackExpectedPosition;
-		int m_seek;
-	
-		QList<unsigned> m_trackStartFrames;
-		QStringList m_trackArtists;
-		QStringList m_trackTitles;
-	
-		KRandomSequence m_randSequence;
-		QList<unsigned> m_playlist;
-		bool m_loopPlaylist;
-		bool m_randomPlaylist;
-		bool m_autoMetadata;
-	
-		void make_playlist();
-		unsigned getNextTrackInPlaylist();
-		unsigned getPrevTrackInPlaylist();
-		bool skipStatusChange(KCompactDisc::DiscStatus);
-		static const QString discStatusI18n(KCompactDisc::DiscStatus);
+    explicit KCompactDiscPrivate(const QString &deviceNode, QObject *parent = 0);
+    virtual ~KCompactDiscPrivate();
 
-		void clearDiscInfo();
+    // methods, starting with the static ones
 
-		virtual unsigned trackLength(unsigned);
-		virtual bool isTrackAudio(unsigned);
-		virtual void playTrackPosition(unsigned, unsigned);
-		virtual void pause();
-		virtual void stop();
-		virtual void eject();
-		virtual void closetray();
-	
-		virtual void setVolume(unsigned);
-		virtual void setBalance(unsigned);
-		virtual unsigned volume();
-		virtual unsigned balance();
+    static const QString discStatusI18n(KCompactDisc::DiscStatus);
 
-		virtual void queryMetadata();
-	
-		QString m_deviceVendor;
-		QString m_deviceModel;
-		QString m_deviceRevision;
+    // device control
 
-	public:
-		Q_DECLARE_PUBLIC(KCompactDisc)
-		KCompactDisc * const q_ptr;
+    bool setDevice(const QString &deviceNode);
+
+    // track information
+
+    void queryMetadata();
+    quint64 trackLength(quint8 trackNo) const;
+    bool isTrackAudio(quint8 trackNo) const;
+
+    // playback control
+
+    void playTrackPosition(quint8 trackNo, quint64 trackOffset);
+    void pause();
+    void stop();
+    void eject();
+    void closeTray();
+    void setVolume(quint8 volume);
+    void setBalance(quint8 balance);
+
+    // playlist control
+
+    void makePlaylist();
+    quint8 getPrevTrackInPlaylist();
+    quint8 getNextTrackInPlaylist();
+
+    // variables, starting with enums
+
+    KCompactDisc::DiscStatus m_status;
+    KCompactDisc::DiscStatus m_statusExpected;
+
+    // drive information
+
+    QString m_deviceVendor;
+    QString m_deviceModel;
+    QString m_deviceRevision;
+    QString m_deviceName;
+
+    // disc information
+
+    QList<quint64> m_trackStartFrames;
+    QString m_albumTitle;
+    QString m_albumArtist;
+    QStringList m_trackArtists;
+    QStringList m_trackTitles;
+
+    quint32 m_discId;
+    quint64 m_discLength;
+    quint8  m_track;
+    quint8  m_tracks;
+    quint64 m_trackPosition;
+    quint64 m_trackExpectedPosition;
+    quint64 m_discPosition;
+    qint64  m_seek;
+
+    // playlist control
+
+    QList<quint16> m_playlist;
+    bool m_loopPlaylist;
+    bool m_randomPlaylist;
+
+    // metadata control
+
+    bool m_autoMetadata;
+
+    private:
+
+    static quint64 sumDigits(quint64 num);
+
+    void resetMetadata();
+    void resetDevice();
+
+    QString mDeviceNode;
+    CdIo_t *mCdioDev;
 };
 
-
-#define SEC2FRAMES(sec) ((sec) * 75)
-#define FRAMES2SEC(frames) ((frames) / 75)
-#define MS2SEC(ms) ((ms) / 1000)
-#define SEC2MS(sec) ((sec) * 1000)
-#define MS2FRAMES(ms) (((ms) * 75) / 1000)
-#define FRAMES2MS(frames) (((frames) * 1000) / 75)
-
-#endif /* KCOMPACTDISC_P_H */
+#endif // KCOMPACTDISCPRIVATE_H

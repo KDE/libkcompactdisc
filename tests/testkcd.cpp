@@ -16,7 +16,7 @@ class TestKCD : public QObject
 
     explicit TestKCD(QObject *parent = 0) :
         QObject(parent),
-        mKcd(new KCompactDisc(KCompactDisc::Asynchronous))
+        mKcd(new KCompactDisc)
     {}
 
     virtual ~TestKCD()

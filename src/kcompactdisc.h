@@ -118,12 +118,6 @@ public Q_SLOTS:
     Q_SCRIPTABLE QStringList trackList();
 */
 public:
-    enum InformationMode
-    {
-        Synchronous, // Return and emit signal when cdrom and cddb information arrives.
-        Asynchronous // Block until cdrom and cddb infromation has been obtained
-    };
-
 	enum DiscCommand
 	{
 		Play,
@@ -154,7 +148,7 @@ public:
         PhononMetadata
     };
 
-    KCompactDisc(InformationMode = KCompactDisc::Synchronous);
+    KCompactDisc();
     virtual ~KCompactDisc();
 
     /**
@@ -253,7 +247,7 @@ public:
     /**
      * CDDB signature of disc, empty if no disc or not possible to deliever.
      */
-    const QList<unsigned> &discSignature();
+    const QList<quint64> &discSignature();
 
     /**
      * Artist for whole disc.
@@ -527,10 +521,6 @@ protected:
 
 private:
     Q_DECLARE_PRIVATE(KCompactDisc)
-#ifdef USE_WMLIB
-	friend class KWMLibCompactDiscPrivate;
-#endif
-	friend class KPhononCompactDiscPrivate;
 };
 
 #endif

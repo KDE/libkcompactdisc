@@ -188,11 +188,10 @@ const QString KCompactDisc::cdromDeviceUdi(const QString &cdromDeviceName)
     return getListOfCdromDevicesNamesAndUdi().value(cdromDeviceName, KCompactDisc::defaultCdromDeviceUdi());
 }
 
-KCompactDisc::KCompactDisc(InformationMode infoMode) :
-    d_ptr(new KCompactDiscPrivate(this, KCompactDisc::defaultCdromDeviceName()))
+KCompactDisc::KCompactDisc() :
+    d_ptr(new KCompactDiscPrivate(defaultCdromDeviceUrl().toLocalFile(), this))
 {
     Q_D(KCompactDisc);
-    d->m_infoMode = infoMode;
 }
 
 KCompactDisc::~KCompactDisc()
@@ -237,7 +236,7 @@ unsigned KCompactDisc::discId()
     return d->m_discId;
 }
 
-const QList<unsigned> &KCompactDisc::discSignature()
+const QList<quint64> &KCompactDisc::discSignature()
 {
     Q_D(KCompactDisc);
     return d->m_trackStartFrames;
@@ -480,7 +479,7 @@ void KCompactDisc::doCommand(KCompactDisc::DiscCommand cmd)
 			}
 		} else {
 			d->m_statusExpected = KCompactDisc::Stopped;
-			d->closetray();
+            d->closeTray();
 		}
 		break;
 
@@ -504,7 +503,7 @@ void KCompactDisc::setRandomPlaylist(bool random)
 {
 	Q_D(KCompactDisc);
 	d->m_randomPlaylist = random;
-	d->make_playlist();
+    d->makePlaylist();
 	emit randomPlaylistChanged(d->m_randomPlaylist);
 }
 
@@ -530,13 +529,16 @@ bool KCompactDisc::setDevice(const QString &deviceName, unsigned volume,
 	const QString ad = digitalPlayback ? audioDevice : QString();
     qDebug() << "Device init: " << deviceName << ", " << as << ", " << ad;
 
+    return 0;
+
+    /*
 	if(d_ptr->moveInterface(deviceName, as, ad)) {
 		setVolume(volume);
 		return 1;
 	} else {
         // Severe (OS-level) error.
 		return 0;
-    }
+    }*/
 }
 
 void KCompactDisc::setVolume(unsigned volume)

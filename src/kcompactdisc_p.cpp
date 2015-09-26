@@ -1,221 +1,27 @@
-/*
- *  KCompactDisc - A CD drive interface for the KDE Project.
- *
- *  Copyright (C) 2007 Alexander Kern <alex.kern@gmx.de>
- *
- *  This program is free software; you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation; either version 2, or (at your option)
- *  any later version.
- *
- *  This program is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU General Public License for more details.
- *
- *  You should have received a copy of the GNU General Public License
- *  along with this program; if not, write to the Free Software
- *  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
- */
-
 #include "kcompactdisc_p.h"
 
-#include "wmlib_interface.h"
-#include "phonon_interface.h"
+#include <KLocalizedString>
+#include <KRandomSequence>
 
-#include <QtGlobal>
-#include <klocale.h>
-
-Q_LOGGING_CATEGORY(CD_PLAYLIST, "cd.playlist")
-
-KCompactDiscPrivate::KCompactDiscPrivate(KCompactDisc *p, const QString& dev) :
-    m_infoMode(KCompactDisc::Synchronous),
-    m_deviceName(dev),
-
-    m_status(KCompactDisc::NoDisc),
-    m_statusExpected(KCompactDisc::NoDisc),
-    m_discId(0),
-    m_discLength(0),
-    m_track(0),
-    m_tracks(0),
-    m_trackPosition(0),
-    m_discPosition(0),
-    m_trackExpectedPosition(0),
-    m_seek(0),
-
-    m_randSequence(0),
-    m_loopPlaylist(false),
-    m_randomPlaylist(false),
-    m_autoMetadata(true),
-
-    m_deviceVendor(QString()),
-    m_deviceModel(QString()),
-    m_deviceRevision(QString()),
-
-    q_ptr(p)
+KCompactDiscPrivate::KCompactDiscPrivate(const QString &deviceNode, QObject *parent) :
+    QObject(parent),
+    mCdioDev(nullptr)
 {
-    m_interface = QLatin1String("dummy");
-    m_trackStartFrames.clear();
-    m_trackArtists.clear();
-    m_trackTitles.clear();
-    m_playlist.clear();
+    // reset everything
+    resetDevice();
+
+    // init the device
+    setDevice(deviceNode);
 }
 
-bool KCompactDiscPrivate::moveInterface(const QString &deviceName,
-	const QString &audioSystem, const QString &audioDevice)
+KCompactDiscPrivate::~KCompactDiscPrivate()
 {
-	Q_Q(KCompactDisc);
-
-	KCompactDiscPrivate *pOld, *pNew;
-
-    qDebug() << "switch from " << q->d_ptr->m_interface << " on " << q->d_ptr->m_deviceName;
-    qDebug() << "         to " << audioSystem << " on " << deviceName;
-
-	/* switch temporary to dummy implementation */
-	if(q->d_ptr != this) {
-		pOld = q->d_ptr;
-		q->d_ptr = this;
-		delete pOld;
-	}
-
-#ifdef USE_WMLIB
-	if(audioSystem == QLatin1String("phonon"))
-#endif
-		pNew = new KPhononCompactDiscPrivate(q, deviceName);
-#ifdef USE_WMLIB
-	else
-		pNew = new KWMLibCompactDiscPrivate(q, deviceName,
-			audioSystem, audioDevice);
-#endif
-
-	pNew->m_infoMode = m_infoMode;
-
-	if(pNew->createInterface()) {
-		q->d_ptr = pNew;
-		return true;
-	} else {
-		delete pNew;
-		return false;
+    if (mCdioDev) {
+        cdio_destroy(mCdioDev);
     }
 }
 
-bool KCompactDiscPrivate::createInterface()
-{
-	return true;
-}
-
-void KCompactDiscPrivate::make_playlist()
-{
-	/* koz: 15/01/00. I want a random list that does not repeat tracks. Ie, */
-	/* a list is created in which each track is listed only once. The tracks */
-	/* are picked off one by one until the end of the list */
-
-	unsigned selected = 0, size = m_tracks;
-	bool rejected = false;
-
-    qCDebug(CD_PLAYLIST) << "Playlist has " << size << " entries\n";
-	m_playlist.clear();
-	for(unsigned i = 0; i < size; i++) {
-		if(m_randomPlaylist) {
-			do {
-				selected = 1 + m_randSequence.getLong(size);
-				rejected = (m_playlist.indexOf(selected) != -1);
-			} while(rejected == true);
-		} else {
-			selected = 1 + i;
-		}
-		m_playlist.append(selected);
-	}
-
-    qCDebug(CD_PLAYLIST) << "dump playlist";
-	QList<unsigned>::const_iterator it;
-	for(it = m_playlist.constBegin(); it != m_playlist.constEnd(); it++) {
-        qCDebug(CD_PLAYLIST) << " " << *it;
-	}
-    qCDebug(CD_PLAYLIST) << "dump playlist end";
-}
-
-unsigned KCompactDiscPrivate::getNextTrackInPlaylist()
-{
-	int current_index, min_index, max_index;
-
-	if(m_playlist.empty())
-		return 0;
-
-	min_index = 0;
-	max_index = m_playlist.size() - 1;
-
-	current_index = m_playlist.indexOf(m_track);
-	if(current_index < 0)
-		current_index = min_index;
-	else if(current_index >= max_index) {
-		if(m_loopPlaylist) {
-			//wrap around
-			if(m_randomPlaylist)
-				make_playlist();
-			current_index = min_index;
-		} else {
-			return 0;
-		}
-	} else {
-		++current_index;
-	}
-
-	return m_playlist[current_index];
-}
-
-unsigned KCompactDiscPrivate::getPrevTrackInPlaylist()
-{
-    int current_index, min_index, max_index;
-
-	if(m_playlist.empty())
-		return 0;
-
-	min_index = 0;
-    max_index = m_playlist.size() - 1;
-
-	current_index = m_playlist.indexOf(m_track);
-    if(current_index < 0)
-		current_index = min_index;
-	else if(current_index <= min_index) {
-		if(m_loopPlaylist) {
-			//wrap around
-			if(m_randomPlaylist)
-				make_playlist();
-
-			current_index = max_index;
-		} else {
-			return 0;
-		}
-	} else {
-		--current_index;
-	}
-
-	return m_playlist[current_index];
-}
-
-bool KCompactDiscPrivate::skipStatusChange(KCompactDisc::DiscStatus status)
-{
-	Q_Q(KCompactDisc);
-
-	if(m_status != status) {
-		if(status == KCompactDisc::Stopped) {
-			if(m_statusExpected == KCompactDisc::Ejected) {
-				eject();
-			} else if(m_statusExpected != KCompactDisc::Stopped) {
-				unsigned track = getNextTrackInPlaylist();
-				if(track) {
-					playTrackPosition(track, 0);
-					return true;
-				}
-			}
-		}
-
-		emit q->discStatusChanged(status);
-	}
-
-	return false;
-}
+// static functions
 
 const QString KCompactDiscPrivate::discStatusI18n(KCompactDisc::DiscStatus status)
 {
@@ -226,8 +32,8 @@ const QString KCompactDiscPrivate::discStatusI18n(KCompactDisc::DiscStatus statu
         return i18n("Paused");
     case KCompactDisc::Stopped:
         return i18n("Stopped");
-	case KCompactDisc::Ejected:
-		return i18n("Ejected");
+    case KCompactDisc::Ejected:
+        return i18n("Ejected");
     case KCompactDisc::NoDisc:
         return i18n("No Disc");
     case KCompactDisc::NotReady:
@@ -238,71 +44,248 @@ const QString KCompactDiscPrivate::discStatusI18n(KCompactDisc::DiscStatus statu
     }
 }
 
-void KCompactDiscPrivate::clearDiscInfo()
+quint64 KCompactDiscPrivate::sumDigits(quint64 num)
 {
-	Q_Q(KCompactDisc);
+    quint64 ret = 0;
 
-	m_discId = 0;
-	m_discLength = 0;
-	m_seek = 0;
-	m_track = 0;
-	m_tracks = 0;
-	m_trackArtists.clear();
-	m_trackTitles.clear();
-	m_trackStartFrames.clear();
-	emit q->discChanged(m_tracks);
+    while (true) {
+        ret += num % 10;
+        num /= 10;
+        if (!num) {
+            return ret;
+        }
+    }
 }
 
-unsigned KCompactDiscPrivate::trackLength(unsigned)
+// device control
+
+bool KCompactDiscPrivate::setDevice(const QString &deviceNode)
 {
-	return 0;
+    // start by initing the cdio device
+    mCdioDev = cdio_open(deviceNode.toAscii().constData(), DRIVER_UNKNOWN);
+    if (!mCdioDev) {
+        mCdioDev = nullptr;
+        return false;
+    }
+    mDeviceNode = deviceNode;
+
+    // fill up the device information
+    cdio_hwinfo_t hwinfo;
+    if (cdio_get_hwinfo(mCdioDev, &hwinfo)) {
+        m_deviceModel = QString(hwinfo.psz_model).trimmed();
+        m_deviceVendor = QString(hwinfo.psz_vendor).trimmed();
+        m_deviceRevision = QString(hwinfo.psz_revision).trimmed();
+
+        m_deviceName = '[' + m_deviceVendor + " - " + m_deviceModel + " - " + m_deviceRevision + ']';
+    }
+
+    // if we have a valid audio cd in, set metadata
+    if (cdio_get_discmode(mCdioDev) == CDIO_DISC_MODE_CD_DA) {
+        m_status = m_statusExpected = KCompactDisc::Stopped;
+        queryMetadata();
+    }
+
+    return true;
 }
 
-bool KCompactDiscPrivate::isTrackAudio(unsigned)
-{
-	return false;
-}
-
-void KCompactDiscPrivate::playTrackPosition(unsigned, unsigned)
-{
-}
-
-void KCompactDiscPrivate::pause()
-{
-}
-
-void KCompactDiscPrivate::stop()
-{
-}
-
-void KCompactDiscPrivate::eject()
-{
-}
-
-void KCompactDiscPrivate::closetray()
-{
-}
-
-void KCompactDiscPrivate::setVolume(unsigned)
-{
-}
-
-void KCompactDiscPrivate::setBalance(unsigned)
-{
-}
-
-unsigned KCompactDiscPrivate::volume()
-{
-	return 0;
-}
-
-unsigned KCompactDiscPrivate::balance()
-{
-	return 50;
-}
+// track information
 
 void KCompactDiscPrivate::queryMetadata()
 {
+    // start with the basics - the number of tracks
+    m_tracks = cdio_get_num_tracks(mCdioDev);
+
+    // and the cdtext artist and title
+    cdtext_t *cdTextData = cdio_get_cdtext(mCdioDev);
+    if (cdTextData == NULL) {
+        m_albumArtist = i18n("Unknown Artist");
+        m_albumTitle = i18n("Unknown Album");
+
+        for (int i = 0; i < m_tracks; ++i) {
+            m_trackArtists.append(i18n("Unknown Artist"));
+            m_trackTitles.append(i18n("Unknown Title"));
+        }
+        return;
+    }
+
+    // cdtext for track 0 contains the album title
+    // and artist
+    m_albumArtist = QString(cdtext_get_const(cdTextData, CDTEXT_FIELD_PERFORMER, 0)).trimmed();
+    m_albumTitle = QString(cdtext_get_const(cdTextData, CDTEXT_FIELD_TITLE, 0)).trimmed();
+
+    for (int i = 1; i <= m_tracks; ++i) {
+        m_trackTitles.append(QString(cdtext_get_const(cdTextData, CDTEXT_FIELD_TITLE, i)).trimmed());
+        m_trackArtists.append(QString(cdtext_get_const(cdTextData, CDTEXT_FIELD_PERFORMER, i)).trimmed());
+    }
+
+    // we're done with cdtext
+    cdtext_destroy(cdTextData);
+
+    // we have one thing left to do now, and that is
+    // calculate the cddb discid for the disc.
+
+    quint64 msfSum = 0;
+    msf_t msfStart;
+    msf_t msfEnd;
+
+    for (int i = 1; i <= m_tracks; ++i) {
+        cdio_get_track_msf(mCdioDev, i, &msfEnd);
+        msfSum += sumDigits(cdio_audio_get_msf_seconds(&msfEnd));
+    }
+
+    cdio_get_track_msf(mCdioDev, 1, &msfStart);
+    cdio_get_track_msf(mCdioDev, CDIO_CDROM_LEADOUT_TRACK, &msfEnd);
+    quint64 msfDiff = cdio_audio_get_msf_seconds(&msfEnd) - cdio_audio_get_msf_seconds(&msfStart);
+
+    m_discId = ((msfSum % 0xff) << 24 | msfDiff << 8 | m_tracks);
+
+    // done
 }
 
-#include "kcompactdisc_p.moc"
+quint64 KCompactDiscPrivate::trackLength(quint8 trackNo) const
+{
+    if (trackNo < 1 || trackNo > m_tracks) {
+        return 0;
+    }
+
+    msf_t trackMsf;
+    cdio_get_track_msf(mCdioDev, trackNo, &trackMsf);
+    return cdio_audio_get_msf_seconds(&trackMsf);
+}
+
+bool KCompactDiscPrivate::isTrackAudio(quint8 trackNo) const
+{
+    if (trackNo < 1 || trackNo > m_tracks) {
+        return false;
+    }
+    return (cdio_get_track_format(mCdioDev, trackNo) == TRACK_FORMAT_AUDIO);
+}
+
+// playback control
+
+void KCompactDiscPrivate::playTrackPosition(quint8 trackNo, quint64 trackOffset) {}
+void KCompactDiscPrivate::pause() {}
+void KCompactDiscPrivate::stop() {}
+
+void KCompactDiscPrivate::eject()
+{
+    if (m_status == KCompactDisc::Playing || m_status == KCompactDisc::Paused) {
+        stop();
+    }
+
+    resetMetadata();
+    driver_return_code_t ret = cdio_eject_media(&mCdioDev);
+    if (ret == DRIVER_OP_SUCCESS) {
+        resetDevice();
+    }
+}
+
+void KCompactDiscPrivate::closeTray()
+{
+    driver_id_t driver = DRIVER_UNKNOWN;
+    driver_return_code_t ret = cdio_close_tray(mDeviceNode.toAscii().constData(), &driver);
+    if (ret == DRIVER_OP_SUCCESS) {
+        queryMetadata();
+    }
+}
+
+void KCompactDiscPrivate::setVolume(quint8 volume) {}
+void KCompactDiscPrivate::setBalance(quint8 balance) {}
+
+// playlist control
+
+void KCompactDiscPrivate::makePlaylist()
+{
+    m_playlist.clear();
+
+    for (quint16 i = 1; i <= m_tracks; ++i) {
+        m_playlist.append(i);
+    }
+
+    if (m_randomPlaylist) {
+        KRandomSequence sequence;
+        sequence.randomize(m_playlist);
+    }
+}
+
+quint8 KCompactDiscPrivate::getPrevTrackInPlaylist()
+{
+    if (m_playlist.empty()) {
+        return 0;
+    }
+
+    int currentIndex = m_playlist.indexOf(m_track);
+    if (currentIndex < 0) {
+        return 0;
+    } else if (currentIndex > 0) {
+        return m_playlist[currentIndex - 1];
+    } else {
+        if (m_loopPlaylist) {
+            return m_playlist.last();
+        }
+        return 0;
+    }
+}
+
+quint8 KCompactDiscPrivate::getNextTrackInPlaylist()
+{
+    if (m_playlist.empty()) {
+        return 0;
+    }
+
+    int currentIndex = m_playlist.indexOf(m_track);
+    if (currentIndex < 0) {
+        return 0;
+    } else if (currentIndex < (m_playlist.size() - 1)) {
+        return m_playlist[currentIndex + 1];
+    } else {
+        if (m_loopPlaylist) {
+            return m_playlist.first();
+        }
+        return 0;
+    }
+}
+
+// private
+
+void KCompactDiscPrivate::resetMetadata()
+{
+    m_status = KCompactDisc::NoDisc;
+    m_statusExpected = KCompactDisc::NoDisc;
+
+    m_discId = 0;
+    m_discLength = 0;
+    m_track = 0;
+    m_tracks = 0;
+    m_trackPosition = 0;
+    m_trackExpectedPosition = 0;
+    m_discPosition = 0;
+    m_seek = 0;
+
+    m_trackStartFrames.clear();
+    m_albumTitle = QString();
+    m_albumArtist = QString();
+    m_trackArtists.clear();
+    m_trackTitles.clear();
+
+    m_playlist.clear();
+    m_loopPlaylist = false;
+    m_randomPlaylist = false;
+    m_autoMetadata = true;
+}
+
+void KCompactDiscPrivate::resetDevice()
+{
+    if (mCdioDev) {
+        cdio_destroy(mCdioDev);
+        mCdioDev = nullptr;
+    }
+    mDeviceNode = QString();
+
+    m_deviceVendor = QString();
+    m_deviceModel = QString();
+    m_deviceRevision = QString();
+    m_deviceName = QString();
+
+    resetMetadata();
+}
