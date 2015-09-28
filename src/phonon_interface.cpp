@@ -100,6 +100,7 @@ KPhononCompactDiscPrivate::~KPhononCompactDiscPrivate()
 
 bool KPhononCompactDiscPrivate::createInterface()
 {
+	qDebug() << "createInterface called";
 	Solid::Device opticalDevice(m_udi);
 	Solid::OpticalDrive *opticalDrive = opticalDevice.as<Solid::OpticalDrive>();
 
@@ -125,12 +126,14 @@ ProducerWidget *KPhononCompactDiscPrivate::producer()
 	if(!m_producerWidget) {
 		Solid::Device opticalDevice(m_udi);
 		Solid::OpticalDrive *opticalDrive = opticalDevice.as<Solid::OpticalDrive>();
+		qDebug() << "producer called, opticalDrive is " << opticalDrive;
 
 		if(opticalDrive) {
 			Solid::OpticalDisc *opticalDisc = opticalDevice.as<Solid::OpticalDisc>();
             qDebug() << "opticalDisc " << opticalDisc;
 			//if(opticalDisc && (opticalDisc->availableContent() == Solid::OpticalDisc::Audio)) {
 				m_producerWidget = new ProducerWidget(this, m_udi);
+				stateChanged(m_producerWidget->m_media->state(), Phonon::StoppedState);
 			//}
 		}
 	}
@@ -302,6 +305,7 @@ void KPhononCompactDiscPrivate::tick(qint64 t)
 
 void KPhononCompactDiscPrivate::stateChanged(Phonon::State newstate, Phonon::State)
 {
+    qDebug() << "stateChanged with state " << newstate;
     KCompactDisc::DiscStatus status;
 	Q_Q(KCompactDisc);
 
@@ -321,6 +325,7 @@ void KPhononCompactDiscPrivate::stateChanged(Phonon::State newstate, Phonon::Sta
 		default:
             if(m_tracks == 0) {
 				m_tracks = m_producerWidget->m_mediaController->availableTitles();
+				qDebug() << "Got " << m_tracks << " tracks from media controller";
 				if(m_tracks > 0) {
                     qDebug() << "New disc with " << m_tracks << " tracks";
 
