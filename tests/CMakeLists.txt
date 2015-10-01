@@ -1,4 +1,4 @@
 # test - sample test everything app
 
-add_executable(testkcd testkcd.cpp)
-target_link_libraries(testkcd KF5::CompactDisc ${CDIO_LIBRARIES})
+add_executable(ripdisc ripdisc.cpp)
+target_link_libraries(ripdisc KF5::CompactDisc ${CDIO_LIBRARIES})

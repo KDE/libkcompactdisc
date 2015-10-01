@@ -17,25 +17,56 @@
  *  Boston, MA 02110-1301, USA.
  */
 
-#ifndef KCOMPACTDISC_H
-#define KCOMPACTDISC_H
+#ifndef TRACK_H
+#define TRACK_H
 
-#include <QList>
+#include <QtGlobal>
+#include <QString>
 
-#include <Solid/Block>
-#include <Solid/Device>
-#include <Solid/OpticalDrive>
+#include <cdio/cdio.h>
+#include <cdio/cdtext.h>
+#include <cdio/audio.h>
 
+#include "audiofile.h"
 #include "kcompactdisc_export.h"
 
 namespace KCompactDisc {
 
-KCOMPACTDISC_EXPORT QList<Solid::OpticalDrive *> allOpticalDrives();
-KCOMPACTDISC_EXPORT QList<QUrl> allOpticalDriveNodes();
+class KCOMPACTDISC_EXPORT Track
+{
+    public:
 
-KCOMPACTDISC_EXPORT Solid::OpticalDrive *defaultOpticalDrive();
-KCOMPACTDISC_EXPORT QUrl defaultOpticalDriveNode();
+    Track(CdIo_t *cdioDevice, cdtext_t *cdTextData, quint8 trackNo);
+    Track(const Track &other);
+    ~Track();
+
+    // track information
+    quint8 trackNo();
+    quint32 length();
+
+    // cdtext data
+    QString title();
+    QString artist();
+    QString songwriter();
+    QString composer();
+    QString arranger();
+    QString genre();
+
+    // cdtext extra data
+    QString cdtextMessage();
+    QString upcEan();
+    QString isrc();
+
+    // audio data
+    AudioFile *audioFile(AudioFile::DataMode dataMode);
+
+    private:
+
+    class TrackPrivate;
+    TrackPrivate *d_ptr;
+    Q_DECLARE_PRIVATE(Track)
+};
 
 } // namespace KCompactDisc
 
-#endif // KCOMPACTDISC_H
+#endif // TRACK_H

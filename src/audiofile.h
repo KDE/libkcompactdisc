@@ -17,20 +17,28 @@
  *  Boston, MA 02110-1301, USA.
  */
 
-#ifndef CDIOAUDIOFILE_H
-#define CDIOAUDIOFILE_H
+#ifndef AUDIOFILE_H
+#define AUDIOFILE_H
 
 #include <QIODevice>
 #include <cdio/cdio.h>
+#include <kcompactdisc_export.h>
 
-class CdioAudioFile : public QIODevice
+namespace KCompactDisc {
+
+class KCOMPACTDISC_EXPORT AudioFile : public QIODevice
 {
     Q_OBJECT
 
     public:
 
-    explicit CdioAudioFile(CdIo_t *cdioDevice, quint16 trackNo, QObject *parent = 0);
-    virtual ~CdioAudioFile();
+    enum DataMode {
+        RawData = 0x01,
+        WaveFile = 0x02
+    };
+
+    explicit AudioFile(CdIo_t *cdioDevice, quint16 trackNo, DataMode dataMode = RawData, QObject *parent = 0);
+    virtual ~AudioFile();
 
     bool open(OpenMode mode) Q_DECL_OVERRIDE;
     bool atEnd() const Q_DECL_OVERRIDE;
@@ -48,11 +56,36 @@ class CdioAudioFile : public QIODevice
     private:
 
     CdIo_t *mCdioDevice;
+    DataMode mDataMode;
     quint16 mTrackNo;
     quint64 mSectorsPerRead;
+
     lsn_t mLsnStart;
     lsn_t mLsnCurrent;
     lsn_t mLsnEnd;
+    quint32 mDataSize;
+    qint64 mCurrentOffset;
+
+    struct WavHeader {
+        char    RiffChunkId[4];
+        quint32 RiffChunkSize;
+        char    RiffChunkFormat[4];
+
+        char    FormatChunkId[4];
+        quint32 FormatChunkSize;
+
+        quint16 AudioFormat;
+        quint16 NumChannels;
+        quint32 SampleRate;
+        quint32 ByteRate;
+        quint16 BlockAlign;
+        quint16 BitsPerSample;
+
+        char    DataChunkId[4];
+        quint32 DataChunkSize;
+    } mWavHeader;
 };
 
-#endif // CDIOAUDIOFILE_H
+} // namespace KCompactDisc
+
+#endif // AUDIOFILE_H

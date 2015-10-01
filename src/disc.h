@@ -17,25 +17,38 @@
  *  Boston, MA 02110-1301, USA.
  */
 
-#ifndef KCOMPACTDISC_H
-#define KCOMPACTDISC_H
+#ifndef DISC_H
+#define DISC_H
 
-#include <QList>
-
-#include <Solid/Block>
-#include <Solid/Device>
-#include <Solid/OpticalDrive>
-
+#include <QObject>
+#include "track.h"
 #include "kcompactdisc_export.h"
 
 namespace KCompactDisc {
 
-KCOMPACTDISC_EXPORT QList<Solid::OpticalDrive *> allOpticalDrives();
-KCOMPACTDISC_EXPORT QList<QUrl> allOpticalDriveNodes();
+class KCOMPACTDISC_EXPORT Disc : public QObject
+{
+    Q_OBJECT
 
-KCOMPACTDISC_EXPORT Solid::OpticalDrive *defaultOpticalDrive();
-KCOMPACTDISC_EXPORT QUrl defaultOpticalDriveNode();
+    public:
+
+    explicit Disc(const QUrl &deviceNode, QObject *parent = 0);
+    virtual ~Disc();
+
+    QString albumArtist();
+    QString albumTitle();
+
+    quint8 numTracks();
+    QList<Track> tracks();
+    Track track(quint8 trackNo);
+
+    private:
+
+    class DiscPrivate;
+    DiscPrivate *d_ptr;
+    Q_DECLARE_PRIVATE(Disc)
+};
 
 } // namespace KCompactDisc
 
-#endif // KCOMPACTDISC_H
+#endif // DISC_H
