@@ -7,9 +7,12 @@ include(MacroLibrary)
 add_definitions(${QT_DEFINITIONS} ${KDE4_DEFINITIONS})
 
 ## Compiler flags
-if(CMAKE_COMPILER_IS_GNUCXX)
-    set(CMAKE_C_FLAGS "-std=c99")   ## ALSA no longer compiles with -std=c90, see https://bugzilla.novell.com/show_bug.cgi?id=817077
+if (CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
+    # ALSA does not build with the default -std=iso9899:1990 from FindKDE4Internal.cmake.
+    # See https://bugzilla.novell.com/show_bug.cgi?id=817077 for more information.
+    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -std=c99")
 endif()
+
 find_package(Alsa)
 alsa_configure_file(${CMAKE_CURRENT_BINARY_DIR}/config-alsa.h)
 
