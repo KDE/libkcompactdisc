@@ -26,9 +26,9 @@
 #include "../include/wm_struct.h"
 #include "../include/wm_config.h"
 
-#include <config-alsa.h>
+#ifdef HAVE_LIBASOUND2
 
-#if defined(HAVE_LIBASOUND2)
+#include <config-alsa.h>
 
 #ifdef HAVE_ALSA_ASOUNDLIB_H
 #	include <alsa/asoundlib.h>

@@ -14,7 +14,10 @@ if (CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
 endif()
 
 find_package(Alsa)
-alsa_configure_file(${CMAKE_CURRENT_BINARY_DIR}/config-alsa.h)
+if(ALSA_FOUND)
+    alsa_configure_file(${CMAKE_CURRENT_BINARY_DIR}/config-alsa.h)
+    add_definitions(-DHAVE_LIBASOUND2)
+endif(ALSA_FOUND)
 
 include_directories(${KDE4_INCLUDES})
 include_directories(${CMAKE_CURRENT_BINARY_DIR} ${CMAKE_CURRENT_SOURCE_DIR})
