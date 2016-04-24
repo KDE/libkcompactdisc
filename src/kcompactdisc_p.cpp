@@ -24,7 +24,8 @@
 #include "phonon_interface.h"
 
 #include <QtGlobal>
-#include <klocale.h>
+
+#include <KLocalizedString>
 
 Q_LOGGING_CATEGORY(CD_PLAYLIST, "cd.playlist")
 

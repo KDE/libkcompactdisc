@@ -25,7 +25,7 @@
 
 #include <QtGlobal>
 
-#include <klocale.h>
+#include <KLocalizedString>
 
 #include <phonon/Global>
 #include <phonon/MediaObject>

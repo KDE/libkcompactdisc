@@ -67,7 +67,6 @@ set_target_properties(KF5CompactDisc PROPERTIES
 target_link_libraries(KF5CompactDisc
     Qt5::DBus
     KF5::CoreAddons
-    KF5::KDELibs4Support
     KF5::Solid
     KF5::I18n
     Phonon::phonon4qt5

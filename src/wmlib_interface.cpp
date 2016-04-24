@@ -22,7 +22,7 @@
 
 #include <QtGlobal>
 
-#include <klocale.h>
+#include <KLocalizedString>
 
 extern "C"
 {
