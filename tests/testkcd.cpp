@@ -4,7 +4,7 @@
 #include <QCoreApplication>
 #include <QtGlobal>
 
-#include <KCompactDisc/KCompactDisc>
+#include <kcompactdisc.h>
 
 class TestKCD : public QObject
 {

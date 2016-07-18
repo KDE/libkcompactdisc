@@ -62,6 +62,7 @@ add_library(KF5::CompactDisc ALIAS KF5CompactDisc)
 set_target_properties(KF5CompactDisc PROPERTIES
     VERSION ${KCOMPACTDISC_VERSION}
     SOVERSION ${KCOMPACTDISC_SOVERSION}
+    EXPORT_NAME CompactDisc
 )
 
 target_link_libraries(KF5CompactDisc
@@ -81,24 +82,26 @@ if (USE_WMLIB)
     target_link_libraries(KF5CompactDisc ${CMAKE_THREAD_LIBS_INIT})
 endif (USE_WMLIB)
 
-target_include_directories(KF5CompactDisc PUBLIC $<INSTALL_INTERFACE:${KF5_INCLUDE_INSTALL_DIR}/KCompactDisc>)
-ecm_generate_headers(KCOMPACTDISC_HEADERS
-    HEADER_NAMES KCompactDisc
-    PREFIX KCompactDisc
-    REQUIRED_HEADERS KCOMPACTDISC_REQ_HEADERS
+target_include_directories(KF5CompactDisc INTERFACE "$<INSTALL_INTERFACE:${KDE_INSTALL_INCLUDEDIR_KF5}/KCompactDisc>")
+ecm_generate_headers(KCompactDisc_HEADERS
+    HEADER_NAMES 
+    KCompactDisc
+    REQUIRED_HEADERS KCompactDisc_HEADERS
 )
-generate_export_header(KF5CompactDisc BASE_NAME kcompactdisc)
+generate_export_header(KF5CompactDisc BASE_NAME KCompactDisc)
 
 ecm_generate_pri_file(
     BASE_NAME KCompactDisc
     LIB_NAME KF5CompactDisc
     DEPS "core dbus phonon4qt5 KCoreAddons KI18n Solid"
     FILENAME_VAR PRI_FILENAME
+    INCLUDE_INSTALL_DIR ${KDE_INSTALL_INCLUDEDIR_KF5}/KCompactDisc
 )
 
 
-install(TARGETS KF5CompactDisc EXPORT KF5CompactDiscTargets ${INSTALL_TARGETS_DEFAULT_ARGS})
-install(FILES ${KCOMPACTDISC_HEADERS} DESTINATION ${KF5_INCLUDE_INSTALL_DIR}/KCompactDisc/KCompactDisc COMPONENT Devel)
-install(FILES ${KCOMPACTDISC_REQ_HEADERS} DESTINATION ${KF5_INCLUDE_INSTALL_DIR}/KCompactDisc/kcompactdisc COMPONENT Devel)
-install(FILES ${CMAKE_CURRENT_BINARY_DIR}/kcompactdisc_export.h DESTINATION ${KF5_INCLUDE_INSTALL_DIR}/KCompactDisc/kcompactdisc COMPONENT Devel)
+install(TARGETS KF5CompactDisc EXPORT KF5CompactDiscTargets ${KF5_INSTALL_TARGETS_DEFAULT_ARGS})
+install(FILES 
+    ${CMAKE_CURRENT_BINARY_DIR}/kcompactdisc_export.h 
+    ${KCompactDisc_HEADERS} 
+    DESTINATION ${KDE_INSTALL_INCLUDEDIR_KF5}/KCompactDisc COMPONENT Devel)
 install(FILES ${PRI_FILENAME} DESTINATION ${ECM_MKSPECS_INSTALL_DIR})
