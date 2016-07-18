@@ -1,25 +1,32 @@
-﻿cmake_minimum_required(VERSION 3.0.2)
-project(libkcompactdisc VERSION 5.0.0)
+﻿cmake_minimum_required(VERSION 2.8.12)
 
-set(QT5_REQUIRED_VERSION 5.4.0)
-set(KF5_REQUIRED_VERSION 5.13.0)
+project(libkcompactdisc)
 
-find_package(ECM ${KF5_REQUIRED_VERSION} NO_MODULE REQUIRED)
-set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${ECM_MODULE_PATH} ${ECM_KDE_MODULE_DIR})
+set(REQUIRED_QT_VERSION 5.4.0)
+set(KF5_VERSION "5.25.0") # handled by release scripts
+set(KF5_DEP_VERSION "5.24.0") # handled by release scripts
+
+# Dependencies
+include(FeatureSummary)
+find_package(ECM 5.24.0  NO_MODULE)
+set_package_properties(ECM PROPERTIES TYPE REQUIRED DESCRIPTION "Extra CMake Modules." URL "https://projects.kde.org/projects/kdesupport/extra-cmake-modules")
+feature_summary(WHAT REQUIRED_PACKAGES_NOT_FOUND FATAL_ON_MISSING_REQUIRED_PACKAGES)
+
+set(CMAKE_MODULE_PATH ${ECM_MODULE_PATH} ${ECM_KDE_MODULE_DIR})
 
 include(KDEInstallDirs)
 include(KDECMakeSettings)
 include(KDECompilerSettings NO_POLICY_SCOPE)
-include(CMakePackageConfigHelpers)
 include(ECMGenerateHeaders)
 include(ECMSetupVersion)
 include(ECMGeneratePriFile)
 include(GenerateExportHeader)
-include(FeatureSummary)
+include(ECMPackageConfigHelpers)
 
 # Version Setup
 
-ecm_setup_version(PROJECT
+ecm_setup_version(
+    ${KF5_VERSION}
     VARIABLE_PREFIX KCOMPACTDISC
     VERSION_HEADER ${CMAKE_CURRENT_BINARY_DIR}/kcompactdisc_version.h
     PACKAGE_VERSION_FILE ${CMAKE_CURRENT_BINARY_DIR}/KF5CompactDiscConfigVersion.cmake
@@ -28,8 +35,8 @@ ecm_setup_version(PROJECT
 
 # Qt5, KF5 and Phonon Packages
 
-find_package(Qt5 ${QT5_REQUIRED_VERSION} REQUIRED COMPONENTS Core DBus)
-find_package(KF5 ${KF5_REQUIRED_VERSION} REQUIRED COMPONENTS CoreAddons KDELibs4Support Solid I18n)
+find_package(Qt5 ${REQUIRED_QT_VERSION} REQUIRED COMPONENTS Core DBus)
+find_package(KF5 ${KF5_DEP_VERSION} REQUIRED COMPONENTS CoreAddons KDELibs4Support Solid I18n)
 find_package(Phonon4Qt5 4.8.0 CONFIG REQUIRED)
 
 # Sources
@@ -46,7 +53,7 @@ add_subdirectory(tests)
 
 set(CMAKECONFIG_INSTALL_DIR ${CMAKECONFIG_INSTALL_PREFIX}/KF5CompactDisc)
 
-configure_package_config_file(
+ecm_configure_package_config_file(
     ${CMAKE_CURRENT_SOURCE_DIR}/KF5CompactDiscConfig.cmake.in
     ${CMAKE_CURRENT_BINARY_DIR}/KF5CompactDiscConfig.cmake
     INSTALL_DESTINATION ${CMAKECONFIG_INSTALL_DIR}
@@ -73,4 +80,3 @@ install(FILES
     COMPONENT Devel
 )
 
-feature_summary(WHAT ALL FATAL_ON_MISSING_REQUIRED_PACKAGES)
