@@ -23,14 +23,15 @@
 
 #include "phonon_interface.h"
 
-#include <kdebug.h>
-#include <klocale.h>
+#include <QtGlobal>
 
-#include <Phonon/Global>
-#include <Phonon/MediaObject>
-#include <Phonon/AudioOutput>
-#include <Phonon/Path>
-#include <Phonon/MediaController>
+#include <KLocalizedString>
+
+#include <phonon/Global>
+#include <phonon/MediaObject>
+#include <phonon/AudioOutput>
+#include <phonon/Path>
+#include <phonon/MediaController>
 
 #include <solid/device.h>
 #include <solid/opticaldrive.h>
@@ -99,6 +100,7 @@ KPhononCompactDiscPrivate::~KPhononCompactDiscPrivate()
 
 bool KPhononCompactDiscPrivate::createInterface()
 {
+	qDebug() << "createInterface called";
 	Solid::Device opticalDevice(m_udi);
 	Solid::OpticalDrive *opticalDrive = opticalDevice.as<Solid::OpticalDrive>();
 
@@ -124,12 +126,14 @@ ProducerWidget *KPhononCompactDiscPrivate::producer()
 	if(!m_producerWidget) {
 		Solid::Device opticalDevice(m_udi);
 		Solid::OpticalDrive *opticalDrive = opticalDevice.as<Solid::OpticalDrive>();
+		qDebug() << "producer called, opticalDrive is " << opticalDrive;
 
 		if(opticalDrive) {
 			Solid::OpticalDisc *opticalDisc = opticalDevice.as<Solid::OpticalDisc>();
-			kDebug() << "opticalDisc " << opticalDisc;
+            qDebug() << "opticalDisc " << opticalDisc;
 			//if(opticalDisc && (opticalDisc->availableContent() == Solid::OpticalDisc::Audio)) {
 				m_producerWidget = new ProducerWidget(this, m_udi);
+				stateChanged(m_producerWidget->m_media->state(), Phonon::StoppedState);
 			//}
 		}
 	}
@@ -155,7 +159,7 @@ void KPhononCompactDiscPrivate::playTrackPosition(unsigned track, unsigned posit
     if(!producer())
 		return;
 
-	kDebug() << "play track " << track << " position " << position;
+    qDebug() << "play track " << track << " position " << position;
 
     m_producerWidget->m_mediaController->setCurrentTitle(track);
     m_producerWidget->m_media->seek(SEC2MS(position));
@@ -236,8 +240,8 @@ void KPhononCompactDiscPrivate::queryMetadata()
 		return;
 
 	QMultiMap<QString, QString> data = m_producerWidget->m_media->metaData();
-	kDebug() << "METADATA";
-	//kDebug() << data;
+    qDebug() << "METADATA";
+    //qDebug() << data;
 
 	m_trackArtists[0] = data.take(QLatin1String( "ARTIST" ));
 	m_trackTitles[0] = data.take(QLatin1String( "ALBUM" ));
@@ -287,7 +291,7 @@ void KPhononCompactDiscPrivate::tick(qint64 t)
 	m_discPosition = m_trackPosition;
 	// Update the current playing position.
 	if(m_seek) {
-		kDebug() << "seek: " << m_seek << " trackPosition " << m_trackPosition;
+        qDebug() << "seek: " << m_seek << " trackPosition " << m_trackPosition;
 		if(abs((long)(m_trackExpectedPosition - m_trackPosition)) > m_seek)
 			m_seek = 0;
 		else
@@ -301,6 +305,7 @@ void KPhononCompactDiscPrivate::tick(qint64 t)
 
 void KPhononCompactDiscPrivate::stateChanged(Phonon::State newstate, Phonon::State)
 {
+    qDebug() << "stateChanged with state " << newstate;
     KCompactDisc::DiscStatus status;
 	Q_Q(KCompactDisc);
 
@@ -320,8 +325,9 @@ void KPhononCompactDiscPrivate::stateChanged(Phonon::State newstate, Phonon::Sta
 		default:
             if(m_tracks == 0) {
 				m_tracks = m_producerWidget->m_mediaController->availableTitles();
+				qDebug() << "Got " << m_tracks << " tracks from media controller";
 				if(m_tracks > 0) {
-					kDebug() << "New disc with " << m_tracks << " tracks";
+                    qDebug() << "New disc with " << m_tracks << " tracks";
 
 					make_playlist();
 

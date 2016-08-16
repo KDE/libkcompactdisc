@@ -23,16 +23,14 @@
 #include "kcompactdisc_p.h"
 
 #include <QtDBus>
+#include <QUrl>
+#include <QtGlobal>
 
-#include <kdebug.h>
-#include <kurl.h>
-#include <klocale.h>
+#include <Solid/Device>
+#include <Solid/Block>
+#include <Solid/OpticalDrive>
 
-#include <solid/device.h>
-#include <solid/block.h>
-#include <solid/opticaldrive.h>
-
-static QMap<QString, KUrl> cdromsNameToDeviceUrl;
+static QMap<QString, QUrl> cdromsNameToDeviceUrl;
 static QMap<QString, QString> cdromsNameToUdi;
 static QString ___null = QString();
 
@@ -41,11 +39,11 @@ static void refreshListOfCdromDevices()
     cdromsNameToDeviceUrl.clear();
     cdromsNameToUdi.clear();
     QString name, type;
-    KUrl url;
+    QUrl url;
 
     //get a list of all devices that are Cdrom
     foreach(const Solid::Device &device, Solid::Device::listFromType(Solid::DeviceInterface::OpticalDrive)) {
-        kDebug() << device.udi().toLatin1().constData();
+        qDebug() << device.udi().toLatin1().constData();
         const Solid::Block *b = device.as<Solid::Block>();
         
         if(!b) {
@@ -55,7 +53,7 @@ static void refreshListOfCdromDevices()
         const Solid::OpticalDrive *o = device.as<Solid::OpticalDrive>();
         Solid::OpticalDrive::MediumTypes mediumType = o->supportedMedia();
 
-        url = KUrl::fromPath(QLatin1String( b->device().toLatin1() ));
+        url = QUrl::fromUserInput(QLatin1String( b->device().toLatin1() ));
         //TODO translate them ?
         if(mediumType < Solid::OpticalDrive::Cdrw) {
             type = QLatin1String( "CD-ROM" );
@@ -81,12 +79,12 @@ static void refreshListOfCdromDevices()
     }
 #if 0
     if(cdromsNameToDeviceUrl.empty()) {
-        cdromsNameToDeviceUrl.insert(QString("Generic CDROM []"), KUrl::fromPath(wm_drive_default_device()));
+        cdromsNameToDeviceUrl.insert(QString("Generic CDROM []"), QUrl::fromPath(wm_drive_default_device()));
     }
 #endif
 }
 
-static QMap<QString, KUrl> &getListOfCdromDevicesNamesAndUrl()
+static QMap<QString, QUrl> &getListOfCdromDevicesNamesAndUrl()
 {
     if(cdromsNameToDeviceUrl.empty())
         refreshListOfCdromDevices();
@@ -102,23 +100,23 @@ static QMap<QString, QString> &getListOfCdromDevicesNamesAndUdi()
     return cdromsNameToUdi;
 }
 
-QString KCompactDisc::urlToDevice(const KUrl& deviceUrl)
+QString KCompactDisc::urlToDevice(const QUrl &deviceUrl)
 {
-    if(deviceUrl.protocol() == QLatin1String( "media" ) || deviceUrl.protocol() == QLatin1String( "system" )) {
-        kDebug() << "Asking mediamanager for " << deviceUrl.fileName();
+    if(deviceUrl.scheme() == QLatin1String( "media" ) || deviceUrl.scheme() == QLatin1String( "system" )) {
+        qDebug() << "Asking mediamanager for " << deviceUrl.fileName();
 
         QDBusInterface mediamanager( QLatin1String( "org.kde.kded" ), QLatin1String( "/modules/mediamanager" ), QLatin1String( "org.kde.MediaManager" ) );
         QDBusReply<QStringList> reply = mediamanager.call(QLatin1String( "properties" ), deviceUrl.fileName());
 
         QStringList properties = reply;
         if(!reply.isValid() || properties.count() < 6) {
-            kError() << "Invalid reply from mediamanager" << endl;
+            qCritical() << "Invalid reply from mediamanager" << endl;
             return deviceUrl.path();
         } else {
-            kDebug() << "Reply from mediamanager " << properties[5];
+            qDebug() << "Reply from mediamanager " << properties[5];
             return properties[5];
         }
-    } else if(deviceUrl.protocol() == QLatin1String( "file" )) {
+    } else if(deviceUrl.scheme() == QLatin1String( "file" )) {
         return deviceUrl.path();
     } else {
         return QString();
@@ -152,21 +150,21 @@ const QString KCompactDisc::defaultCdromDeviceName()
     else return QString();
 }
 
-const KUrl KCompactDisc::defaultCdromDeviceUrl()
+const QUrl KCompactDisc::defaultCdromDeviceUrl()
 {
-    const QList<KUrl> urls = getListOfCdromDevicesNamesAndUrl().values();
+    const QList<QUrl> urls = getListOfCdromDevicesNamesAndUrl().values();
     if (!urls.isEmpty()) return urls[0];
-    else return KUrl();
+    else return QUrl();
 }
 
-const KUrl KCompactDisc::cdromDeviceUrl(const QString &cdromDeviceName)
+const QUrl KCompactDisc::cdromDeviceUrl(const QString &cdromDeviceName)
 {
-    const QMap<QString, KUrl> &nameUrls = getListOfCdromDevicesNamesAndUrl();
-    KUrl result = nameUrls.value(cdromDeviceName);
+    const QMap<QString, QUrl> &nameUrls = getListOfCdromDevicesNamesAndUrl();
+    QUrl result = nameUrls.value(cdromDeviceName);
     if (!result.isValid())
     {
-        const KUrl passedUrl(cdromDeviceName);
-        foreach(const KUrl &url, nameUrls)
+        const QUrl passedUrl(cdromDeviceName);
+        foreach(const QUrl &url, nameUrls)
         {
             if (url == passedUrl)
             {
@@ -227,7 +225,7 @@ const QString &KCompactDisc::deviceName()
     return d->m_deviceName;
 }
 
-const KUrl KCompactDisc::deviceUrl()
+const QUrl KCompactDisc::deviceUrl()
 {
     Q_D(KCompactDisc);
     return KCompactDisc::cdromDeviceUrl(d->m_deviceName);
@@ -378,7 +376,7 @@ void KCompactDisc::playTrack(unsigned track)
 
 	d->m_statusExpected = KCompactDisc::Playing;
     d->m_trackExpectedPosition = 0;
-    d->m_seek = abs( (double) d->m_trackExpectedPosition - trackPosition());
+    d->m_seek = abs(int(d->m_trackExpectedPosition - trackPosition()));
 
 	d->playTrackPosition(track, 0);
 }
@@ -389,7 +387,7 @@ void KCompactDisc::playPosition(unsigned position)
 
 	d->m_statusExpected = Playing;
     d->m_trackExpectedPosition = position;
-    d->m_seek = abs( (double) d->m_trackExpectedPosition - trackPosition());
+    d->m_seek = abs(int(d->m_trackExpectedPosition - trackPosition()));
 
 	d->playTrackPosition(d->m_track, position);
 }
@@ -530,7 +528,7 @@ bool KCompactDisc::setDevice(const QString &deviceName, unsigned volume,
 {
 	const QString as = digitalPlayback ? audioSystem : QLatin1String("cdin");
 	const QString ad = digitalPlayback ? audioDevice : QString();
-    kDebug() << "Device init: " << deviceName << ", " << as << ", " << ad;
+    qDebug() << "Device init: " << deviceName << ", " << as << ", " << ad;
 
 	if(d_ptr->moveInterface(deviceName, as, ad)) {
 		setVolume(volume);
@@ -544,14 +542,14 @@ bool KCompactDisc::setDevice(const QString &deviceName, unsigned volume,
 void KCompactDisc::setVolume(unsigned volume)
 {
 	Q_D(KCompactDisc);
-    kDebug() << "change volume: " << volume;
+    qDebug() << "change volume: " << volume;
 	d->setVolume(volume);
 }
 
 void KCompactDisc::setBalance(unsigned balance)
 {
 	Q_D(KCompactDisc);
-    kDebug() << "change balance: " << balance;
+    qDebug() << "change balance: " << balance;
 	d->setBalance(balance);
 }
 

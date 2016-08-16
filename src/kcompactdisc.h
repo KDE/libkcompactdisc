@@ -22,28 +22,12 @@
 #ifndef KCOMPACTDISC_H
 #define KCOMPACTDISC_H
 
-#include <QtCore/QObject>
-#include <QtCore/QTimer>
-#include <QtCore/QStringList>
+#include <QObject>
+#include <QStringList>
+#include <QUrl>
+#include <QTimer>
 
-#include <kdemacros.h>
-#include <kurl.h>
-
-#if defined Q_OS_WIN
-
-#ifndef KCOMPACTDISC_EXPORT
-# ifdef MAKE_KCOMPACTDISC_LIB
-#  define KCOMPACTDISC_EXPORT KDE_EXPORT
-# else
-#  define KCOMPACTDISC_EXPORT KDE_IMPORT
-# endif
-#endif
-
-#else /* UNIX */
-
-/* export statements for unix */
-#define KCOMPACTDISC_EXPORT KDE_EXPORT
-#endif
+#include "kcompactdisc_export.h"
 
 class KCompactDiscPrivate;
 
@@ -191,7 +175,7 @@ public:
      * If the url is a media:/ or system:/ URL returns
      * the device it represents, otherwise returns device
      */
-    static QString urlToDevice(const KUrl& url);
+    static QString urlToDevice(const QUrl& url);
 
     /**
      * All installed audio backends.
@@ -211,12 +195,12 @@ public:
     /**
      * The Url of default CDROM device for this system.
      */
-    static const KUrl defaultCdromDeviceUrl();
+    static const QUrl defaultCdromDeviceUrl();
 
     /**
      * The Url of named CDROM device for this system.
      */
-	static const KUrl cdromDeviceUrl(const QString &);
+    static const QUrl cdromDeviceUrl(const QString &);
 
     /**
      * The Udi of default CDROM device for this system.
@@ -257,9 +241,9 @@ public:
     const QString &deviceName();
 
     /**
-     * Current device as Kurl.
+     * Current device as QUrl.
      */
-    const KUrl deviceUrl();
+    const QUrl deviceUrl();
 
     /**
      * Current disc, 0 if no disc or impossible to calculate id.

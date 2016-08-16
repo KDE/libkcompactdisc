@@ -23,10 +23,13 @@
 
 #include <QString>
 #include <QList>
+#include <QLoggingCategory>
+#include <QtGlobal>
 
 #include <krandomsequence.h>
-#include <kurl.h>
 #include "kcompactdisc.h"
+
+Q_DECLARE_LOGGING_CATEGORY(CD_PLAYLIST)
 
 class KCompactDiscPrivate : public QObject
 {
@@ -34,7 +37,7 @@ class KCompactDiscPrivate : public QObject
 
 	public:
 		KCompactDiscPrivate(KCompactDisc *, const QString&);
-		virtual ~KCompactDiscPrivate() { };
+        virtual ~KCompactDiscPrivate() { }
 	
 		bool moveInterface(const QString &, const QString &, const QString &);
 		virtual bool createInterface();
