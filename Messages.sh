@@ -1,2 +1,2 @@
 #! /bin/sh
-$XGETTEXT *.cpp -o $podir/libkcompactdisc.pot
+$XGETTEXT src/*.cpp -o $podir/libkcompactdisc.pot
