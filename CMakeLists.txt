@@ -4,7 +4,6 @@ project(libkcompactdisc)
 
 set(REQUIRED_QT_VERSION 5.4.0)
 set(PROJECT_VERSION "16.08.0")
-set(KF5_VERSION ${PROJECT_VERSION})
 set(KF5_DEP_VERSION "5.24.0") # handled by release scripts
 
 # Dependencies
@@ -27,11 +26,11 @@ include(ECMPackageConfigHelpers)
 # Version Setup
 
 ecm_setup_version(
-    ${KF5_VERSION}
+    "5.0.0"
     VARIABLE_PREFIX KCOMPACTDISC
     VERSION_HEADER ${CMAKE_CURRENT_BINARY_DIR}/kcompactdisc_version.h
     PACKAGE_VERSION_FILE ${CMAKE_CURRENT_BINARY_DIR}/KF5CompactDiscConfigVersion.cmake
-    SOVERSION 16
+    SOVERSION 5
 )
 
 # Qt5, KF5 and Phonon Packages
