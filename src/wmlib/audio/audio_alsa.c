@@ -26,15 +26,10 @@
 #include "../include/wm_struct.h"
 #include "../include/wm_config.h"
 
-#ifdef HAVE_LIBASOUND2
+#ifdef HAVE_ALSA
 
 #include <config-alsa.h>
-
-#ifdef HAVE_ALSA_ASOUNDLIB_H
-#	include <alsa/asoundlib.h>
-#elif defined(HAVE_SYS_ASOUNDLIB_H)
-#	include <sys/asoundlib.h>
-#endif
+#include <alsa/asoundlib.h>
 
 static char *device = NULL;
 static snd_pcm_t *handle;
@@ -353,4 +348,4 @@ setup_alsa(const char *dev, const char *ctl)
   return &alsa_oops;
 }
 
-#endif /* HAVE_LIBASOUND2 */
+#endif /* HAVE_ALSA */

@@ -6,8 +6,14 @@ if(CMAKE_COMPILER_IS_GNUCXX)
     set(CMAKE_C_FLAGS "-std=c99")   ## ALSA no longer compiles with -std=c90, see https://bugzilla.novell.com/show_bug.cgi?id=817077
 endif()
 
-find_package(Alsa)
-alsa_configure_file(${CMAKE_CURRENT_BINARY_DIR}/config-alsa.h)
+find_package(ALSA)
+set_package_properties(ALSA PROPERTIES
+                       URL "http://www.alsa-project.org/"
+                       DESCRIPTION "ALSA provides audio and MIDI functionality"
+                       TYPE OPTIONAL
+                       PURPOSE "Play back audo CDs via ALSA")
+set(HAVE_ALSA ${ALSA_FOUND})
+configure_file(config-alsa.h.cmake ${CMAKE_CURRENT_BINARY_DIR}/config-alsa.h)
 
 set(wmlib_audio_SRCS
         wmlib/audio/audio.c
@@ -73,9 +79,9 @@ target_link_libraries(KF5CompactDisc
     Phonon::phonon4qt5
 )
 
-if (HAVE_LIBASOUND2)
-    target_link_libraries(KF5CompactDisc ${ASOUND_LIBRARY})
-endif (HAVE_LIBASOUND2)
+if (HAVE_ALSA)
+    target_link_libraries(KF5CompactDisc ${ALSA_LIBRARY})
+endif ()
 
 if (USE_WMLIB)
     find_package(Threads)

@@ -128,7 +128,7 @@ const QStringList KCompactDisc::audioSystems()
     QStringList list;
 
     list << QLatin1String( "phonon" )
-#if defined(HAVE_LIBASOUND2)
+#if defined(HAVE_ALSA)
         << QLatin1String( "alsa" )
 #endif
 #if defined(sun) || defined(__sun__)

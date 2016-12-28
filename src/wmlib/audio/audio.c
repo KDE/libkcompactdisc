@@ -19,7 +19,7 @@
 #include "audio.h"
 #include "../include/wm_config.h"
 
-#ifdef HAVE_LIBASOUND2
+#ifdef HAVE_ALSA
 #include <config-alsa.h>
 #endif
 #include <string.h>
@@ -43,7 +43,7 @@ struct audio_oops *setup_soundsystem(const char *ss, const char *dev, const char
   if(!strcmp(ss, "arts"))
     return setup_arts(dev, ctl);
 #endif
-#if defined(HAVE_LIBASOUND2)
+#if defined(HAVE_ALSA)
   if(!strcmp(ss, "alsa"))
     return setup_alsa(dev, ctl);
 #endif
