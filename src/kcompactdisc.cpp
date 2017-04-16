@@ -22,6 +22,8 @@
 #include "kcompactdisc.h"
 #include "kcompactdisc_p.h"
 
+#include <config-alsa.h>
+
 #include <QtDBus>
 #include <QUrl>
 #include <QtGlobal>

@@ -26,9 +26,10 @@
 #include "../include/wm_struct.h"
 #include "../include/wm_config.h"
 
+#include <config-alsa.h>
+
 #ifdef HAVE_ALSA
 
-#include <config-alsa.h>
 #include <alsa/asoundlib.h>
 
 static char *device = NULL;

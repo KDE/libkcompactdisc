@@ -19,9 +19,8 @@
 #include "audio.h"
 #include "../include/wm_config.h"
 
-#ifdef HAVE_ALSA
 #include <config-alsa.h>
-#endif
+
 #include <string.h>
 
 struct audio_oops *setup_phonon(const char *dev, const char *ctl);
