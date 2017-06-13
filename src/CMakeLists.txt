@@ -15,6 +15,10 @@ set_package_properties(ALSA PROPERTIES
 set(HAVE_ALSA ${ALSA_FOUND})
 configure_file(config-alsa.h.cmake ${CMAKE_CURRENT_BINARY_DIR}/config-alsa.h)
 
+if (HAVE_ALSA)
+    include_directories(${ALSA_INCLUDE_DIRS})
+endif ()
+
 set(wmlib_audio_SRCS
         wmlib/audio/audio.c
         wmlib/audio/audio_arts.c
