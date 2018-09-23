@@ -138,7 +138,7 @@ struct wm_drive
 {
 	int  cdda;            /* cdda 1, cdin 0 */
 
-	/* commpn section */
+	/* common section */
 	char *cd_device;
 	char *soundsystem;
 	char *sounddevice;

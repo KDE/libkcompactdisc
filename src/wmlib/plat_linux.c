@@ -27,7 +27,6 @@
 #include "include/wm_struct.h"
 #include "include/wm_cdtext.h"
 #include "include/wm_cdda.h"
-#include "include/wm_struct.h"
 #include "include/wm_platform.h"
 #include "include/wm_cdrom.h"
 #include "include/wm_scsi.h"

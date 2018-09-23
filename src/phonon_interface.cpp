@@ -333,7 +333,7 @@ void KPhononCompactDiscPrivate::stateChanged(Phonon::State newstate, Phonon::Sta
 
 					m_trackArtists.append(i18n("Unknown Artist"));
 					m_trackTitles.append(i18n("Unknown Title"));
-					for(unsigned i = 1; i <= m_tracks; i++) {
+					for(unsigned i = 1; i <= m_tracks; ++i) {
 						m_trackArtists.append(i18n("Unknown Artist"));
 						m_trackTitles.append(ki18n("Track %1").subs(i, 2).toString());
 					}

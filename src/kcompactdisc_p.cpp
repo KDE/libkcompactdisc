@@ -116,7 +116,7 @@ void KCompactDiscPrivate::make_playlist()
 
     qCDebug(CD_PLAYLIST) << "Playlist has " << size << " entries\n";
 	m_playlist.clear();
-	for(unsigned i = 0; i < size; i++) {
+	for(unsigned i = 0; i < size; ++i) {
 		if(m_randomPlaylist) {
 			do {
 				selected = 1 + m_randSequence.getLong(size);
@@ -130,7 +130,7 @@ void KCompactDiscPrivate::make_playlist()
 
     qCDebug(CD_PLAYLIST) << "dump playlist";
 	QList<unsigned>::const_iterator it;
-	for(it = m_playlist.constBegin(); it != m_playlist.constEnd(); it++) {
+	for(it = m_playlist.constBegin(); it != m_playlist.constEnd(); ++it) {
         qCDebug(CD_PLAYLIST) << " " << *it;
 	}
     qCDebug(CD_PLAYLIST) << "dump playlist end";

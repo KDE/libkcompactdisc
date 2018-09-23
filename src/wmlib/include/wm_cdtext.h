@@ -65,7 +65,7 @@ struct cdtext_info_block {
 };
 
 struct cdtext_info {
-  /* somethimes i get hunderts of bytes, without anyone valid pack
+  /* sometimes i get hundreds of bytes, without anyone valid pack
      my CDU-561 for example */
   int count_of_entries; /* one more because album need one too */
   int count_of_valid_packs;

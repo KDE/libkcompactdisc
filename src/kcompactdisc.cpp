@@ -24,7 +24,8 @@
 
 #include <config-alsa.h>
 
-#include <QtDBus>
+#include <QDBusInterface>
+#include <QDBusReply>
 #include <QUrl>
 #include <QtGlobal>
 

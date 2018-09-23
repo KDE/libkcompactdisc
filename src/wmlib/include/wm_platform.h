@@ -55,8 +55,8 @@
 #define WM_CDM_NO_DISC       10
 #define WM_CDM_UNKNOWN       11
 #define WM_CDM_CDDAERROR     12
-#define WM_CDM_LOADING       13      /* tribute to phonon state mashine */
-#define WM_CDM_BUFFERING     14      /* tribute to phonon state mashine */
+#define WM_CDM_LOADING       13      /* tribute to phonon state machine */
+#define WM_CDM_BUFFERING     14      /* tribute to phonon state machine */
 #define WM_CDM_CDDAACK       0xF0
 
 #endif /* WM_PLATFORM_H */

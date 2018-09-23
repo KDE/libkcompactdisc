@@ -34,7 +34,6 @@
 #include <sys/param.h>
 #include <sys/mount.h>
 #include <fcntl.h>
-#include <sys/param.h>
 #include <sys/stat.h>
 
 #include "include/wm_config.h"

@@ -224,7 +224,7 @@ void KWMLibCompactDiscPrivate::timerExpired()
                     qDebug() << "New disc with " << m_tracks << " tracks";
 					m_discId = wm_cddb_discid(m_handle);
 
-					for(i = 1; i <= m_tracks; i++) {
+					for(i = 1; i <= m_tracks; ++i) {
 						m_trackStartFrames.append(wm_cd_gettrackstart(m_handle, i));
 					}
 					m_trackStartFrames.append(wm_cd_gettrackstart(m_handle, i));
@@ -236,7 +236,7 @@ void KWMLibCompactDiscPrivate::timerExpired()
 
 					m_trackArtists.append(i18n("Unknown Artist"));
 					m_trackTitles.append(i18n("Unknown Title"));
-					for(i = 1; i <= m_tracks; i++) {
+					for(i = 1; i <= m_tracks; ++i) {
 						m_trackArtists.append(i18n("Unknown Artist"));
 						m_trackTitles.append(ki18n("Track %1").subs(i, 2).toString());
 					}
@@ -313,7 +313,7 @@ void KWMLibCompactDiscPrivate::cdtext()
 	m_trackArtists[0] = QLatin1String( reinterpret_cast<char*>(info->blocks[0]->performer[0]) );
 	m_trackTitles[0] = QLatin1String( reinterpret_cast<char*>(info->blocks[0]->name[0]) );
 
-	for(i = 1; i <= m_tracks; i++) {
+	for(i = 1; i <= m_tracks; ++i) {
             m_trackArtists[i] = QLatin1String( reinterpret_cast<char*>(info->blocks[0]->performer[i]) );
             m_trackTitles[i] =QLatin1String( reinterpret_cast<char*>(info->blocks[0]->name[i]) );
 	}

@@ -121,7 +121,7 @@ public:
     enum InformationMode
     {
         Synchronous, // Return and emit signal when cdrom and cddb information arrives.
-        Asynchronous // Block until cdrom and cddb infromation has been obtained
+        Asynchronous // Block until cdrom and cddb information has been obtained
     };
 
 	enum DiscCommand
@@ -154,7 +154,7 @@ public:
         PhononMetadata
     };
 
-    KCompactDisc(InformationMode = KCompactDisc::Synchronous);
+    explicit KCompactDisc(InformationMode = KCompactDisc::Synchronous);
     virtual ~KCompactDisc();
 
     /**
@@ -251,7 +251,7 @@ public:
     unsigned discId();
 
     /**
-     * CDDB signature of disc, empty if no disc or not possible to deliever.
+     * CDDB signature of disc, empty if no disc or not possible to deliver.
      */
     const QList<unsigned> &discSignature();
 

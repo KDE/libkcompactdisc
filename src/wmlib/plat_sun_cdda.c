@@ -27,7 +27,6 @@
 
 
 #include "include/wm_struct.h"
-#include "include/wm_cdda.h"
 /* types.h and cdio.h are included by wm_cdda.h */
 
 #include <stdio.h>
