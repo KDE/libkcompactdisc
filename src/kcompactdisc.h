@@ -36,48 +36,48 @@ class KCompactDiscPrivate;
  *
  *  The disc interface is modelled by these slots:
  *
- * @see #playoutTrack(unsigned track): Play specified track.
- * @see #playoutPosition(unsigned position): seek to specified position.
- * @see #playNext(): Play next track in the playlist.
- * @see #playPrev(): Play previous track in the playlist.
- * @see #pauseResumePlayout(): Toggle between pause/resume.
- * @see #stopPlayout(): Stop playout:
- * @see #eject(): Stop playout and eject disc or Close
+ * @see playTrack(unsigned int track): Play specified track.
+ * @see playPosition(unsigned int position): seek to specified position.
+ * @see next(): Play next track in the playlist.
+ * @see prev(): Play previous track in the playlist.
+ * @see pause(): Toggle between pause/resume.
+ * @see stop(): Stop playout:
+ * @see eject(): Stop playout and eject disc or Close
  *                        tray and try to read TOC from disc.
  *
  *  The progress of playout is modelled by these signals:
  *
- * @see #playoutPositionChanged(unsigned position): A position in a track.
- * @see #playoutTrackChanged(unsigned track): A playout of this track is started.
+ * @see playoutPositionChanged(unsigned int position): A position in a track.
+ * @see playoutTrackChanged(unsigned int track): A playout of this track is started.
  *
  *
  *  The shape of playlist is controlled by these accessors.
  *
- * @see #setRandomPlaylist(bool): Shuffle the playlist.
- * @see #setLoopPlaylist(bool): Couple begin and end of playlist.
+ * @see setRandomPlaylist(bool): Shuffle the playlist.
+ * @see setLoopPlaylist(bool): Couple begin and end of playlist.
  *
  *
  *  The disc lifecycle is modelled by these signals:
  *
  * @see #discChanged(...): A new disc was inserted.
- * @see #discStatusChanged(KCompactDisc::Playing): A disc started playout.
- * @see #discStatusChanged(KCompactDisc::Paused): A disc was paused.
- * @see #discStatusChanged(KCompactDisc::Stopped): The disc stopped.
- * @see #discStatusChanged(KCompactDisc::NoDisc): The disc is removed. No disc in tray or data disc.
- * @see #discStatusChanged(KCompactDisc::NotReady): The disc is present. But playout is not possible.
- * @see #discInformation(QStringList info): A content for disc information is arrived.
+ * @see discStatusString(KCompactDisc::Playing): A disc started playout.
+ * @see discStatusString(KCompactDisc::Paused): A disc was paused.
+ * @see discStatusString(KCompactDisc::Stopped): The disc stopped.
+ * @see discStatusString(KCompactDisc::NoDisc): The disc is removed. No disc in tray or data disc.
+ * @see discStatusString(KCompactDisc::NotReady): The disc is present. But playout is not possible.
+ * @see discInformation(KCompactDisc::DiscInfo info): A content for disc information is arrived.
  *
  *
  *  The volume control is modelled by these slots:
  *
- * @see #setVolume(unsigned): A new volume value.
- * @see #setBalance(unsigned): A new balance value.
+ * @see setVolume(unsigned int volume): A new volume value.
+ * @see setBalance(unsigned int balance): A new balance value.
  *
  *
  *  And these signals:
  *
- * @see #volumeChanged(unsigned): A current volume value.
- * @see #balanceChanged(unsigned): A current balance value.
+ * @see volumeChanged(unsigned int volume): A current volume value.
+ * @see balanceChanged(unsigned int balance): A current balance value.
  *
  *
  *  All times in this interface are in seconds. Valid track numbers are
@@ -159,6 +159,7 @@ public:
 
     /**
      * @param device Name of CD device, e.g. /dev/cdrom.
+     * @param volume Playback volume.
      * @param digitalPlayback Select digital or analog playback.
      * @param audioSystem For digital playback, system to use, e.g. "phonon".
      * @param audioDevice For digital playback, device to use.
