@@ -30,6 +30,9 @@
 
 #ifdef HAVE_ALSA
 
+#define _BSD_SOURCE /* strdup */
+#define _DEFAULT_SOURCE /* stop glibc whining about the previous line */
+
 #include <alsa/asoundlib.h>
 
 static char *device = NULL;
