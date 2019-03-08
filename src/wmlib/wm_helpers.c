@@ -23,6 +23,9 @@
  *
  */
 
+#define _BSD_SOURCE /* strdup, timerclear */
+#define _DEFAULT_SOURCE /* stop glibc whining about the previous line */
+
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>

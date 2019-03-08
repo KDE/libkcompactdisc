@@ -24,6 +24,9 @@
  * platform- or drive-dependent code here.
  */
 
+#define _BSD_SOURCE /* strdup */
+#define _DEFAULT_SOURCE /* stop glibc whining about the previous line */
+
 #include "include/wm_config.h"
 #include "include/wm_struct.h"
 #include "include/wm_cddb.h"
