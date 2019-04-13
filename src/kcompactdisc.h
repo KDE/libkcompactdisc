@@ -155,7 +155,7 @@ public:
     };
 
     explicit KCompactDisc(InformationMode = KCompactDisc::Synchronous);
-    virtual ~KCompactDisc();
+    ~KCompactDisc() override;
 
     /**
      * @param device Name of CD device, e.g. /dev/cdrom.

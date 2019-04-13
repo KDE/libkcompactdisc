@@ -37,7 +37,7 @@ class KCompactDiscPrivate : public QObject
 
 	public:
 		KCompactDiscPrivate(KCompactDisc *, const QString&);
-        virtual ~KCompactDiscPrivate() { }
+        ~KCompactDiscPrivate() override { }
 	
 		bool moveInterface(const QString &, const QString &, const QString &);
 		virtual bool createInterface();

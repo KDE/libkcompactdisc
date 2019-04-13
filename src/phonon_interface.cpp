@@ -45,7 +45,7 @@ class ProducerWidget : public QObject
 {
     public:
         ProducerWidget(KPhononCompactDiscPrivate *, const QString &);
-        ~ProducerWidget();
+        ~ProducerWidget() override;
 
     public:
         MediaObject *m_media;
