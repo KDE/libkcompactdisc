@@ -29,24 +29,24 @@ class KWMLibCompactDiscPrivate : public KCompactDiscPrivate
 
 	public:
 		KWMLibCompactDiscPrivate(KCompactDisc *, const QString&, const QString &, const QString&);
-		virtual ~KWMLibCompactDiscPrivate();
+		~KWMLibCompactDiscPrivate() override;
 
-		virtual bool createInterface();
+		bool createInterface() override;
 
-		virtual unsigned trackLength(unsigned);
-		virtual bool isTrackAudio(unsigned);
-		virtual void playTrackPosition(unsigned, unsigned);
-		virtual void pause();
-		virtual void stop();
-		virtual void eject();
-		virtual void closetray();
+		unsigned trackLength(unsigned) override;
+		bool isTrackAudio(unsigned) override;
+		void playTrackPosition(unsigned, unsigned) override;
+		void pause() override;
+		void stop() override;
+		void eject() override;
+		void closetray() override;
 	
-		virtual void setVolume(unsigned);
-		virtual void setBalance(unsigned);
-		virtual unsigned volume();
-		virtual unsigned balance();
+		void setVolume(unsigned) override;
+		void setBalance(unsigned) override;
+		unsigned volume() override;
+		unsigned balance() override;
 	
-		virtual void queryMetadata();
+		void queryMetadata() override;
 
 
 	private:

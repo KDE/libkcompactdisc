@@ -17,7 +17,7 @@ class TestKCD : public QObject
         mKcd(new KCompactDisc(KCompactDisc::Asynchronous))
     {}
 
-    virtual ~TestKCD()
+    ~TestKCD() override
     {
         mKcd->deleteLater();
     }
