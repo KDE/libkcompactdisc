@@ -8,10 +8,10 @@ endif()
 
 find_package(ALSA)
 set_package_properties(ALSA PROPERTIES
-                       URL "http://www.alsa-project.org/"
+                       URL "https://www.alsa-project.org/"
                        DESCRIPTION "ALSA provides audio and MIDI functionality"
                        TYPE OPTIONAL
-                       PURPOSE "Play back audo CDs via ALSA")
+                       PURPOSE "Play back audio CDs via ALSA")
 set(HAVE_ALSA ${ALSA_FOUND})
 configure_file(config-alsa.h.cmake ${CMAKE_CURRENT_BINARY_DIR}/config-alsa.h)
 
