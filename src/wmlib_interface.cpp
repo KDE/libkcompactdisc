@@ -107,7 +107,7 @@ void KWMLibCompactDiscPrivate::playTrackPosition(unsigned track, unsigned positi
 	lastTrack = TRACK_VALID(lastTrack) ? lastTrack : WM_ENDTRACK;
 
     qDebug() << "play track " << firstTrack << " position "
-		 << position << endl;
+                 << position;
 
     wm_cd_play(m_handle, firstTrack, position, lastTrack);
 }

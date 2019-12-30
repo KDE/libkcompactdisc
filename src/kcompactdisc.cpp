@@ -113,7 +113,7 @@ QString KCompactDisc::urlToDevice(const QUrl &deviceUrl)
 
         QStringList properties = reply;
         if(!reply.isValid() || properties.count() < 6) {
-            qCritical() << "Invalid reply from mediamanager" << endl;
+            qCritical() << "Invalid reply from mediamanager";
             return deviceUrl.path();
         } else {
             qDebug() << "Reply from mediamanager " << properties[5];
