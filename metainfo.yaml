@@ -1,0 +1,15 @@
+fancyname: KCompactDisc
+description: library for interfacing with CDs
+type: functional
+public_lib: true
+platforms:
+    - name: Linux
+    - name: FreeBSD
+    #- name: Windows
+    #- name: MacOSX
+    #- name: Android
+release: true
+libraries:
+    - cmake: "KF5::CompactDisc"
+      qmake: KCompactDisc
+cmakename: KF5CompactDisc
