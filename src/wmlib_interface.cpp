@@ -54,12 +54,12 @@ KWMLibCompactDiscPrivate::~KWMLibCompactDiscPrivate()
 
 bool KWMLibCompactDiscPrivate::createInterface()
 {
-	QString devicePath;
-
-	devicePath = KCompactDisc::cdromDeviceUrl(m_deviceName).path();
+	const QString devicePath = KCompactDisc::cdromDeviceUrl(m_deviceName).path();
 
 	// Debug.
-	//wm_cd_set_verbosity(WM_MSG_LEVEL_DEBUG | WM_MSG_CLASS_ALL);
+	if (qEnvironmentVariableIsSet("KCOMPACTDISC_WMLIB_DEBUG")) {
+		wm_cd_set_verbosity(WM_MSG_LEVEL_DEBUG | WM_MSG_CLASS_ALL);
+	}
 
 	int status = wm_cd_init(
         devicePath.toLatin1().data(),

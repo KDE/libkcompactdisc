@@ -166,7 +166,7 @@ const QUrl KCompactDisc::cdromDeviceUrl(const QString &cdromDeviceName)
     QUrl result = nameUrls.value(cdromDeviceName);
     if (!result.isValid())
     {
-        const QUrl passedUrl(cdromDeviceName);
+        const QUrl passedUrl = QUrl::fromLocalFile(cdromDeviceName);
         foreach(const QUrl &url, nameUrls)
         {
             if (url == passedUrl)
