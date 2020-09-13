@@ -74,7 +74,7 @@ bool KWMLibCompactDiscPrivate::createInterface()
 		m_deviceRevision = QLatin1String(wm_drive_revision(m_handle));
 
 		Q_Q(KCompactDisc);
-		emit q->discChanged(0);
+		Q_EMIT q->discChanged(0);
 
 		if (m_infoMode == KCompactDisc::Asynchronous) {
 			timerExpired();
@@ -246,7 +246,7 @@ qDebug() << "m_trackStartFrames " << m_trackStartFrames;
 qDebug() << "m_trackArtists " << m_trackArtists;
 qDebug() << "m_trackTitles " << m_trackTitles;
 
-					emit q->discChanged(m_tracks);
+					Q_EMIT q->discChanged(m_tracks);
 
 					if(m_autoMetadata)
 						queryMetadata();
@@ -270,8 +270,8 @@ qDebug() << "m_trackTitles " << m_trackTitles;
 		}
 
 		if(!m_seek) {
-			emit q->playoutPositionChanged(m_trackPosition);
-			//emit q->playoutDiscPositionChanged(m_discPosition);
+			Q_EMIT q->playoutPositionChanged(m_trackPosition);
+			//Q_EMIT q->playoutDiscPositionChanged(m_discPosition);
 		}
 
 		// Per-event processing.
@@ -279,7 +279,7 @@ qDebug() << "m_trackTitles " << m_trackTitles;
 
 		if(m_track != track) {
 			m_track = track;
-			emit q->playoutTrackChanged(m_track);
+			Q_EMIT q->playoutTrackChanged(m_track);
 		}
 		break;
 
@@ -322,5 +322,5 @@ void KWMLibCompactDiscPrivate::cdtext()
     qDebug() << "m_trackArtists " << m_trackArtists;
     qDebug() << "m_trackTitles " << m_trackTitles;
 
-	emit q->discInformation(KCompactDisc::Cdtext);
+	Q_EMIT q->discInformation(KCompactDisc::Cdtext);
 }

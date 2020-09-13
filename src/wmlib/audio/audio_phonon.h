@@ -40,7 +40,7 @@ public:
     QByteArray wavHeader() const;
     void setNextBuffer(struct cdda_block *blk);
 
-public slots:
+public Q_SLOTS:
     void playBuffer(struct cdda_block *blk);
     void pause(void);
     void stop(void);
@@ -51,7 +51,7 @@ protected:
     void reset();
     void needData();
 
-signals:
+Q_SIGNALS:
     void cmdChanged(int cmd);
     void nextBuffer(struct cdda_block *blk);
 

@@ -212,7 +212,7 @@ bool KCompactDiscPrivate::skipStatusChange(KCompactDisc::DiscStatus status)
 			}
 		}
 
-		emit q->discStatusChanged(status);
+		Q_EMIT q->discStatusChanged(status);
 	}
 
 	return false;
@@ -251,7 +251,7 @@ void KCompactDiscPrivate::clearDiscInfo()
 	m_trackArtists.clear();
 	m_trackTitles.clear();
 	m_trackStartFrames.clear();
-	emit q->discChanged(m_tracks);
+	Q_EMIT q->discChanged(m_tracks);
 }
 
 unsigned KCompactDiscPrivate::trackLength(unsigned)

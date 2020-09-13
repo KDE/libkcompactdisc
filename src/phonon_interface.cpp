@@ -110,7 +110,7 @@ bool KPhononCompactDiscPrivate::createInterface()
 		m_deviceVendor = opticalDevice.vendor();
 		m_deviceModel = opticalDevice.product();
 
-		emit q->discChanged(0);
+		Q_EMIT q->discChanged(0);
 
 		producer();
 
@@ -163,7 +163,7 @@ void KPhononCompactDiscPrivate::playTrackPosition(unsigned track, unsigned posit
 
     m_producerWidget->m_mediaController->setCurrentTitle(track);
     m_producerWidget->m_media->seek(SEC2MS(position));
-	emit m_producerWidget->m_media->play();
+	Q_EMIT m_producerWidget->m_media->play();
 }
 
 void KPhononCompactDiscPrivate::pause()
@@ -171,7 +171,7 @@ void KPhononCompactDiscPrivate::pause()
     if(!producer())
 		return;
 
-	emit m_producerWidget->m_media->pause();
+	Q_EMIT m_producerWidget->m_media->pause();
 }
 
 void KPhononCompactDiscPrivate::stop()
@@ -179,7 +179,7 @@ void KPhononCompactDiscPrivate::stop()
     if(!producer())
 		return;
 
-	emit m_producerWidget->m_media->stop();
+	Q_EMIT m_producerWidget->m_media->stop();
 }
 
 void KPhononCompactDiscPrivate::eject()
@@ -249,7 +249,7 @@ void KPhononCompactDiscPrivate::queryMetadata()
 	m_trackArtists[m_track] = data.take(QLatin1String( "ARTIST" ));
 	m_trackTitles[m_track] = data.take(QLatin1String( "TITLE" ));
 
-	emit q->discInformation(KCompactDisc::PhononMetadata);
+	Q_EMIT q->discInformation(KCompactDisc::PhononMetadata);
 }
 
 KCompactDisc::DiscStatus KPhononCompactDiscPrivate::discStatusTranslate(Phonon::State state)
@@ -280,7 +280,7 @@ void KPhononCompactDiscPrivate::tick(qint64 t)
 	if(track != m_track) {
 		m_track = track;
 		m_discLength = trackLength(m_track);
-		emit q->playoutTrackChanged(m_track);
+		Q_EMIT q->playoutTrackChanged(m_track);
 
 		/* phonon gives us Metadata only per Track */
 		if(m_autoMetadata)
@@ -299,7 +299,7 @@ void KPhononCompactDiscPrivate::tick(qint64 t)
 	}
 
 	if(!m_seek) {
-		emit q->playoutPositionChanged(m_trackPosition);
+		Q_EMIT q->playoutPositionChanged(m_trackPosition);
 	}
 }
 
@@ -338,7 +338,7 @@ void KPhononCompactDiscPrivate::stateChanged(Phonon::State newstate, Phonon::Sta
 						m_trackTitles.append(ki18n("Track %1").subs(i, 2).toString());
 					}
 
-					emit q->discChanged(m_tracks);
+					Q_EMIT q->discChanged(m_tracks);
 
 					if(m_autoMetadata)
 						queryMetadata();

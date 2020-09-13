@@ -508,14 +508,14 @@ void KCompactDisc::setRandomPlaylist(bool random)
 	Q_D(KCompactDisc);
 	d->m_randomPlaylist = random;
 	d->make_playlist();
-	emit randomPlaylistChanged(d->m_randomPlaylist);
+	Q_EMIT randomPlaylistChanged(d->m_randomPlaylist);
 }
 
 void KCompactDisc::setLoopPlaylist(bool loop)
 {
 	Q_D(KCompactDisc);
 	d->m_loopPlaylist = loop;
-	emit loopPlaylistChanged(d->m_loopPlaylist);
+	Q_EMIT loopPlaylistChanged(d->m_loopPlaylist);
 }
 
 void KCompactDisc::setAutoMetadataLookup(bool autoMetadata)

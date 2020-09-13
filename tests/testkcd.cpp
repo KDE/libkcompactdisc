@@ -22,7 +22,7 @@ class TestKCD : public QObject
         mKcd->deleteLater();
     }
 
-    public slots:
+    public Q_SLOTS:
 
     void doTest()
     {

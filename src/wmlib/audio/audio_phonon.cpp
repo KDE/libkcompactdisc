@@ -104,7 +104,7 @@ void LibWMPcmPlayer::needData()
 
 void LibWMPcmPlayer::setNextBuffer(struct cdda_block *blk)
 {
-    emit nextBuffer(blk);
+    Q_EMIT nextBuffer(blk);
     m_mutex.lock();
     m_readyToPlay.wait(&m_mutex);
     m_mutex.unlock();
@@ -113,7 +113,7 @@ void LibWMPcmPlayer::setNextBuffer(struct cdda_block *blk)
 void LibWMPcmPlayer::playBuffer(struct cdda_block *blk)
 {
     if(m_cmd != WM_CDM_PLAYING) {
-        emit cmdChanged(WM_CDM_PLAYING);
+        Q_EMIT cmdChanged(WM_CDM_PLAYING);
         m_cmd = WM_CDM_PLAYING;
     }
     writeData(QByteArray(blk->buf, blk->buflen));
@@ -123,7 +123,7 @@ void LibWMPcmPlayer::playBuffer(struct cdda_block *blk)
 void LibWMPcmPlayer::pause(void)
 {
     if(m_cmd != WM_CDM_PAUSED) {
-        emit cmdChanged(WM_CDM_PAUSED);
+        Q_EMIT cmdChanged(WM_CDM_PAUSED);
         m_cmd = WM_CDM_PAUSED;
 
         m_readyToPlay.wakeAll();
@@ -133,7 +133,7 @@ void LibWMPcmPlayer::pause(void)
 void LibWMPcmPlayer::stop(void)
 {
     if(m_cmd != WM_CDM_STOPPED) {
-        emit cmdChanged(WM_CDM_STOPPED);
+        Q_EMIT cmdChanged(WM_CDM_STOPPED);
         m_cmd = WM_CDM_STOPPED;
 
         m_readyToPlay.wakeAll();
