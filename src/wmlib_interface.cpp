@@ -38,7 +38,7 @@ extern "C"
 KWMLibCompactDiscPrivate::KWMLibCompactDiscPrivate(KCompactDisc *p,
 	const QString &dev, const QString &audioSystem, const QString &audioDevice) :
 	KCompactDiscPrivate(p, dev),
-	m_handle(NULL),
+	m_handle(nullptr),
 	m_audioSystem(audioSystem),
 	m_audioDevice(audioDevice)
 {
@@ -65,7 +65,7 @@ bool KWMLibCompactDiscPrivate::createInterface()
         devicePath.toLatin1().data(),
         m_audioSystem.toLatin1().data(),
         m_audioDevice.toLatin1().data(),
-		NULL,
+		nullptr,
 		&m_handle);
 
 	if(!WM_CDS_ERROR(status)) {
@@ -84,7 +84,7 @@ bool KWMLibCompactDiscPrivate::createInterface()
 
 		return true;
 	}
-	m_handle = NULL;
+	m_handle = nullptr;
 	return false;
 }
 

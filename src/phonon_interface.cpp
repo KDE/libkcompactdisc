@@ -54,9 +54,9 @@ class ProducerWidget : public QObject
 };
 
 ProducerWidget::ProducerWidget(KPhononCompactDiscPrivate *p, const QString &Udi) :
-    m_media(0),
-    m_output(0),
-    m_mediaController(0)
+    m_media(nullptr),
+    m_output(nullptr),
+    m_mediaController(nullptr)
 {
     m_media = new MediaObject(this);
     connect(m_media, SIGNAL(metaDataChanged()), SLOT(updateMetaData()));
@@ -86,7 +86,7 @@ ProducerWidget::~ProducerWidget()
 KPhononCompactDiscPrivate::KPhononCompactDiscPrivate(KCompactDisc *p,
 	const QString &dev) :
 	KCompactDiscPrivate(p, dev),
-	m_producerWidget(NULL),
+	m_producerWidget(nullptr),
 	m_udi(KCompactDisc::cdromDeviceUdi(dev))
 {
 	m_interface = QLatin1String("phonon");
@@ -95,7 +95,7 @@ KPhononCompactDiscPrivate::KPhononCompactDiscPrivate(KCompactDisc *p,
 KPhononCompactDiscPrivate::~KPhononCompactDiscPrivate()
 {
 	delete m_producerWidget;
-	m_producerWidget = NULL;
+	m_producerWidget = nullptr;
 }
 
 bool KPhononCompactDiscPrivate::createInterface()

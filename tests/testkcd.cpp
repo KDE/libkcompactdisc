@@ -12,7 +12,7 @@ class TestKCD : public QObject
 
     public:
 
-    explicit TestKCD(QObject *parent = 0) :
+    explicit TestKCD(QObject *parent = nullptr) :
         QObject(parent),
         mKcd(new KCompactDisc(KCompactDisc::Asynchronous))
     {}
