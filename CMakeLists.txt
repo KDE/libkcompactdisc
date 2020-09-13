@@ -21,7 +21,7 @@ include(ECMGenerateHeaders)
 include(ECMSetupVersion)
 include(ECMGeneratePriFile)
 include(GenerateExportHeader)
-include(ECMPackageConfigHelpers)
+include(CMakePackageConfigHelpers)
 
 # Version Setup
 
@@ -56,7 +56,7 @@ endif()
 
 set(CMAKECONFIG_INSTALL_DIR ${CMAKECONFIG_INSTALL_PREFIX}/KF5CompactDisc)
 
-ecm_configure_package_config_file(
+configure_package_config_file(
     ${CMAKE_CURRENT_SOURCE_DIR}/KF5CompactDiscConfig.cmake.in
     ${CMAKE_CURRENT_BINARY_DIR}/KF5CompactDiscConfig.cmake
     INSTALL_DESTINATION ${CMAKECONFIG_INSTALL_DIR}
