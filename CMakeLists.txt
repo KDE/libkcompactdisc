@@ -58,12 +58,6 @@ add_definitions(
     -DQT_NO_NARROWING_CONVERSIONS_IN_CONNECT
 )
 
-include_directories(
-    ${CMAKE_CURRENT_SOURCE_DIR}
-    ${CMAKE_CURRENT_BINARY_DIR}
-)
-
-
 add_subdirectory(src)
 if(BUILD_TESTING)
     add_subdirectory(tests)
