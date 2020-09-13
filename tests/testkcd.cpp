@@ -27,7 +27,7 @@ class TestKCD : public QObject
     void doTest()
     {
         qDebug() << "Starting test";
-        mKcd->setDevice(mKcd->defaultCdromDeviceName(), 50, true, "phonon");
+        mKcd->setDevice(mKcd->defaultCdromDeviceName(), 50, true, QStringLiteral("phonon"));
         qDebug() << "";
 
         qDebug() << "We have" << mKcd->audioSystems().size() << "audo systems available:";
