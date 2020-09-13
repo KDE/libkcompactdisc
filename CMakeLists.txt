@@ -2,13 +2,14 @@
 
 project(libkcompactdisc)
 
-set(REQUIRED_QT_VERSION 5.4.0)
 set(PROJECT_VERSION "16.08.0")
-set(KF5_DEP_VERSION "5.24.0") # handled by release scripts
+
+set(QT_MIN_VERSION "5.12.0")
+set(KF_MIN_VERSION "5.68.0")
 
 # Dependencies
 include(FeatureSummary)
-find_package(ECM 5.24.0  NO_MODULE)
+find_package(ECM ${KF_MIN_VERSION} NO_MODULE)
 set_package_properties(ECM PROPERTIES TYPE REQUIRED DESCRIPTION "Extra CMake Modules." URL "https://commits.kde.org/extra-cmake-modules")
 
 set(CMAKE_MODULE_PATH ${ECM_MODULE_PATH})
@@ -35,8 +36,8 @@ ecm_setup_version(
 
 # Qt5, KF5 and Phonon Packages
 
-find_package(Qt5 ${REQUIRED_QT_VERSION} REQUIRED COMPONENTS Core DBus)
-find_package(KF5 ${KF5_DEP_VERSION} REQUIRED COMPONENTS CoreAddons Solid I18n)
+find_package(Qt5 ${QT_MIN_VERSION} REQUIRED COMPONENTS Core DBus)
+find_package(KF5 ${KF_MIN_VERSION} REQUIRED COMPONENTS CoreAddons Solid I18n)
 find_package(Phonon4Qt5 4.8.0 CONFIG REQUIRED)
 
 # Sources
