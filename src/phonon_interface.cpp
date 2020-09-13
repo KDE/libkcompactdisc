@@ -349,6 +349,3 @@ void KPhononCompactDiscPrivate::stateChanged(Phonon::State newstate, Phonon::Sta
 		}
 	}
 }
-
-#include "phonon_interface.moc"
-

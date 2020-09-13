@@ -555,5 +555,3 @@ void KCompactDisc::setBalance(unsigned balance)
     qDebug() << "change balance: " << balance;
 	d->setBalance(balance);
 }
-
-#include "kcompactdisc.moc"
