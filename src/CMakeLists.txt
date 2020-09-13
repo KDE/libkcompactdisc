@@ -1,5 +1,7 @@
 ## Compiler flags
 
+add_definitions(-DTRANSLATION_DOMAIN=\"libkcompactdisc\")
+
 if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_C_COMPILER_ID MATCHES "Clang")
     set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -std=c99")   ## ALSA no longer compiles with -std=c90, see https://bugzilla.novell.com/show_bug.cgi?id=817077
 endif()
