@@ -45,7 +45,8 @@ static void refreshListOfCdromDevices()
     QUrl url;
 
     //get a list of all devices that are Cdrom
-    foreach(const Solid::Device &device, Solid::Device::listFromType(Solid::DeviceInterface::OpticalDrive)) {
+    const auto devices = Solid::Device::listFromType(Solid::DeviceInterface::OpticalDrive);
+    for (const Solid::Device &device : devices) {
         qDebug() << device.udi().toLatin1().constData();
         const Solid::Block *b = device.as<Solid::Block>();
         
@@ -167,8 +168,7 @@ const QUrl KCompactDisc::cdromDeviceUrl(const QString &cdromDeviceName)
     if (!result.isValid())
     {
         const QUrl passedUrl = QUrl::fromLocalFile(cdromDeviceName);
-        foreach(const QUrl &url, nameUrls)
-        {
+        for (const QUrl &url : nameUrls) {
             if (url == passedUrl)
             {
                 return passedUrl;

@@ -42,6 +42,8 @@ find_package(Phonon4Qt5 4.8.0 CONFIG REQUIRED)
 
 # Sources
 
+add_definitions(-DQT_NO_FOREACH)
+
 include_directories(
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_BINARY_DIR}
