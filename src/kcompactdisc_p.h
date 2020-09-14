@@ -25,8 +25,8 @@
 #include <QList>
 #include <QLoggingCategory>
 #include <QtGlobal>
+#include <QRandomGenerator>
 
-#include <krandomsequence.h>
 #include "kcompactdisc.h"
 
 Q_DECLARE_LOGGING_CATEGORY(CD_PLAYLIST)
@@ -61,7 +61,7 @@ class KCompactDiscPrivate : public QObject
 		QStringList m_trackArtists;
 		QStringList m_trackTitles;
 	
-		KRandomSequence m_randSequence;
+		QRandomGenerator m_randSequence;
 		QList<unsigned> m_playlist;
 		bool m_loopPlaylist;
 		bool m_randomPlaylist;

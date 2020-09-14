@@ -44,7 +44,7 @@ KCompactDiscPrivate::KCompactDiscPrivate(KCompactDisc *p, const QString& dev) :
     m_trackExpectedPosition(0),
     m_seek(0),
 
-    m_randSequence(0),
+    m_randSequence(QRandomGenerator::global()->generate()),
     m_loopPlaylist(false),
     m_randomPlaylist(false),
     m_autoMetadata(true),
@@ -119,7 +119,7 @@ void KCompactDiscPrivate::make_playlist()
 	for(unsigned i = 0; i < size; ++i) {
 		if(m_randomPlaylist) {
 			do {
-				selected = 1 + m_randSequence.getLong(size);
+				selected = 1 + m_randSequence.bounded(size);
 				rejected = (m_playlist.indexOf(selected) != -1);
 			} while(rejected == true);
 		} else {
