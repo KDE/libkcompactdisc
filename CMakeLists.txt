@@ -1,8 +1,6 @@
 ﻿cmake_minimum_required(VERSION 3.5)
 
-project(libkcompactdisc)
-
-set(PROJECT_VERSION "16.08.0")
+project(KCompactDisc VERSION 5.0.0)
 
 set(QT_MIN_VERSION "5.12.0")
 set(KF_MIN_VERSION "5.68.0")
@@ -27,7 +25,7 @@ include(CMakePackageConfigHelpers)
 # Version Setup
 
 ecm_setup_version(
-    "5.0.0"
+    ${KCompactDisc_VERSION}
     VARIABLE_PREFIX KCOMPACTDISC
     VERSION_HEADER ${CMAKE_CURRENT_BINARY_DIR}/kcompactdisc_version.h
     PACKAGE_VERSION_FILE ${CMAKE_CURRENT_BINARY_DIR}/KF5CompactDiscConfigVersion.cmake
