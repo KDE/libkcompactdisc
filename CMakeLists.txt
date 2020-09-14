@@ -37,7 +37,10 @@ ecm_setup_version(
 # Qt5, KF5 and Phonon Packages
 
 find_package(Qt5 ${QT_MIN_VERSION} REQUIRED COMPONENTS Core DBus)
-find_package(KF5 ${KF_MIN_VERSION} REQUIRED COMPONENTS CoreAddons Solid I18n)
+find_package(KF5 ${KF_MIN_VERSION} REQUIRED COMPONENTS
+    Solid
+    I18n
+)
 find_package(Phonon4Qt5 4.8.0 CONFIG REQUIRED)
 
 # Sources

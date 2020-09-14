@@ -3,7 +3,6 @@
 include(CMakeFindDependencyMacro)
 find_dependency(Qt5Core @QT5_REQUIRED_VERSION@)
 find_dependency(Qt5DBus @QT5_REQUIRED_VERSION@)
-find_dependency(KF5CoreAddons @KF5_REQUIRED_VERSION@)
 find_dependency(KF5Solid @KF5_REQUIRED_VERSION@)
 find_dependency(KF5I18n @KF5_REQUIRED_VERSION@)
 find_dependency(Phonon4Qt5 4.8.0)
