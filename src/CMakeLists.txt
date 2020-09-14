@@ -76,19 +76,22 @@ set_target_properties(KF5CompactDisc PROPERTIES
 )
 
 target_link_libraries(KF5CompactDisc
-    Qt5::DBus
-    KF5::Solid
-    KF5::I18n
-    Phonon::phonon4qt5
+    PUBLIC
+        Qt5::Core
+    PRIVATE
+        Qt5::DBus
+        KF5::Solid
+        KF5::I18n
+        Phonon::phonon4qt5
 )
 
 if (HAVE_ALSA)
-    target_link_libraries(KF5CompactDisc ${ALSA_LIBRARY})
+    target_link_libraries(KF5CompactDisc PRIVATE ${ALSA_LIBRARY})
 endif ()
 
 if (USE_WMLIB)
     find_package(Threads)
-    target_link_libraries(KF5CompactDisc ${CMAKE_THREAD_LIBS_INIT})
+    target_link_libraries(KF5CompactDisc PRIVATE ${CMAKE_THREAD_LIBS_INIT})
 endif (USE_WMLIB)
 
 target_include_directories(KF5CompactDisc INTERFACE "$<INSTALL_INTERFACE:${KDE_INSTALL_INCLUDEDIR_KF5}/KCompactDisc>")
