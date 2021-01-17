@@ -33,9 +33,9 @@
 #include <phonon/Path>
 #include <phonon/MediaController>
 
-#include <solid/device.h>
-#include <solid/opticaldrive.h>
-#include <solid/opticaldisc.h>
+#include <Solid/Device>
+#include <Solid/OpticalDrive>
+#include <Solid/OpticalDisc>
 
 #define WM_MSG_CLASS WM_MSG_CLASS_PLATFORM
 
