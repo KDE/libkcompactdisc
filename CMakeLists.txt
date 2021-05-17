@@ -16,21 +16,12 @@ set(CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake" ${CMAKE_MODULE_PATH})
 include(KDEInstallDirs)
 include(KDECMakeSettings)
 include(KDECompilerSettings NO_POLICY_SCOPE)
+
 include(ECMGenerateHeaders)
 include(ECMSetupVersion)
 include(ECMGeneratePriFile)
 include(GenerateExportHeader)
 include(CMakePackageConfigHelpers)
-
-# Version Setup
-
-ecm_setup_version(
-    ${KCompactDisc_VERSION}
-    VARIABLE_PREFIX KCOMPACTDISC
-    VERSION_HEADER ${CMAKE_CURRENT_BINARY_DIR}/kcompactdisc_version.h
-    PACKAGE_VERSION_FILE ${CMAKE_CURRENT_BINARY_DIR}/KF5CompactDiscConfigVersion.cmake
-    SOVERSION 5
-)
 
 # Qt5, KF5 and Phonon Packages
 
@@ -63,37 +54,6 @@ add_subdirectory(src)
 if(BUILD_TESTING)
     add_subdirectory(tests)
 endif()
-
-# Additional
-
-set(CMAKECONFIG_INSTALL_DIR ${KDE_INSTALL_CMAKEPACKAGEDIR}/KF5CompactDisc)
-
-configure_package_config_file(
-    ${CMAKE_CURRENT_SOURCE_DIR}/KF5CompactDiscConfig.cmake.in
-    ${CMAKE_CURRENT_BINARY_DIR}/KF5CompactDiscConfig.cmake
-    INSTALL_DESTINATION ${CMAKECONFIG_INSTALL_DIR}
-)
-
-install(FILES
-    ${CMAKE_CURRENT_BINARY_DIR}/KF5CompactDiscConfig.cmake
-    ${CMAKE_CURRENT_BINARY_DIR}/KF5CompactDiscConfigVersion.cmake
-    DESTINATION "${CMAKECONFIG_INSTALL_DIR}"
-    COMPONENT Devel
-)
-
-install(EXPORT
-    KF5CompactDiscTargets
-    DESTINATION "${CMAKECONFIG_INSTALL_DIR}"
-    FILE KF5CompactDiscTargets.cmake
-    NAMESPACE KF5::
-    COMPONENT Devel
-)
-
-install(FILES
-    ${CMAKE_CURRENT_BINARY_DIR}/kcompactdisc_version.h
-    DESTINATION "${KDE_INSTALL_INCLUDEDIR_KF5}"
-    COMPONENT Devel
-)
 
 ki18n_install(po)
 
