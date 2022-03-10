@@ -31,10 +31,6 @@ configure_file(config-alsa.h.cmake ${CMAKE_CURRENT_BINARY_DIR}/config-alsa.h)
 add_library(KCompactDisc SHARED)
 add_library(KF5::CompactDisc ALIAS KCompactDisc)
 
-if (HAVE_ALSA)
-    target_include_directories(KCompactDisc PRIVATE ${ALSA_INCLUDE_DIRS})
-endif()
-
 if (APPLE OR WIN32 OR CMAKE_SYSTEM_NAME STREQUAL GNU)
     set(USE_WMLIB false)
 else()
@@ -99,7 +95,7 @@ target_link_libraries(KCompactDisc
 )
 
 if (HAVE_ALSA)
-    target_link_libraries(KCompactDisc PRIVATE ${ALSA_LIBRARY})
+    target_link_libraries(KCompactDisc PRIVATE ALSA::ALSA)
 endif()
 
 if (USE_WMLIB)
