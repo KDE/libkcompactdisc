@@ -3,7 +3,7 @@
 project(KCompactDisc VERSION 5.0.0)
 
 set(QT_MIN_VERSION "5.15.0")
-set(KF_MIN_VERSION "5.85.0")
+set(KF_MIN_VERSION "5.90.0")
 
 # Dependencies
 include(FeatureSummary)
@@ -25,12 +25,12 @@ include(CMakePackageConfigHelpers)
 
 # Qt5, KF5 and Phonon Packages
 
-find_package(Qt5 ${QT_MIN_VERSION} REQUIRED COMPONENTS Core DBus)
+find_package(Qt${QT_MAJOR_VERSION} ${QT_MIN_VERSION} REQUIRED COMPONENTS Core DBus)
 find_package(KF5 ${KF_MIN_VERSION} REQUIRED COMPONENTS
     Solid
     I18n
 )
-find_package(Phonon4Qt5 4.8.0 CONFIG REQUIRED)
+find_package(Phonon4Qt${QT_MAJOR_VERSION} 4.8.0 CONFIG REQUIRED)
 
 # Sources
 

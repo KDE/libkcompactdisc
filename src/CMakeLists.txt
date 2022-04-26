@@ -14,7 +14,7 @@ set_package_properties(ALSA PROPERTIES
                        PURPOSE "Play back audio CDs via ALSA")
 set(HAVE_ALSA ${ALSA_FOUND})
 
-set(KCOMPACTDISC_INSTALL_INCLUDEDIR "${KDE_INSTALL_INCLUDEDIR_KF5}/KCompactDisc")
+set(KCOMPACTDISC_INSTALL_INCLUDEDIR "${KDE_INSTALL_INCLUDEDIR_KF}/KCompactDisc")
 set(KCOMPACTDISC_CMAKECONFIG_NAME "KF5CompactDisc")
 
 # Version Setup
@@ -86,12 +86,12 @@ set_target_properties(KCompactDisc PROPERTIES
 
 target_link_libraries(KCompactDisc
     PUBLIC
-        Qt5::Core
+        Qt::Core
     PRIVATE
-        Qt5::DBus
+        Qt::DBus
         KF5::Solid
         KF5::I18n
-        Phonon::phonon4qt5
+        Phonon::phonon4qt${QT_MAJOR_VERSION}
 )
 
 if (HAVE_ALSA)
@@ -151,7 +151,7 @@ install(EXPORT
 
 install(FILES
     ${CMAKE_CURRENT_BINARY_DIR}/kcompactdisc_version.h
-    DESTINATION "${KDE_INSTALL_INCLUDEDIR_KF5}"
+    DESTINATION "${KDE_INSTALL_INCLUDEDIR_KF}"
     COMPONENT Devel
 )
 
