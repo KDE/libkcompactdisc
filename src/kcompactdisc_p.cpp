@@ -23,7 +23,6 @@
 #include "wmlib_interface.h"
 #include "phonon_interface.h"
 
-#include <QtGlobal>
 
 #include <KLocalizedString>
 

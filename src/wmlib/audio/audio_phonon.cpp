@@ -21,11 +21,7 @@
 #include "audio_phonon.h"
 #include "audio.h"
 
-#include <QByteArray>
 #include <QDataStream>
-#include <QTimer>
-#include <QWaitCondition>
-#include <QMutex>
 
 #include <phonon/audiooutput.h>
 #include <phonon/audiopath.h>
