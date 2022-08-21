@@ -116,7 +116,7 @@ ecm_generate_headers(KCompactDisc_HEADERS
 generate_export_header(KCompactDisc BASE_NAME KCompactDisc)
 
 
-install(TARGETS KCompactDisc EXPORT KCompactDiscTargets ${KF5_INSTALL_TARGETS_DEFAULT_ARGS})
+install(TARGETS KCompactDisc EXPORT KCompactDiscTargets ${KF_INSTALL_TARGETS_DEFAULT_ARGS})
 install(FILES
     ${CMAKE_CURRENT_BINARY_DIR}/kcompactdisc_export.h
     ${KCompactDisc_HEADERS}
