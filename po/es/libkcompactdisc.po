@@ -1,0 +1,71 @@
+# translation of libkcompactdisc.po to Spanish
+# Copyright (C) YEAR This_file_is_part_of_KDE
+# This file is distributed under the same license as the PACKAGE package.
+#
+# Eloy Cuadra <ecuadra@eloihr.net>, 2007.
+# Enrique Matias Sanchez (Quique) <cronopios@gmail.com>, 2008.
+msgid ""
+msgstr ""
+"Project-Id-Version: libkcompactdisc\n"
+"Report-Msgid-Bugs-To: https://bugs.kde.org\n"
+"POT-Creation-Date: 2022-05-06 00:45+0000\n"
+"PO-Revision-Date: 2008-12-07 18:18+0100\n"
+"Last-Translator: Enrique Matias Sanchez (Quique) <cronopios@gmail.com>\n"
+"Language-Team: Spanish <es@li.org>\n"
+"Language: es\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"X-Generator: KBabel 1.11.4\n"
+"Plural-Forms: nplurals=2; plural=n != 1;\n"
+
+#: src/kcompactdisc_p.cpp:224
+#, kde-format
+msgid "Playing"
+msgstr "Reproduciendo"
+
+#: src/kcompactdisc_p.cpp:226
+#, kde-format
+msgid "Paused"
+msgstr "En pausa"
+
+#: src/kcompactdisc_p.cpp:228
+#, kde-format
+msgid "Stopped"
+msgstr "Detenido"
+
+#: src/kcompactdisc_p.cpp:230
+#, kde-format
+msgid "Ejected"
+msgstr "Expulsado"
+
+#: src/kcompactdisc_p.cpp:232
+#, kde-format
+msgid "No Disc"
+msgstr "Sin disco"
+
+#: src/kcompactdisc_p.cpp:234
+#, kde-format
+msgid "Not Ready"
+msgstr "No preparado"
+
+#: src/kcompactdisc_p.cpp:237
+#, kde-format
+msgid "Error"
+msgstr "Error"
+
+#: src/phonon_interface.cpp:334 src/phonon_interface.cpp:337
+#: src/wmlib_interface.cpp:237 src/wmlib_interface.cpp:240
+#, kde-format
+msgid "Unknown Artist"
+msgstr "Artista desconocido"
+
+#: src/phonon_interface.cpp:335 src/wmlib_interface.cpp:238
+#, kde-format
+msgid "Unknown Title"
+msgstr "Título desconocido"
+
+#: src/phonon_interface.cpp:338 src/wmlib_interface.cpp:241
+#, kde-format
+msgid "Track %1"
+msgstr "Pista %1"
