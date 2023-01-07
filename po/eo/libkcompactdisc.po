@@ -1,13 +1,15 @@
 # Translation of libkcompactdisc into esperanto.
+# Copyright (C) 2003 Free Software Foundation, Inc.
 # Axel Rousseau <axel@esperanto-jeunes.org>, 2009.
+# Oliver Kellogg <okellogg@users.sourceforge.net>, 2023.
 #
 msgid ""
 msgstr ""
 "Project-Id-Version: libkcompactdisc\n"
 "Report-Msgid-Bugs-To: https://bugs.kde.org\n"
 "POT-Creation-Date: 2022-05-06 00:45+0000\n"
-"PO-Revision-Date: 2009-11-15 12:06+0100\n"
-"Last-Translator: Axel Rousseau <axel@esperanto-jeunes.org>\n"
+"PO-Revision-Date: 2023-01-06 22:00+0100\n"
+"Last-Translator: Oliver Kellogg <okellogg@users.sourceforge.net>\n"
 "Language-Team: esperanto <kde-i18n-eo@kde.org>\n"
 "Language: eo\n"
 "MIME-Version: 1.0\n"
@@ -37,14 +39,14 @@ msgid "Ejected"
 msgstr "Eligite"
 
 #: src/kcompactdisc_p.cpp:232
-#, fuzzy, kde-format
+#, kde-format
 msgid "No Disc"
-msgstr "Disko"
+msgstr "Neniu Disko"
 
 #: src/kcompactdisc_p.cpp:234
 #, kde-format
 msgid "Not Ready"
-msgstr ""
+msgstr "Ne Preta"
 
 #: src/kcompactdisc_p.cpp:237
 #, kde-format
@@ -60,7 +62,7 @@ msgstr "Nekonata artisto"
 #: src/phonon_interface.cpp:335 src/wmlib_interface.cpp:238
 #, kde-format
 msgid "Unknown Title"
-msgstr ""
+msgstr "Nekonata Titolo"
 
 #: src/phonon_interface.cpp:338 src/wmlib_interface.cpp:241
 #, kde-format
