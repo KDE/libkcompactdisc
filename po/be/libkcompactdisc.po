@@ -1,16 +1,12 @@
-# translation of libkcompactdisc.po to Belarusian
-# Copyright (C) YEAR This_file_is_part_of_KDE
-# This file is distributed under the same license as the PACKAGE package.
-#
 # Darafei Praliaskouski <komzpa@licei2.com>, 2007.
 msgid ""
 msgstr ""
-"Project-Id-Version: libkcompactdisc\n"
+"Project-Id-Version: 86ff119b1606fcaa910d6b44fc14b611\n"
 "Report-Msgid-Bugs-To: https://bugs.kde.org\n"
 "POT-Creation-Date: 2022-05-06 00:45+0000\n"
-"PO-Revision-Date: 2007-07-27 16:21+0300\n"
+"PO-Revision-Date: 2023-01-20 11:01\n"
 "Last-Translator: Darafei Praliaskouski <komzpa@licei2.com>\n"
-"Language-Team: Belarusian <i18n@mova.org>\n"
+"Language-Team: Belarusian\n"
 "Language: be\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
@@ -19,6 +15,11 @@ msgstr ""
 "Plural-Forms: nplurals=4; plural=(n%10==1 && n%100!=11 ? 0 : n%10>=2 && n"
 "%10<=4 && (n%100<12 || n%100>14) ? 1 : n%10==0 || n%10>=5 && n%10<=9 || n"
 "%100>=11 && n%100<=14 ? 2 : 3);\n"
+"X-Crowdin-Project: 86ff119b1606fcaa910d6b44fc14b611\n"
+"X-Crowdin-Project-ID: 127\n"
+"X-Crowdin-Language: be\n"
+"X-Crowdin-File: /main/be/libkcompactdisc/libkcompactdisc.po\n"
+"X-Crowdin-File-ID: 8387\n"
 
 #: src/kcompactdisc_p.cpp:224
 #, kde-format
@@ -38,7 +39,7 @@ msgstr "Спынена"
 #: src/kcompactdisc_p.cpp:230
 #, kde-format
 msgid "Ejected"
-msgstr ""
+msgstr "Носьбіт выняты"
 
 #: src/kcompactdisc_p.cpp:232
 #, kde-format
@@ -48,7 +49,7 @@ msgstr "Няма дыска"
 #: src/kcompactdisc_p.cpp:234
 #, kde-format
 msgid "Not Ready"
-msgstr ""
+msgstr "Не гатова"
 
 #: src/kcompactdisc_p.cpp:237
 #, kde-format
@@ -64,9 +65,9 @@ msgstr "Невядомы выканаўца"
 #: src/phonon_interface.cpp:335 src/wmlib_interface.cpp:238
 #, kde-format
 msgid "Unknown Title"
-msgstr ""
+msgstr "Невядомая назва"
 
 #: src/phonon_interface.cpp:338 src/wmlib_interface.cpp:241
 #, kde-format
 msgid "Track %1"
-msgstr "Дарожка %1"
+msgstr "Кампазіцыя %1"
