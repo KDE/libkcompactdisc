@@ -38,14 +38,14 @@ else()
 endif()
 
 target_sources(KCompactDisc PRIVATE
-    kcompactdisc.cpp
-    kcompactdisc_p.cpp
-    phonon_interface.cpp
+    kcompactdisc.cpp kcompactdisc.h
+    kcompactdisc_p.cpp kcompactdisc_p.h
+    phonon_interface.cpp phonon_interface.h
 )
 
 if (USE_WMLIB)
     target_sources(KCompactDisc PRIVATE
-        wmlib_interface.cpp
+        wmlib_interface.cpp wmlib_interface.h
 
         wmlib/audio/audio.c
         wmlib/audio/audio_arts.c
