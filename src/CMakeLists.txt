@@ -89,8 +89,8 @@ target_link_libraries(KCompactDisc
         Qt::Core
     PRIVATE
         Qt::DBus
-        KF5::Solid
-        KF5::I18n
+        KF${KF_MAJOR_VERSION}::Solid
+        KF${KF_MAJOR_VERSION}::I18n
         Phonon::phonon4qt${QT_MAJOR_VERSION}
 )
 

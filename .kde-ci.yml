@@ -2,7 +2,14 @@
 # SPDX-License-Identifier: CC0-1.0
 
 Dependencies:
-- 'on': ['@all']
+- 'on': ['Linux/Qt6', 'FreeBSD/Qt6']
+  'require':
+    'frameworks/extra-cmake-modules': '@latest-qt6'
+    'frameworks/solid': '@latest-qt6'
+    'frameworks/ki18n': '@latest-qt6'
+    'libraries/phonon': '@latest-qt6'
+
+- 'on': ['Linux/Qt5', 'FreeBSD/Qt5']
   'require':
     'frameworks/extra-cmake-modules': '@stable'
     'frameworks/solid': '@stable'
