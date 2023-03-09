@@ -14,8 +14,20 @@ set_package_properties(ALSA PROPERTIES
                        PURPOSE "Play back audio CDs via ALSA")
 set(HAVE_ALSA ${ALSA_FOUND})
 
-set(KCOMPACTDISC_INSTALL_INCLUDEDIR "${KDE_INSTALL_INCLUDEDIR_KF}/KCompactDisc")
-set(KCOMPACTDISC_CMAKECONFIG_NAME "KF5CompactDisc")
+
+if (QT_MAJOR_VERSION STREQUAL "5")
+    set(KCOMPACTDISC_INSTALL_INCLUDEDIR "${KDE_INSTALL_INCLUDEDIR_KF}/KCompactDisc")
+    set(KCOMPACTDISC_CMAKECONFIG_NAME "KF5CompactDisc")
+    set(LIBRARYFILE_NAME "KF5CompactDisc")
+    set(TARGET_EXPORT_NAME "CompactDisc")
+    set(NAMESPACE_NAME "KF5::")
+else()
+    set(KCOMPACTDISC_INSTALL_INCLUDEDIR "${KDE_INSTALL_INCLUDEDIR}/KCompactDisc6")
+    set(KCOMPACTDISC_CMAKECONFIG_NAME "KCompactDisc6")
+    set(LIBRARYFILE_NAME "KCompactDisc6")
+    set(TARGET_EXPORT_NAME "KCompactDisc6")
+    set(NAMESPACE_NAME "")
+endif()
 
 # Version Setup
 
@@ -29,7 +41,16 @@ ecm_setup_version(${KCompactDisc_VERSION}
 configure_file(config-alsa.h.cmake ${CMAKE_CURRENT_BINARY_DIR}/config-alsa.h)
 
 add_library(KCompactDisc SHARED)
-add_library(KF5::CompactDisc ALIAS KCompactDisc)
+set_target_properties(KCompactDisc PROPERTIES
+    VERSION ${KCOMPACTDISC_VERSION}
+    SOVERSION ${KCOMPACTDISC_SOVERSION}
+    OUTPUT_NAME ${LIBRARYFILE_NAME}
+    EXPORT_NAME ${TARGET_EXPORT_NAME}
+)
+
+if (QT_MAJOR_VERSION STREQUAL "5")
+    add_library(KF5::CompactDisc ALIAS KCompactDisc)
+endif()
 
 if (APPLE OR WIN32 OR CMAKE_SYSTEM_NAME STREQUAL GNU)
     set(USE_WMLIB false)
@@ -77,13 +98,6 @@ if (USE_WMLIB)
     target_compile_definitions(KCompactDisc PRIVATE -DUSE_WMLIB=1)
 endif()
 
-set_target_properties(KCompactDisc PROPERTIES
-    VERSION ${KCOMPACTDISC_VERSION}
-    SOVERSION ${KCOMPACTDISC_SOVERSION}
-    OUTPUT_NAME  KF5CompactDisc
-    EXPORT_NAME CompactDisc
-)
-
 target_link_libraries(KCompactDisc
     PUBLIC
         Qt::Core
@@ -129,7 +143,7 @@ install(FILES ${PRI_FILENAME} DESTINATION ${ECM_MKSPECS_INSTALL_DIR})
 set(CMAKECONFIG_INSTALL_DIR ${KDE_INSTALL_CMAKEPACKAGEDIR}/${KCOMPACTDISC_CMAKECONFIG_NAME})
 
 configure_package_config_file(
-    ${CMAKE_CURRENT_SOURCE_DIR}/${KCOMPACTDISC_CMAKECONFIG_NAME}Config.cmake.in
+    ${CMAKE_CURRENT_SOURCE_DIR}/KF5CompactDiscConfig.cmake.in
     ${CMAKE_CURRENT_BINARY_DIR}/${KCOMPACTDISC_CMAKECONFIG_NAME}Config.cmake
     INSTALL_DESTINATION ${CMAKECONFIG_INSTALL_DIR}
 )
@@ -145,7 +159,7 @@ install(EXPORT
     KCompactDiscTargets
     DESTINATION "${CMAKECONFIG_INSTALL_DIR}"
     FILE ${KCOMPACTDISC_CMAKECONFIG_NAME}Targets.cmake
-    NAMESPACE KF5::
+    NAMESPACE ${NAMESPACE_NAME}
     COMPONENT Devel
 )
 
@@ -157,7 +171,7 @@ install(FILES
 
 ecm_generate_pri_file(
     BASE_NAME KCompactDisc
-    LIB_NAME KF5CompactDisc
+    LIB_NAME ${KCOMPACTDISC_CMAKECONFIG_NAME}
     DEPS "core dbus phonon4qt5 KCoreAddons KI18n Solid"
     FILENAME_VAR PRI_FILENAME
     INCLUDE_INSTALL_DIR ${KCOMPACTDISC_INSTALL_INCLUDEDIR}
