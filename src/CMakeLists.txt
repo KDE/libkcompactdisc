@@ -130,7 +130,11 @@ ecm_generate_headers(KCompactDisc_HEADERS
 generate_export_header(KCompactDisc BASE_NAME KCompactDisc)
 
 
-install(TARGETS KCompactDisc EXPORT KCompactDiscTargets ${KF_INSTALL_TARGETS_DEFAULT_ARGS})
+if (QT_MAJOR_VERSION STREQUAL "6")
+    install(TARGETS KCompactDisc EXPORT KCompactDiscTargets ${KDE_INSTALL_TARGETS_DEFAULT_ARGS})
+else()
+    install(TARGETS KCompactDisc EXPORT KCompactDiscTargets ${KF_INSTALL_TARGETS_DEFAULT_ARGS})
+endif()
 install(FILES
     ${CMAKE_CURRENT_BINARY_DIR}/kcompactdisc_export.h
     ${KCompactDisc_HEADERS}
