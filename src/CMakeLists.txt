@@ -52,6 +52,24 @@ if (QT_MAJOR_VERSION STREQUAL "5")
     add_library(KF5::CompactDisc ALIAS KCompactDisc)
 endif()
 
+if (QT_MAJOR_VERSION STREQUAL "5")
+    set(_generate_export_header_version_args)
+else()
+    # For Qt6/KF6 world transitively include the version header
+    if(ECM_VERSION VERSION_LESS "5.106")
+        set(include_version_header_code "#include <kcompactdisc_version.h>\n")
+        set(_generate_export_header_version_args CUSTOM_CONTENT_FROM_VARIABLE include_version_header_code)
+    else()
+        set(_generate_export_header_version_args USE_VERSION_HEADER)
+    endif()
+endif()
+ecm_generate_export_header(KCompactDisc
+    BASE_NAME KCompactDisc
+    VERSION ${KCOMPACTDISC_VERSION}
+    DEPRECATED_BASE_VERSION 0
+    ${_generate_export_header_version_args}
+)
+
 if (APPLE OR WIN32 OR CMAKE_SYSTEM_NAME STREQUAL GNU)
     set(USE_WMLIB false)
 else()
@@ -127,8 +145,6 @@ ecm_generate_headers(KCompactDisc_HEADERS
     KCompactDisc
     REQUIRED_HEADERS KCompactDisc_HEADERS
 )
-generate_export_header(KCompactDisc BASE_NAME KCompactDisc)
-
 
 if (QT_MAJOR_VERSION STREQUAL "6")
     install(TARGETS KCompactDisc EXPORT KCompactDiscTargets ${KDE_INSTALL_TARGETS_DEFAULT_ARGS})
