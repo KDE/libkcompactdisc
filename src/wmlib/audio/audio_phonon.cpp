@@ -284,3 +284,4 @@ setup_phonon(const char *dev, const char *ctl)
 }
 
 #include "audio_phonon.moc"
+#include "moc_audio_phonon.cpp"

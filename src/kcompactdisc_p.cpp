@@ -304,3 +304,5 @@ unsigned KCompactDiscPrivate::balance()
 void KCompactDiscPrivate::queryMetadata()
 {
 }
+
+#include "moc_kcompactdisc_p.cpp"

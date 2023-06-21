@@ -324,3 +324,5 @@ void KWMLibCompactDiscPrivate::cdtext()
 
 	Q_EMIT q->discInformation(KCompactDisc::Cdtext);
 }
+
+#include "moc_wmlib_interface.cpp"
