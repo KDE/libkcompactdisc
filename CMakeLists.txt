@@ -2,8 +2,8 @@
 
 project(KCompactDisc VERSION 5.0.0)
 
-set(QT_MIN_VERSION "5.15.2")
-set(KF_MIN_VERSION "5.92.0")
+set(QT_MIN_VERSION "6.5.0")
+set(KF_MIN_VERSION "5.240.0")
 
 # Dependencies
 include(FeatureSummary)
@@ -23,35 +23,20 @@ include(ECMGeneratePriFile)
 include(ECMGenerateExportHeader)
 include(CMakePackageConfigHelpers)
 include(ECMDeprecationSettings)
-if (QT_MAJOR_VERSION STREQUAL "6")
-    set(QT_REQUIRED_VERSION "6.5.0")
-    set(KF_MIN_VERSION "5.240.0")
-    set(KF_MAJOR_VERSION "6")
-else()
-    set(KF_MAJOR_VERSION "5")
-endif()
-
 # Qt5, KF5 and Phonon Packages
 
-find_package(Qt${QT_MAJOR_VERSION} ${QT_MIN_VERSION} REQUIRED COMPONENTS Core DBus)
-find_package(KF${KF_MAJOR_VERSION} ${KF_MIN_VERSION} REQUIRED COMPONENTS
+find_package(Qt6 ${QT_MIN_VERSION} REQUIRED COMPONENTS Core DBus)
+find_package(KF6 ${KF_MIN_VERSION} REQUIRED COMPONENTS
     Solid
     I18n
 )
-find_package(Phonon4Qt${QT_MAJOR_VERSION} 4.8.0 CONFIG REQUIRED)
+find_package(Phonon4Qt6 4.8.0 CONFIG REQUIRED)
 
 # Sources
-if (QT_MAJOR_VERSION STREQUAL "6")
-    ecm_set_disabled_deprecation_versions(
-        QT 6.5
-        KF 5.239
-    )
-else()
-    ecm_set_disabled_deprecation_versions(
-        QT 5.15.2
-        KF 5.100.0
-    )
-endif()
+ecm_set_disabled_deprecation_versions(
+     QT 6.5
+     KF 5.239
+)
 
 add_subdirectory(src)
 if(BUILD_TESTING)

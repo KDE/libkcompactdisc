@@ -15,19 +15,11 @@ set_package_properties(ALSA PROPERTIES
 set(HAVE_ALSA ${ALSA_FOUND})
 
 
-if (QT_MAJOR_VERSION STREQUAL "5")
-    set(KCOMPACTDISC_INSTALL_INCLUDEDIR "${KDE_INSTALL_INCLUDEDIR_KF}/KCompactDisc")
-    set(KCOMPACTDISC_CMAKECONFIG_NAME "KF5CompactDisc")
-    set(LIBRARYFILE_NAME "KF5CompactDisc")
-    set(TARGET_EXPORT_NAME "CompactDisc")
-    set(NAMESPACE_NAME "KF5::")
-else()
-    set(KCOMPACTDISC_INSTALL_INCLUDEDIR "${KDE_INSTALL_INCLUDEDIR}/KCompactDisc6")
-    set(KCOMPACTDISC_CMAKECONFIG_NAME "KCompactDisc6")
-    set(LIBRARYFILE_NAME "KCompactDisc6")
-    set(TARGET_EXPORT_NAME "KCompactDisc6")
-    set(NAMESPACE_NAME "")
-endif()
+set(KCOMPACTDISC_INSTALL_INCLUDEDIR "${KDE_INSTALL_INCLUDEDIR}/KCompactDisc6")
+set(KCOMPACTDISC_CMAKECONFIG_NAME "KCompactDisc6")
+set(LIBRARYFILE_NAME "KCompactDisc6")
+set(TARGET_EXPORT_NAME "KCompactDisc6")
+set(NAMESPACE_NAME "")
 
 # Version Setup
 
@@ -48,21 +40,7 @@ set_target_properties(KCompactDisc PROPERTIES
     EXPORT_NAME ${TARGET_EXPORT_NAME}
 )
 
-if (QT_MAJOR_VERSION STREQUAL "5")
-    add_library(KF5::CompactDisc ALIAS KCompactDisc)
-endif()
-
-if (QT_MAJOR_VERSION STREQUAL "5")
-    set(_generate_export_header_version_args)
-else()
-    # For Qt6/KF6 world transitively include the version header
-    if(ECM_VERSION VERSION_LESS "5.106")
-        set(include_version_header_code "#include <kcompactdisc_version.h>\n")
-        set(_generate_export_header_version_args CUSTOM_CONTENT_FROM_VARIABLE include_version_header_code)
-    else()
-        set(_generate_export_header_version_args USE_VERSION_HEADER)
-    endif()
-endif()
+set(_generate_export_header_version_args USE_VERSION_HEADER)
 ecm_generate_export_header(KCompactDisc
     BASE_NAME KCompactDisc
     VERSION ${KCOMPACTDISC_VERSION}
@@ -121,9 +99,9 @@ target_link_libraries(KCompactDisc
         Qt::Core
     PRIVATE
         Qt::DBus
-        KF${KF_MAJOR_VERSION}::Solid
-        KF${KF_MAJOR_VERSION}::I18n
-        Phonon::phonon4qt${QT_MAJOR_VERSION}
+        KF6::Solid
+        KF6::I18n
+        Phonon::phonon4qt6
 )
 
 if (HAVE_ALSA)
@@ -146,11 +124,7 @@ ecm_generate_headers(KCompactDisc_HEADERS
     REQUIRED_HEADERS KCompactDisc_HEADERS
 )
 
-if (QT_MAJOR_VERSION STREQUAL "6")
-    install(TARGETS KCompactDisc EXPORT KCompactDiscTargets ${KDE_INSTALL_TARGETS_DEFAULT_ARGS})
-else()
-    install(TARGETS KCompactDisc EXPORT KCompactDiscTargets ${KF_INSTALL_TARGETS_DEFAULT_ARGS})
-endif()
+install(TARGETS KCompactDisc EXPORT KCompactDiscTargets ${KDE_INSTALL_TARGETS_DEFAULT_ARGS})
 install(FILES
     ${CMAKE_CURRENT_BINARY_DIR}/kcompactdisc_export.h
     ${KCompactDisc_HEADERS}
