@@ -5,7 +5,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: libkcompactdisc\n"
 "Report-Msgid-Bugs-To: https://bugs.kde.org\n"
-"POT-Creation-Date: 2019-05-20 03:09+0200\n"
+"POT-Creation-Date: 2022-05-06 00:45+0000\n"
 "PO-Revision-Date: 2012-07-05 11:30+0200\n"
 "Last-Translator: Chusslove Illich <caslav.ilic@gmx.net>\n"
 "Language-Team: Serbian <kde-i18n-sr@kde.org>\n"
@@ -21,43 +21,43 @@ msgstr ""
 "X-Environment: kde\n"
 
 # >> @item disc status
-#: src/kcompactdisc_p.cpp:225
+#: src/kcompactdisc_p.cpp:224
 #, kde-format
 msgid "Playing"
 msgstr "пушта се"
 
 # >> @item disc status
-#: src/kcompactdisc_p.cpp:227
+#: src/kcompactdisc_p.cpp:226
 #, kde-format
 msgid "Paused"
 msgstr "паузиран"
 
 # >> @item disc status
-#: src/kcompactdisc_p.cpp:229
+#: src/kcompactdisc_p.cpp:228
 #, kde-format
 msgid "Stopped"
 msgstr "заустављен"
 
 # >> @item disc status
-#: src/kcompactdisc_p.cpp:231
+#: src/kcompactdisc_p.cpp:230
 #, kde-format
 msgid "Ejected"
 msgstr "избачен"
 
 # >> @item disc status
-#: src/kcompactdisc_p.cpp:233
+#: src/kcompactdisc_p.cpp:232
 #, kde-format
 msgid "No Disc"
 msgstr "нема диска"
 
 # >> @item disc status
-#: src/kcompactdisc_p.cpp:235
+#: src/kcompactdisc_p.cpp:234
 #, kde-format
 msgid "Not Ready"
 msgstr "није спреман"
 
 # >> @item disc status
-#: src/kcompactdisc_p.cpp:238
+#: src/kcompactdisc_p.cpp:237
 #, kde-format
 msgid "Error"
 msgstr "грешка"
