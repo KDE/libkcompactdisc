@@ -1,0 +1,69 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR This file is copyright:
+# This file is distributed under the same license as the libkcompactdisc package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: libkcompactdisc\n"
+"Report-Msgid-Bugs-To: https://bugs.kde.org\n"
+"POT-Creation-Date: 2022-05-06 00:45+0000\n"
+"PO-Revision-Date: 2023-09-26 23:58+0530\n"
+"Last-Translator: \n"
+"Language-Team: LANGUAGE <kde-i18n-doc@kde.org>\n"
+"Language: sa\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"X-Generator: Poedit 3.3.2\n"
+
+#: src/kcompactdisc_p.cpp:224
+#, kde-format
+msgid "Playing"
+msgstr "वादयति"
+
+#: src/kcompactdisc_p.cpp:226
+#, kde-format
+msgid "Paused"
+msgstr "विरामितः"
+
+#: src/kcompactdisc_p.cpp:228
+#, kde-format
+msgid "Stopped"
+msgstr "स्थगितवान्"
+
+#: src/kcompactdisc_p.cpp:230
+#, kde-format
+msgid "Ejected"
+msgstr "निष्कासितम्"
+
+#: src/kcompactdisc_p.cpp:232
+#, kde-format
+msgid "No Disc"
+msgstr "Disc नास्ति"
+
+#: src/kcompactdisc_p.cpp:234
+#, kde-format
+msgid "Not Ready"
+msgstr "सज्जः नास्ति"
+
+#: src/kcompactdisc_p.cpp:237
+#, kde-format
+msgid "Error"
+msgstr "त्रुटि"
+
+#: src/phonon_interface.cpp:334 src/phonon_interface.cpp:337
+#: src/wmlib_interface.cpp:237 src/wmlib_interface.cpp:240
+#, kde-format
+msgid "Unknown Artist"
+msgstr "अज्ञात कलाकार"
+
+#: src/phonon_interface.cpp:335 src/wmlib_interface.cpp:238
+#, kde-format
+msgid "Unknown Title"
+msgstr "अज्ञात शीर्षक"
+
+#: src/phonon_interface.cpp:338 src/wmlib_interface.cpp:241
+#, kde-format
+msgid "Track %1"
+msgstr "पटल %1"
