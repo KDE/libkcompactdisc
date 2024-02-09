@@ -52,7 +52,7 @@
 #include <signal.h>
 #include <sigfpe.h>
 #include <dmedia/cdaudio.h>
-#include <dmedia/audio.h>
+#include "dmedia/audio.h"
 #include <errno.h>
 
 #include "include/wm_struct.h"
