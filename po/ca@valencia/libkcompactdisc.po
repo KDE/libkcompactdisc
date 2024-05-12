@@ -24,7 +24,7 @@ msgstr ""
 #: src/kcompactdisc_p.cpp:224
 #, kde-format
 msgid "Playing"
-msgstr "Reproducció"
+msgstr "Reproduïu"
 
 #: src/kcompactdisc_p.cpp:226
 #, kde-format
