@@ -9,12 +9,5 @@ Dependencies:
     'frameworks/ki18n': '@latest-kf6'
     'libraries/phonon': '@latest-kf6'
 
-- 'on': ['Linux/Qt5', 'FreeBSD/Qt5', 'Windows/Qt5']
-  'require':
-    'frameworks/extra-cmake-modules': '@stable'
-    'frameworks/solid': '@stable'
-    'frameworks/ki18n': '@stable'
-    'libraries/phonon': '@stable'
-
 Options:
   require-passing-tests-on: ['Linux', 'FreeBSD', 'Windows']
