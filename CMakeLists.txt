@@ -23,8 +23,13 @@ include(ECMGeneratePriFile)
 include(ECMGenerateExportHeader)
 include(CMakePackageConfigHelpers)
 include(ECMDeprecationSettings)
+include(KDEGitCommitHooks)
+include(KDEClangFormat)
+file(GLOB_RECURSE ALL_CLANG_FORMAT_SOURCE_FILES *.cpp *.h *.c)
+kde_clang_format(${ALL_CLANG_FORMAT_SOURCE_FILES})
 
-# Qt5, KF5 and Phonon Packages
+
+# Qt6, KF6 and Phonon Packages
 
 find_package(Qt6 ${QT_MIN_VERSION} REQUIRED COMPONENTS Core DBus)
 find_package(KF6 ${KF_MIN_VERSION} REQUIRED COMPONENTS
@@ -45,5 +50,5 @@ if(BUILD_TESTING)
 endif()
 
 ki18n_install(po)
-
+kde_configure_git_pre_commit_hook(CHECKS CLANG_FORMAT)
 feature_summary(WHAT ALL FATAL_ON_MISSING_REQUIRED_PACKAGES)
