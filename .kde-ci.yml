@@ -2,12 +2,12 @@
 # SPDX-License-Identifier: CC0-1.0
 
 Dependencies:
-- 'on': ['Linux/Qt6', 'FreeBSD/Qt6', 'Windows/Qt6']
-  'require':
+ - 'on': ['Linux/Qt6', 'FreeBSD/Qt6', 'Windows/Qt6']
+   'require':
     'frameworks/extra-cmake-modules': '@latest-kf6'
     'frameworks/solid': '@latest-kf6'
     'frameworks/ki18n': '@latest-kf6'
     'libraries/phonon': '@latest-kf6'
 
 Options:
-  require-passing-tests-on: ['Linux', 'FreeBSD', 'Windows']
+ require-passing-tests-on: ['Linux', 'FreeBSD', 'Windows']
