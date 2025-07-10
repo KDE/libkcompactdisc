@@ -59,16 +59,16 @@ ProducerWidget::ProducerWidget(KPhononCompactDiscPrivate *p, const QString &Udi)
     m_mediaController(nullptr)
 {
     m_media = new MediaObject(this);
-    connect(m_media, SIGNAL(metaDataChanged()), SLOT(updateMetaData()));
+    connect(m_media, &MediaObject::metaDataChanged, p, &KPhononCompactDiscPrivate::queryMetadata);
     m_media->setTickInterval(1000);
 
     m_output = new AudioOutput(Phonon::MusicCategory, this);
     Phonon::createPath(m_media, m_output);
 
-    connect(m_media, SIGNAL(stateChanged(Phonon::State,Phonon::State)),
-            p, SLOT(stateChanged(Phonon::State,Phonon::State)));
+    connect(m_media, &MediaObject::stateChanged,
+            p, &KPhononCompactDiscPrivate::stateChanged);
 
-    connect(m_media, SIGNAL(tick(qint64)), p, SLOT(tick(qint64)));
+    connect(m_media, &MediaObject::tick, p, &KPhononCompactDiscPrivate::tick);
 
     MediaSource *m_mediaSource = new MediaSource(Phonon::Cd, Udi);
     m_media->setCurrentSource(*m_mediaSource);

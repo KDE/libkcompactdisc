@@ -41,10 +41,10 @@ LibWMPcmPlayer::LibWMPcmPlayer() : AbstractMediaStream(NULL),
     setStreamSeekable(false);
     setStreamSize(0xffffffff);
 
-    connect(this, SIGNAL(cmdChanged(int)), this, SLOT(executeCmd(int)));
-    connect(this, SIGNAL(nextBuffer(cdda_block*)), this, SLOT(playBuffer(cdda_block*)));
-    connect(m_media, SIGNAL(stateChanged(Phonon::State,Phonon::State)),
-        this, SLOT(stateChanged(Phonon::State,Phonon::State)));
+    connect(this, &LibWMPcmPlayer::cmdChanged, this, &LibWMPcmPlayer::executeCmd);
+    connect(this, &LibWMPcmPlayer::nextBuffer, this, &LibWMPcmPlayer::playBuffer);
+    connect(m_media, &Phonon::MediaObject::stateChanged,
+        this, &LibWMPcmPlayer::stateChanged);
 
     DEBUGLOG("writeHeader\n");
     writeData( wavHeader() );

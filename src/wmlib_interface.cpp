@@ -79,7 +79,7 @@ bool KWMLibCompactDiscPrivate::createInterface()
 		if (m_infoMode == KCompactDisc::Asynchronous) {
 			timerExpired();
 		} else {
-			QTimer::singleShot(1000, this, SLOT(timerExpired()));
+			QTimer::singleShot(1000, this, &KWMLibCompactDiscPrivate::timerExpired);
 		}
 
 		return true;
@@ -294,7 +294,7 @@ qDebug() << "m_trackTitles " << m_trackTitles;
 
 timerExpiredExit:
 	// Now that we have incurred any delays caused by the signals, we'll start the timer.
-	QTimer::singleShot(1000, this, SLOT(timerExpired()));
+	QTimer::singleShot(1000, this, &KWMLibCompactDiscPrivate::timerExpired);
 }
 
 void KWMLibCompactDiscPrivate::cdtext()
