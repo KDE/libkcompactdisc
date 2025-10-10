@@ -528,9 +528,6 @@ protected:
 
 private:
     Q_DECLARE_PRIVATE(KCompactDisc)
-#ifdef USE_WMLIB
-	friend class KWMLibCompactDiscPrivate;
-#endif
 	friend class KPhononCompactDiscPrivate;
 };
 

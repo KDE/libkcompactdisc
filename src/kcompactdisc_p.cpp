@@ -20,7 +20,6 @@
 
 #include "kcompactdisc_p.h"
 
-#include "wmlib_interface.h"
 #include "phonon_interface.h"
 
 
@@ -78,16 +77,7 @@ bool KCompactDiscPrivate::moveInterface(const QString &deviceName,
 		delete pOld;
 	}
 
-#ifdef USE_WMLIB
-	if(audioSystem == QLatin1String("phonon"))
-#endif
-		pNew = new KPhononCompactDiscPrivate(q, deviceName);
-#ifdef USE_WMLIB
-	else
-		pNew = new KWMLibCompactDiscPrivate(q, deviceName,
-			audioSystem, audioDevice);
-#endif
-
+	pNew = new KPhononCompactDiscPrivate(q, deviceName);
 	pNew->m_infoMode = m_infoMode;
 
 	if(pNew->createInterface()) {

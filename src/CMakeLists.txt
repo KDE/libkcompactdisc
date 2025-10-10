@@ -48,51 +48,11 @@ ecm_generate_export_header(KCompactDisc
     ${_generate_export_header_version_args}
 )
 
-if (APPLE OR WIN32 OR CMAKE_SYSTEM_NAME STREQUAL GNU)
-    set(USE_WMLIB false)
-else()
-    set(USE_WMLIB true)
-endif()
-
 target_sources(KCompactDisc PRIVATE
     kcompactdisc.cpp kcompactdisc.h
     kcompactdisc_p.cpp kcompactdisc_p.h
     phonon_interface.cpp phonon_interface.h
 )
-
-if (USE_WMLIB)
-    target_sources(KCompactDisc PRIVATE
-        wmlib_interface.cpp wmlib_interface.h
-
-        wmlib/audio/audio.c
-        wmlib/audio/audio_arts.c
-        wmlib/audio/audio_alsa.c
-        wmlib/audio/audio_sun.c
-
-        wmlib/cdda.c
-        wmlib/cddb.c
-        wmlib/cdrom.c
-        wmlib/wm_helpers.c
-        wmlib/cdtext.c
-        wmlib/scsi.c
-        wmlib/plat_aix.c
-        wmlib/plat_bsd386.c
-        wmlib/plat_freebsd.c
-        wmlib/plat_hpux.c
-        wmlib/plat_irix.c
-        wmlib/plat_linux.c
-        wmlib/plat_svr4.c
-        wmlib/plat_ultrix.c
-        wmlib/plat_news.c
-        wmlib/plat_openbsd.c
-        wmlib/plat_osf1.c
-        wmlib/plat_sun.c
-        wmlib/plat_scor5.c
-        wmlib/drv_sony.c
-        wmlib/drv_toshiba.c
-    )
-    target_compile_definitions(KCompactDisc PRIVATE -DUSE_WMLIB=1)
-endif()
 
 target_link_libraries(KCompactDisc
     PUBLIC
@@ -106,11 +66,6 @@ target_link_libraries(KCompactDisc
 
 if (HAVE_ALSA)
     target_link_libraries(KCompactDisc PRIVATE ALSA::ALSA)
-endif()
-
-if (USE_WMLIB)
-    find_package(Threads)
-    target_link_libraries(KCompactDisc PRIVATE ${CMAKE_THREAD_LIBS_INIT})
 endif()
 
 target_include_directories(KCompactDisc
