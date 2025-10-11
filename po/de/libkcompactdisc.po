@@ -1,7 +1,7 @@
-# Martin Ereth <martin.ereth@arcor.de>, 2007.
-# Thomas Reitelbach <tr@erdfunkstelle.de>, 2007.
-# Panagiotis Papadopoulos <pano_90@gmx.net>, 2009.
-# Burkhard Lück <lueck@hube-lueck.de>, 2013.
+# SPDX-FileCopyrightText: 2007 Martin Ereth <martin.ereth@arcor.de>
+# SPDX-FileCopyrightText: 2007 Thomas Reitelbach <tr@erdfunkstelle.de>
+# SPDX-FileCopyrightText: 2009 Panagiotis Papadopoulos <pano_90@gmx.net>
+# SPDX-FileCopyrightText: 2013 Burkhard Lück <lueck@hube-lueck.de>
 msgid ""
 msgstr ""
 "Project-Id-Version: libkcompactdisc\n"
